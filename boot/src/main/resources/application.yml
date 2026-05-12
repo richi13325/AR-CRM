@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: CRM2
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/crm2
+    username: crm2
+    password: crm2
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 30000
+      connection-timeout: 20000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  server:
+  port: 8080

@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: crm2-postgres
+    environment:
+      POSTGRES_DB: crm2
+      POSTGRES_USER: crm2
+      POSTGRES_PASSWORD: crm2
+    ports:
+      - "5433:5432"
+    volumes:
+      - crm2-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crm2 -d crm2"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  crm2-pgdata:
