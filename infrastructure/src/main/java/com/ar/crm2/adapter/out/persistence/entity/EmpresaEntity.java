@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
  * JPA entity for Empresa persistence.
@@ -22,7 +21,7 @@ public class EmpresaEntity {
 
     @Id
     @Column(name = "id")
-    private UUID id;
+    private String id;
 
     @Column(name = "nombre", nullable = false, length = 200)
     private String nombre;
@@ -50,10 +49,10 @@ public class EmpresaEntity {
     private EstadoRelacion estadoRelacion;
 
     @Column(name = "responsable_id")
-    private UUID responsableId;
+    private String responsableId;
 
     @Column(name = "creado_por")
-    private UUID creadoPor;
+    private String creadoPor;
 
     @Column(name = "notas", columnDefinition = "TEXT")
     private String notas;

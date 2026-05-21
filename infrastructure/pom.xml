@@ -76,5 +76,29 @@
             <version>42.7.4</version>
             <scope>runtime</scope>
         </dependency>
+
+        <!-- Test dependencies: H2 for slice tests, Spring test MVC/Data JPA for WebMvcTest/DataJpaTest. -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Spring Boot test suite: includes spring-boot-test-autoconfigure (contains @DataJpaTest, @WebMvcTest). -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Spring Boot Data JPA test slice: contains @DataJpaTest in Boot 4 (package moved from spring-boot-test-autoconfigure). -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-data-jpa-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

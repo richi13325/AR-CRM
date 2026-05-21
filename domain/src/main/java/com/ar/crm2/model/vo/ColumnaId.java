@@ -10,7 +10,7 @@ import java.util.UUID;
 public record ColumnaId(UUID value) {
 
     public ColumnaId {
-        DomainAssert.notNull(value, "columnaId is mandatory");
+        DomainAssert.notNull(value, "columnaId");
     }
 
     public static ColumnaId from(UUID value) {

@@ -1,6 +1,21 @@
 package com.ar.crm2.adapter.in.rest;
 
-import com.ar.crm2.exception.InvariantViolationException;
+import com.ar.crm2.application.columna.exception.ColumnaHasAssociatedFichasException;
+import com.ar.crm2.application.columna.exception.ColumnaNotFoundException;
+import com.ar.crm2.application.contacto.exception.ContactoHasAssociatedTratosException;
+import com.ar.crm2.application.contacto.exception.ContactoNotFoundException;
+import com.ar.crm2.application.empresa.exception.EmpresaHasAssociatedTratosException;
+import com.ar.crm2.application.empresa.exception.EmpresaNotFoundException;
+import com.ar.crm2.application.ficha.exception.FichaNotFoundException;
+import com.ar.crm2.application.rol.exception.RolHasAssociatedUsuariosException;
+import com.ar.crm2.application.rol.exception.RolNotFoundException;
+import com.ar.crm2.application.superusuario.exception.SuperUsuarioNotFoundException;
+import com.ar.crm2.application.tablero.exception.TableroNotFoundException;
+import com.ar.crm2.application.tarea.exception.TareaNotFoundException;
+import com.ar.crm2.application.trato.exception.TratoNotFoundException;
+import com.ar.crm2.application.usuario.exception.UsuarioNotFoundException;
+import com.ar.crm2.exception.ColumnaConFichasNoPuedeEliminarseException;
+import com.ar.crm2.exception.DomainException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -16,10 +31,143 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     /**
-     * Handles domain invariant violations as 400 Bad Request.
+     * Handles RolNotFoundException as 404 Not Found.
      */
-    @ExceptionHandler(InvariantViolationException.class)
-    public ResponseEntity<Map<String, String>> handleInvariantViolation(InvariantViolationException ex) {
+    @ExceptionHandler(RolNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleRolNotFoundException(RolNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(ColumnaNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleColumnaNotFoundException(ColumnaNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * Handles UsuarioNotFoundException as 404 Not Found.
+     */
+    @ExceptionHandler(UsuarioNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleUsuarioNotFoundException(UsuarioNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * Handles SuperUsuarioNotFoundException as 404 Not Found.
+     */
+    @ExceptionHandler(SuperUsuarioNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleSuperUsuarioNotFoundException(SuperUsuarioNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * Handles RolHasAssociatedUsuariosException as 409 Conflict.
+     */
+    @ExceptionHandler(RolHasAssociatedUsuariosException.class)
+    public ResponseEntity<Map<String, String>> handleRolHasAssociatedUsuariosException(RolHasAssociatedUsuariosException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(ColumnaHasAssociatedFichasException.class)
+    public ResponseEntity<Map<String, String>> handleColumnaHasAssociatedFichasException(ColumnaHasAssociatedFichasException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * Handles EmpresaNotFoundException as 404 Not Found.
+     */
+    @ExceptionHandler(EmpresaNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleEmpresaNotFoundException(EmpresaNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * Handles ContactoNotFoundException as 404 Not Found.
+     */
+    @ExceptionHandler(ContactoNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleContactoNotFoundException(ContactoNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * Handles TratoNotFoundException as 404 Not Found.
+     */
+    @ExceptionHandler(TratoNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleTratoNotFoundException(TratoNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * Handles TareaNotFoundException as 404 Not Found.
+     */
+    @ExceptionHandler(TareaNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleTareaNotFoundException(TareaNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * Handles FichaNotFoundException as 404 Not Found.
+     */
+    @ExceptionHandler(FichaNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleFichaNotFoundException(FichaNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * Handles EmpresaHasAssociatedTratosException as 409 Conflict.
+     */
+    @ExceptionHandler(EmpresaHasAssociatedTratosException.class)
+    public ResponseEntity<Map<String, String>> handleEmpresaHasAssociatedTratosException(EmpresaHasAssociatedTratosException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * Handles ContactoHasAssociatedTratosException as 409 Conflict.
+     */
+    @ExceptionHandler(ContactoHasAssociatedTratosException.class)
+    public ResponseEntity<Map<String, String>> handleContactoHasAssociatedTratosException(ContactoHasAssociatedTratosException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * Handles TableroNotFoundException as 404 Not Found.
+     */
+    @ExceptionHandler(TableroNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleTableroNotFoundException(TableroNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * Handles ColumnaConFichasNoPuedeEliminarseException as 409 Conflict.
+     * This domain exception is thrown when a column deletion is attempted
+     * on a column that contains fichas.
+     */
+    @ExceptionHandler(ColumnaConFichasNoPuedeEliminarseException.class)
+    public ResponseEntity<Map<String, String>> handleColumnaConFichasNoPuedeEliminarse(ColumnaConFichasNoPuedeEliminarseException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * Handles domain business rule violations as 400 Bad Request.
+     * Covers DomainException and all subclasses (InvariantViolationException,
+     * UnauthorizedDomainActionException, TipoTableroMismatchException, etc.).
+     */
+    @ExceptionHandler(DomainException.class)
+    public ResponseEntity<Map<String, String>> handleDomainException(DomainException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(Map.of("error", ex.getMessage()));
     }

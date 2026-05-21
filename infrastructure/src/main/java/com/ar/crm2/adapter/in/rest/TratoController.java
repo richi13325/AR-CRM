@@ -1,0 +1,97 @@
+package com.ar.crm2.adapter.in.rest;
+
+import com.ar.crm2.adapter.in.rest.dto.request.CreateTratoRequest;
+import com.ar.crm2.adapter.in.rest.dto.request.EditTratoRequest;
+import com.ar.crm2.adapter.in.rest.dto.response.TratoResponse;
+import com.ar.crm2.adapter.in.rest.mapper.TratoCommandMapper;
+import com.ar.crm2.application.trato.command.CreateTratoCommand;
+import com.ar.crm2.application.trato.command.DeleteTratoCommand;
+import com.ar.crm2.application.trato.command.EditTratoCommand;
+import com.ar.crm2.application.trato.command.GetTratoByIdCommand;
+import com.ar.crm2.application.trato.port.in.CreateTratoUseCase;
+import com.ar.crm2.application.trato.port.in.DeleteTratoUseCase;
+import com.ar.crm2.application.trato.port.in.EditTratoUseCase;
+import com.ar.crm2.application.trato.port.in.GetAllTratosUseCase;
+import com.ar.crm2.application.trato.port.in.GetTratoByIdUseCase;
+import com.ar.crm2.model.entity.Trato;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * REST controller for Trato operations.
+ * Implements inbound adapter pattern, delegates to application UseCase contracts.
+ */
+@RestController
+@RequestMapping("/api/tratos")
+@RequiredArgsConstructor
+public class TratoController {
+
+    private final CreateTratoUseCase createUseCase;
+    private final GetAllTratosUseCase getAllUseCase;
+    private final GetTratoByIdUseCase getByIdUseCase;
+    private final EditTratoUseCase editUseCase;
+    private final DeleteTratoUseCase deleteUseCase;
+
+    /**
+     * Creates a new Trato.
+     */
+    @PostMapping("/create")
+    public ResponseEntity<TratoResponse> create(@Valid @RequestBody CreateTratoRequest request) {
+        CreateTratoCommand command = TratoCommandMapper.toCommand(request);
+        Trato trato = createUseCase.create(command);
+        return ResponseEntity.status(HttpStatus.CREATED).body(TratoResponse.fromDomain(trato));
+    }
+
+    /**
+     * Retrieves all Tratos.
+     */
+    @GetMapping("/get-all")
+    public ResponseEntity<List<TratoResponse>> getAll() {
+        List<Trato> tratos = getAllUseCase.getAll();
+        List<TratoResponse> responses = tratos.stream().map(TratoResponse::fromDomain).toList();
+        return ResponseEntity.ok(responses);
+    }
+
+    /**
+     * Retrieves a Trato by its id.
+     */
+    @GetMapping("/get-by-id")
+    public ResponseEntity<TratoResponse> getById(@RequestParam UUID id) {
+        GetTratoByIdCommand command = TratoCommandMapper.toGetByIdCommand(id);
+        Trato trato = getByIdUseCase.getById(command);
+        return ResponseEntity.ok(TratoResponse.fromDomain(trato));
+    }
+
+    /**
+     * Updates an existing Trato.
+     */
+    @PutMapping("/edit")
+    public ResponseEntity<TratoResponse> edit(@RequestParam UUID id, @Valid @RequestBody EditTratoRequest request) {
+        EditTratoCommand command = TratoCommandMapper.toCommand(id, request);
+        Trato trato = editUseCase.edit(command);
+        return ResponseEntity.ok(TratoResponse.fromDomain(trato));
+    }
+
+    /**
+     * Deletes an existing Trato.
+     */
+    @DeleteMapping("/delete")
+    public ResponseEntity<Void> delete(@RequestParam UUID id) {
+        DeleteTratoCommand command = TratoCommandMapper.toDeleteCommand(id);
+        deleteUseCase.delete(command);
+        return ResponseEntity.noContent().build();
+    }
+}

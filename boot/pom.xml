@@ -24,6 +24,20 @@
     </properties>
 
     <dependencies>
+        <!-- Domain: boot is the composition root and may depend on all inner modules. -->
+        <dependency>
+            <groupId>com.ar</groupId>
+            <artifactId>domain</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Application: use cases, services, and ports are wired from boot. -->
+        <dependency>
+            <groupId>com.ar</groupId>
+            <artifactId>application</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Infrastructure: boot -> infrastructure -> application -> domain.
              Infrastructure brings spring-boot-starter-web (controllers),
              spring-boot-starter-data-jpa (repositories), and the adapter implementations. -->

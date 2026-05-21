@@ -1,5 +1,6 @@
 package com.ar.crm2.model.entity;
 
+import com.ar.crm2.exception.EmpresaStateTransitionException;
 import com.ar.crm2.model.enums.EstadoRelacion;
 import com.ar.crm2.model.vo.EmpresaId;
 import com.ar.crm2.model.vo.UsuarioId;
@@ -67,13 +68,13 @@ public class Empresa {
     ) {
         return Empresa.builder()
             .id(EmpresaId.create())
-            .nombre(DomainAssert.lengthBetween(nombre, 1, 200, "nombre must be 1-200 chars"))
+            .nombre(DomainAssert.lengthBetween(nombre, "nombre", 1, 200))
             .sector(sector)
             .telefono(telefono)
-            .paginaWeb(paginaWeb)
-            .facebook(facebook)
-            .instagram(instagram)
-            .twitter(twitter)
+            .paginaWeb(paginaWeb == null || paginaWeb.isBlank() ? null : DomainAssert.link(paginaWeb, "paginaWeb"))
+            .facebook(facebook == null || facebook.isBlank() ? null : DomainAssert.link(facebook, "facebook"))
+            .instagram(instagram == null || instagram.isBlank() ? null : DomainAssert.link(instagram, "instagram"))
+            .twitter(twitter == null || twitter.isBlank() ? null : DomainAssert.link(twitter, "twitter"))
             .estadoRelacion(estadoRelacion)
             .responsableId(responsableId)
             .creadoPor(creadoPor)
@@ -102,20 +103,76 @@ public class Empresa {
         LocalDateTime actualizadoEn
     ) {
         return Empresa.builder()
-            .id(DomainAssert.notNull(id, "id is mandatory"))
-            .nombre(DomainAssert.lengthBetween(nombre, 1, 200, "nombre must be 1-200 chars"))
+            .id(DomainAssert.notNull(id, "id"))
+            .nombre(DomainAssert.lengthBetween(nombre, "nombre", 1, 200))
             .sector(sector)
             .telefono(telefono)
-            .paginaWeb(paginaWeb)
-            .facebook(facebook)
-            .instagram(instagram)
-            .twitter(twitter)
+            .paginaWeb(paginaWeb == null || paginaWeb.isBlank() ? null : DomainAssert.link(paginaWeb, "paginaWeb"))
+            .facebook(facebook == null || facebook.isBlank() ? null : DomainAssert.link(facebook, "facebook"))
+            .instagram(instagram == null || instagram.isBlank() ? null : DomainAssert.link(instagram, "instagram"))
+            .twitter(twitter == null || twitter.isBlank() ? null : DomainAssert.link(twitter, "twitter"))
             .estadoRelacion(estadoRelacion)
             .responsableId(responsableId)
             .creadoPor(creadoPor)
             .notas(notas)
-            .creadoEn(DomainAssert.notNull(creadoEn, "creadoEn is mandatory"))
+            .creadoEn(DomainAssert.notNull(creadoEn, "creadoEn"))
             .actualizadoEn(actualizadoEn)
             .build();
     }
-}
+
+    // ── Business Methods ─────────────────────────────────────────────────────
+
+    /**
+     * Changes the company's relationship state.
+     *
+     * <p>Rules (CLIENTE maps to enum value ACTIVO):
+     * <ul>
+     *   <li>{@code nuevoEstado} is required.</li>
+     *   <li>Same-state change is idempotent (returns unchanged instance).</li>
+     *   <li>ACTIVO → PROSPECTO is forbidden.</li>
+     *   <li>INACTIVO → PROSPECTO is forbidden.</li>
+     *   <li>Any → INACTIVO is forbidden when {@code tieneTratosActivos == true}.</li>
+     * </ul>
+     *
+     * @param nuevoEstado       the target state (required)
+     * @param tieneTratosActivos indicates whether the company has active deals
+     * @return a new Empresa instance with updated estadoRelacion and actualizadoEn;
+     *         or the same instance if the state is unchanged (idempotent)
+     * @throws EmpresaStateTransitionException on invalid transitions
+     */
+    public Empresa cambiarEstadoRelacion(EstadoRelacion nuevoEstado, boolean tieneTratosActivos) {
+        DomainAssert.notNull(nuevoEstado, "nuevoEstado");
+
+        if (nuevoEstado == this.estadoRelacion) {
+            return this;
+        }
+
+        // Rule: cannot go back to PROSPECTO once left
+        if (nuevoEstado == EstadoRelacion.PROSPECTO && this.estadoRelacion != EstadoRelacion.PROSPECTO) {
+            throw EmpresaStateTransitionException.transicionAProspectoNoPermitida(this.estadoRelacion.name());
+        }
+
+        // Rule: cannot mark as INACTIVO if there are active deals
+        if (nuevoEstado == EstadoRelacion.INACTIVO && tieneTratosActivos) {
+            throw EmpresaStateTransitionException.inactivoConTratosActivos();
+        }
+
+        return Empresa.builder()
+                .id(this.id)
+                .nombre(this.nombre)
+                .sector(this.sector)
+                .telefono(this.telefono)
+                .paginaWeb(this.paginaWeb)
+                .facebook(this.facebook)
+                .instagram(this.instagram)
+                .twitter(this.twitter)
+                .estadoRelacion(nuevoEstado)
+                .responsableId(this.responsableId)
+                .creadoPor(this.creadoPor)
+                .notas(this.notas)
+                .creadoEn(this.creadoEn)
+                .actualizadoEn(LocalDateTime.now())
+                .build();
+    }
+
+    }

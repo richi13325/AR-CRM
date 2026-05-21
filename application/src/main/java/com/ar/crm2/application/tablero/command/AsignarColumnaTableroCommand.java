@@ -1,0 +1,43 @@
+package com.ar.crm2.application.tablero.command;
+
+import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTarea;
+import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTrato;
+
+import java.math.BigDecimal;
+import java.util.UUID;
+
+/**
+ * Command to assign an existing catalog Columna to a Tablero with contextual data.
+ *
+ * <p>Unlike {@link AgregarColumnaTableroCommand}, this command does NOT carry
+ * column definition (nombre, color, tipoColumna). Those belong to the catalog.
+ * This command only carries the board-specific context (WIP limit, note, state).
+ */
+public record AsignarColumnaTableroCommand(
+    UUID tableroId,
+    UUID columnaId,
+    Integer limiteWip,
+    String nota,
+    TipoEstadoColumnaTableroTarea estadoTarea,
+    TipoEstadoColumnaTableroTrato estadoTrato,
+    BigDecimal totalValorEstimado
+) {
+
+    public AsignarColumnaTableroCommand {
+        if (tableroId == null) {
+            throw new IllegalArgumentException("tableroId is required");
+        }
+        if (columnaId == null) {
+            throw new IllegalArgumentException("columnaId is required");
+        }
+        if (limiteWip == null) {
+            throw new IllegalArgumentException("limiteWip is required");
+        }
+        if (limiteWip <= 0) {
+            throw new IllegalArgumentException("limiteWip must be greater than zero");
+        }
+        if (totalValorEstimado == null) {
+            throw new IllegalArgumentException("totalValorEstimado is required");
+        }
+    }
+}

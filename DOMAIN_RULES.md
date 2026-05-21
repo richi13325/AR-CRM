@@ -41,6 +41,18 @@ Por qué está mal:
 
 ## Validación e invariantes
 
+Estas reglas son **validaciones base** para que el objeto exista en un estado válido. No deben confundirse con comportamiento de negocio.
+
+Ejemplos de validación base:
+
+- `notNull`
+- `notBlank`
+- longitud mínima/máxima
+- formato de email
+- formato de link/URL
+
+Estas validaciones protegen la integridad mínima del modelo, pero no representan por sí solas lo que la entidad **puede hacer**.
+
 - Toda entidad debe crearse mediante métodos factory (`create`, `crear`, `reconstitute`) que validen invariantes antes de instanciar.
 - El constructor de entidades puede ser generado con Lombok, pero debe ser privado para no saltarse validaciones.
 - Los value objects sí pueden validar en su propia creación/factory.
@@ -58,24 +70,24 @@ public final class DomainAssert {
     private DomainAssert() {
     }
 
-    public static <T> T notNull(T value, String message) {
+    public static <T> T notNull(T value, String fieldName) {
         if (value == null) {
-            throw new InvariantViolationException(message);
+            throw InvariantViolationException.required(fieldName);
         }
         return value;
     }
 
-    public static String notBlank(String value, String message) {
+    public static String notBlank(String value, String fieldName) {
         if (value == null || value.isBlank()) {
-            throw new InvariantViolationException(message);
+            throw InvariantViolationException.blank(fieldName);
         }
         return value.trim();
     }
 
-    public static String lengthBetween(String value, int min, int max, String message) {
-        String normalized = notBlank(value, message);
+    public static String lengthBetween(String value, String fieldName, int min, int max) {
+        String normalized = notBlank(value, fieldName);
         if (normalized.length() < min || normalized.length() > max) {
-            throw new InvariantViolationException(message);
+            throw InvariantViolationException.lengthOutsideRange(fieldName, min, max);
         }
         return normalized;
     }
@@ -86,10 +98,37 @@ Reglas:
 
 - Usar `DomainAssert` para validaciones comunes de invariantes.
 - `InvariantViolationException` debe pertenecer a `domain`.
+- Las validaciones genéricas reciben **nombre de campo**, no mensajes completos.
+- Los mensajes de excepciones deben estar centralizados en las excepciones y en español.
+- Ejemplo correcto: `DomainAssert.notNull(columnaId, "columnaId")`.
+- Ejemplo incorrecto: `DomainAssert.notNull(columnaId, "columnaId is mandatory")`.
 - No lanzar excepciones HTTP, Spring, JPA ni infraestructura desde dominio.
 - Agregar nuevos métodos de assertion sólo cuando representen validaciones reutilizables.
 - **Validación de longitud:** usar `lengthBetween(min, max)` en una sola llamada para validar mínimo y máximo juntos.
 - **Sin wrappers privados:** no crear métodos privados como `validarNombre`, `validarCorreo`, etc. dentro de la entidad. Usar `DomainAssert` directamente en factories y comportamiento de negocio, a menos que emerja un concepto de dominio real que justifique abstracción.
+
+## Comportamiento de dominio
+
+El comportamiento de dominio son acciones reales que una entidad puede ejecutar y las condiciones bajo las cuales puede ejecutarlas.
+
+No confundir comportamiento con validaciones base. Que un campo sea obligatorio o tenga longitud válida es una invariante estructural. Que una entidad pueda o no ejecutar una acción según su estado actual es comportamiento de negocio.
+
+Ejemplos de comportamiento de dominio:
+
+- `pagar`: una orden no puede pagarse si ya está pagada o cancelada.
+- `cancelar`: una orden no puede cancelarse si ya está pagada o cancelada.
+- `agregarArticulo`: no se puede agregar un artículo vacío ni agregar artículos cuando la orden ya no está pendiente.
+- `cambiarResponsable`: una entidad puede reasignarse sólo si la regla de negocio lo permite.
+- `marcarComoGanado` / `marcarComoPerdido`: un trato sólo puede cambiar a ciertos estados desde estados válidos.
+
+Reglas:
+
+- Los métodos de comportamiento deben tener nombres del lenguaje del negocio.
+- Una entidad sólo debe exponer comportamiento cuando exista una acción real del negocio.
+- Las reglas de transición o acción deben vivir en la entidad o en un servicio de dominio, no en controllers, DTOs, repositories ni servicios de aplicación.
+- Si una regla de negocio se aplica en más de un método o lugar, debe extraerse a un método aparte para evitar duplicación.
+- Las excepciones específicas de comportamiento deben recibir datos contextuales mínimos y construir su propio mensaje en español.
+- La capa application puede orquestar y cargar dependencias, pero no debe decidir reglas de negocio que pertenezcan al dominio.
 
 ## Entidades
 
@@ -124,9 +163,9 @@ public class Usuario {
     public static Usuario create(String nombre, String correo, String passwordHash) {
         return new Usuario(
             UsuarioId.create(),
-            DomainAssert.lengthBetween(nombre, 1, 100, "nombre must be 1-100 chars"),
-            DomainAssert.lengthBetween(correo, 1, 150, "correo must be 1-150 chars"),
-            DomainAssert.lengthBetween(passwordHash, 1, 255, "passwordHash must be 1-255 chars"),
+            DomainAssert.lengthBetween(nombre, "nombre", 1, 100),
+            DomainAssert.lengthBetween(correo, "correo", 1, 150),
+            DomainAssert.lengthBetween(passwordHash, "passwordHash", 1, 255),
             LocalDateTime.now(),
             true
         );
@@ -135,11 +174,11 @@ public class Usuario {
     public static Usuario reconstitute(UsuarioId id, String nombre, String correo,
             String passwordHash, LocalDateTime creadoEn, boolean activo) {
         return new Usuario(
-            DomainAssert.notNull(id, "id is mandatory"),
-            DomainAssert.lengthBetween(nombre, 1, 100, "nombre must be 1-100 chars"),
-            DomainAssert.lengthBetween(correo, 1, 150, "correo must be 1-150 chars"),
-            DomainAssert.lengthBetween(passwordHash, 1, 255, "passwordHash must be 1-255 chars"),
-            DomainAssert.notNull(creadoEn, "creadoEn is mandatory"),
+            DomainAssert.notNull(id, "id"),
+            DomainAssert.lengthBetween(nombre, "nombre", 1, 100),
+            DomainAssert.lengthBetween(correo, "correo", 1, 150),
+            DomainAssert.lengthBetween(passwordHash, "passwordHash", 1, 255),
+            DomainAssert.notNull(creadoEn, "creadoEn"),
             activo
         );
     }
