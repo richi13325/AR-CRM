@@ -1,5 +1,6 @@
 package com.ar.crm2.application.usuario.service;
 
+import com.ar.crm2.application.identity.port.out.IdentityProviderUserPort;
 import com.ar.crm2.application.usuario.command.EditUsuarioCommand;
 import com.ar.crm2.application.usuario.exception.UsuarioNotFoundException;
 import com.ar.crm2.application.usuario.port.in.EditUsuarioUseCase;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
  * Application service implementing EditUsuarioUseCase.
  * Orchestrates loading the aggregate, applying the immutable domain update via reconstitute,
  * and saving. Preserves: id, rolId, creadoEn, activo.
+ * Syncs email and enabled state to Keycloak before local update.
  * No Spring annotations — constructor injection via Lombok.
  */
 @RequiredArgsConstructor
@@ -21,6 +23,7 @@ public class EditUsuarioService implements EditUsuarioUseCase {
 
     private final FindUsuarioByIdPort findPort;
     private final SaveUsuarioPort savePort;
+    private final IdentityProviderUserPort identityPort;
 
     @Override
     public Usuario edit(EditUsuarioCommand command) {
@@ -32,6 +35,16 @@ public class EditUsuarioService implements EditUsuarioUseCase {
         String keycloakId = command.keycloakId() != null
                 ? command.keycloakId()
                 : existing.getKeycloakId();
+
+        // Sync email to Keycloak first — if this fails, do not update local
+        if (!command.correo().equals(existing.getCorreo()) && keycloakId != null) {
+            identityPort.syncEmail(keycloakId, command.correo());
+        }
+
+        // Sync enabled flag to Keycloak
+        if (keycloakId != null) {
+            identityPort.setEnabled(keycloakId, existing.isActivo());
+        }
 
         Usuario updated = Usuario.reconstitute(
                 existing.getId(),
