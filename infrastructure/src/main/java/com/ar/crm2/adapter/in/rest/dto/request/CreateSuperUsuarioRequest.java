@@ -15,6 +15,9 @@ public record CreateSuperUsuarioRequest(
     @Size(max = 120, message = "correo must not exceed 120 characters")
     String correo,
 
+    @NotBlank(message = "initialPassword is required for Keycloak provisioning")
+    String initialPassword,
+
     @Size(max = 255, message = "keycloakId must not exceed 255 characters")
     String keycloakId
 ) {}

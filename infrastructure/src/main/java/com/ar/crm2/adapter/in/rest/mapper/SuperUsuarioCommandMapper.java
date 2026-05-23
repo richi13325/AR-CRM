@@ -22,7 +22,8 @@ public final class SuperUsuarioCommandMapper {
     public static CreateSuperUsuarioCommand toCommand(CreateSuperUsuarioRequest request) {
         return new CreateSuperUsuarioCommand(
             request.correo(),
-            request.keycloakId()
+            request.keycloakId(),
+            request.initialPassword()
         );
     }
 

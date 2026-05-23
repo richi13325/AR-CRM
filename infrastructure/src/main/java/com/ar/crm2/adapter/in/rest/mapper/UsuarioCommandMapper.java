@@ -24,7 +24,8 @@ public final class UsuarioCommandMapper {
             request.nombre(),
             request.correo(),
             request.rolId(),
-            request.keycloakId()
+            request.keycloakId(),
+            request.initialPassword()
         );
     }
 

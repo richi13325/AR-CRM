@@ -2,6 +2,7 @@ package com.ar.crm2.adapter.in.rest.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
@@ -21,7 +22,11 @@ public record CreateUsuarioRequest(
     @Size(max = 120, message = "correo must not exceed 120 characters")
     String correo,
 
+    @NotNull(message = "rolId is required")
     UUID rolId,
+
+    @NotBlank(message = "initialPassword is required for Keycloak provisioning")
+    String initialPassword,
 
     @Size(max = 255, message = "keycloakId must not exceed 255 characters")
     String keycloakId

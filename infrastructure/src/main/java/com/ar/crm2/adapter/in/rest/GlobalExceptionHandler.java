@@ -7,6 +7,7 @@ import com.ar.crm2.application.contacto.exception.ContactoNotFoundException;
 import com.ar.crm2.application.empresa.exception.EmpresaHasAssociatedTratosException;
 import com.ar.crm2.application.empresa.exception.EmpresaNotFoundException;
 import com.ar.crm2.application.ficha.exception.FichaNotFoundException;
+import com.ar.crm2.application.identity.model.IdentityProvisioningException;
 import com.ar.crm2.application.rol.exception.RolHasAssociatedUsuariosException;
 import com.ar.crm2.application.rol.exception.RolNotFoundException;
 import com.ar.crm2.application.superusuario.exception.SuperUsuarioNotFoundException;
@@ -178,6 +179,20 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * Handles IdentityProvisioningException due to connection/auth issues as 502 Bad Gateway.
+     */
+    @ExceptionHandler(IdentityProvisioningException.class)
+    public ResponseEntity<Map<String, String>> handleIdentityProvisioningException(IdentityProvisioningException ex) {
+        HttpStatus status = switch (ex.getReason()) {
+            case USER_ALREADY_EXISTS -> HttpStatus.CONFLICT;
+            case USER_NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case CONNECTION_FAILURE, AUTHENTICATION_FAILURE, SERVER_ERROR -> HttpStatus.BAD_GATEWAY;
+        };
+        return ResponseEntity.status(status)
             .body(Map.of("error", ex.getMessage()));
     }
 }
