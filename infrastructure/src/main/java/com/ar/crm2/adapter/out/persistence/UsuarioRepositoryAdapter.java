@@ -7,6 +7,7 @@ import com.ar.crm2.application.rol.port.out.ExistsUsuariosByRolIdPort;
 import com.ar.crm2.application.usuario.port.out.DeleteUsuarioByIdPort;
 import com.ar.crm2.application.usuario.port.out.FindAllUsuariosPort;
 import com.ar.crm2.application.usuario.port.out.FindUsuarioByIdPort;
+import com.ar.crm2.application.usuario.port.out.FindUsuarioByKeycloakIdPort;
 import com.ar.crm2.application.usuario.port.out.SaveUsuarioPort;
 import com.ar.crm2.model.entity.Usuario;
 import com.ar.crm2.model.vo.RolId;
@@ -24,7 +25,7 @@ import java.util.Optional;
  */
 @Repository
 @RequiredArgsConstructor
-public class UsuarioRepositoryAdapter implements SaveUsuarioPort, FindAllUsuariosPort, FindUsuarioByIdPort, DeleteUsuarioByIdPort, ExistsUsuariosByRolIdPort {
+public class UsuarioRepositoryAdapter implements SaveUsuarioPort, FindAllUsuariosPort, FindUsuarioByIdPort, DeleteUsuarioByIdPort, ExistsUsuariosByRolIdPort, FindUsuarioByKeycloakIdPort {
 
     private final UsuarioRepository repository;
 
@@ -56,5 +57,11 @@ public class UsuarioRepositoryAdapter implements SaveUsuarioPort, FindAllUsuario
     @Override
     public boolean existsUsuariosByRolId(RolId rolId) {
         return repository.existsByRolId(rolId.value().toString());
+    }
+
+    @Override
+    public Optional<Usuario> findByKeycloakId(String keycloakId) {
+        return repository.findByKeycloakId(keycloakId)
+            .map(UsuarioMapper::toDomain);
     }
 }

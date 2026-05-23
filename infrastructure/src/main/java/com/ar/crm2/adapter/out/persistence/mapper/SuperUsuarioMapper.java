@@ -26,6 +26,7 @@ public final class SuperUsuarioMapper {
             .passwordHash(domain.getPasswordHash())
             .creadoEn(domain.getCreadoEn())
             .activo(domain.isActivo())
+            .keycloakId(domain.getKeycloakId())
             .build();
     }
 
@@ -45,7 +46,8 @@ public final class SuperUsuarioMapper {
             entity.getCorreo(),
             entity.getPasswordHash(),
             entity.getCreadoEn(),
-            entity.isActivo()
+            entity.isActivo(),
+            entity.getKeycloakId()
         );
     }
 }

@@ -16,5 +16,8 @@ public record CreateSuperUsuarioRequest(
 
     @NotBlank(message = "passwordHash is required")
     @Size(max = 255, message = "passwordHash must not exceed 255 characters")
-    String passwordHash
+    String passwordHash,
+
+    @Size(max = 255, message = "keycloakId must not exceed 255 characters")
+    String keycloakId
 ) {}

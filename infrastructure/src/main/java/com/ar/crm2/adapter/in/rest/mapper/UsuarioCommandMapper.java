@@ -24,7 +24,8 @@ public final class UsuarioCommandMapper {
             request.nombre(),
             request.correo(),
             request.passwordHash(),
-            request.rolId()
+            request.rolId(),
+            request.keycloakId()
         );
     }
 
@@ -37,7 +38,8 @@ public final class UsuarioCommandMapper {
             request.nombre(),
             request.correo(),
             request.passwordHash(),
-            request.rolId()
+            request.rolId(),
+            request.keycloakId()
         );
     }
 

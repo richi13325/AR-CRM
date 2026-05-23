@@ -25,5 +25,8 @@ public record EditUsuarioRequest(
     @Size(max = 255, message = "passwordHash must not exceed 255 characters")
     String passwordHash,
 
-    UUID rolId
+    UUID rolId,
+
+    @Size(max = 255, message = "keycloakId must not exceed 255 characters")
+    String keycloakId
 ) {}

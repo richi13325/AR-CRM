@@ -38,6 +38,7 @@ import com.ar.crm2.application.superusuario.port.in.GetSuperUsuarioByIdUseCase;
 import com.ar.crm2.application.superusuario.port.out.DeleteSuperUsuarioByIdPort;
 import com.ar.crm2.application.superusuario.port.out.FindAllSuperUsuariosPort;
 import com.ar.crm2.application.superusuario.port.out.FindSuperUsuarioByIdPort;
+import com.ar.crm2.application.superusuario.port.out.FindSuperUsuarioByKeycloakIdPort;
 import com.ar.crm2.application.superusuario.port.out.SaveSuperUsuarioPort;
 import com.ar.crm2.application.superusuario.service.CreateSuperUsuarioService;
 import com.ar.crm2.application.superusuario.service.DeleteSuperUsuarioService;
@@ -67,6 +68,7 @@ import com.ar.crm2.application.usuario.port.in.GetUsuarioByIdUseCase;
 import com.ar.crm2.application.usuario.port.out.DeleteUsuarioByIdPort;
 import com.ar.crm2.application.usuario.port.out.FindAllUsuariosPort;
 import com.ar.crm2.application.usuario.port.out.FindUsuarioByIdPort;
+import com.ar.crm2.application.usuario.port.out.FindUsuarioByKeycloakIdPort;
 import com.ar.crm2.application.usuario.port.out.SaveUsuarioPort;
 import com.ar.crm2.application.usuario.service.CreateUsuarioService;
 import com.ar.crm2.application.usuario.service.DeleteUsuarioService;
@@ -585,6 +587,11 @@ public class WiringConfig {
         return adapter;
     }
 
+    @Bean
+    public FindUsuarioByKeycloakIdPort findUsuarioByKeycloakIdPort(UsuarioRepositoryAdapter adapter) {
+        return adapter;
+    }
+
     // ── Usuario UseCase Beans ──
 
     @Bean
@@ -692,6 +699,11 @@ public class WiringConfig {
 
     @Bean
     public DeleteSuperUsuarioByIdPort deleteSuperUsuarioByIdPort(SuperUsuarioRepositoryAdapter adapter) {
+        return adapter;
+    }
+
+    @Bean
+    public FindSuperUsuarioByKeycloakIdPort findSuperUsuarioByKeycloakIdPort(SuperUsuarioRepositoryAdapter adapter) {
         return adapter;
     }
 

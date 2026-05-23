@@ -14,4 +14,8 @@ public interface UsuarioRepository extends JpaRepository<UsuarioEntity, String> 
 
     @Query("SELECT COUNT(u) > 0 FROM UsuarioEntity u WHERE u.rolId = :rolId")
     boolean existsByRolId(@Param("rolId") String rolId);
+
+    boolean existsByKeycloakId(String keycloakId);
+
+    java.util.Optional<UsuarioEntity> findByKeycloakId(String keycloakId);
 }

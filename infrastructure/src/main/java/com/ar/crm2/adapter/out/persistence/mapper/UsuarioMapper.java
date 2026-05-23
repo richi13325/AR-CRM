@@ -29,6 +29,7 @@ public final class UsuarioMapper {
             .rolId(domain.getRolId().value().toString())
             .creadoEn(domain.getCreadoEn())
             .activo(domain.isActivo())
+            .keycloakId(domain.getKeycloakId())
             .build();
     }
 
@@ -50,7 +51,8 @@ public final class UsuarioMapper {
             entity.getPasswordHash(),
             RolId.from(java.util.UUID.fromString(entity.getRolId())),
             entity.getCreadoEn(),
-            entity.isActivo()
+            entity.isActivo(),
+            entity.getKeycloakId()
         );
     }
 }

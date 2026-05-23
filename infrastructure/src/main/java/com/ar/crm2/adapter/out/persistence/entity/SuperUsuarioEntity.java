@@ -41,4 +41,7 @@ public class SuperUsuarioEntity {
 
     @Column(name = "activo", nullable = false)
     private boolean activo;
+
+    @Column(name = "keycloak_id", nullable = true, length = 255)
+    private String keycloakId;
 }
