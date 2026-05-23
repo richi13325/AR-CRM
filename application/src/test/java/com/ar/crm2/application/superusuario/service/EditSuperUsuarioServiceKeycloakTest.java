@@ -1,5 +1,7 @@
 package com.ar.crm2.application.superusuario.service;
 
+import com.ar.crm2.application.identity.model.IdentityProvisioningException;
+import com.ar.crm2.application.identity.port.out.IdentityProviderUserPort;
 import com.ar.crm2.application.superusuario.command.EditSuperUsuarioCommand;
 import com.ar.crm2.application.superusuario.exception.SuperUsuarioNotFoundException;
 import com.ar.crm2.application.superusuario.port.in.EditSuperUsuarioUseCase;
@@ -40,6 +42,9 @@ class EditSuperUsuarioServiceKeycloakTest {
 
     @Mock
     private SaveSuperUsuarioPort savePort;
+
+    @Mock
+    private IdentityProviderUserPort identityPort;
 
     @InjectMocks
     private EditSuperUsuarioService service;
@@ -159,6 +164,100 @@ class EditSuperUsuarioServiceKeycloakTest {
 
             assertThrows(SuperUsuarioNotFoundException.class, () -> service.edit(cmd));
             verify(savePort, never()).save(any());
+        }
+    }
+
+    // ── Keycloak sync failure — email ──────────────────────────────
+
+    @Nested
+    @DisplayName("Keycloak email sync fails — local update not attempted")
+    class EmailSyncFalla {
+
+        @Test
+        @DisplayName("throws IdentityProvisioningException when syncEmail fails — local not saved")
+        void edit_emailSyncFalla_noActualizaLocal() {
+            UUID id = UUID.randomUUID();
+            SuperUsuarioId suId = SuperUsuarioId.from(id);
+            SuperUsuario existing = SuperUsuario.reconstitute(
+                    suId, CORREO,
+                    AHORA.minusDays(1), true, KEYCLOAK_ID_EXISTING
+            );
+            when(findPort.findById(suId)).thenReturn(Optional.of(existing));
+            doThrow(new IdentityProvisioningException(
+                "Keycloak error",
+                IdentityProvisioningException.Reason.SERVER_ERROR
+            )).when(identityPort).syncEmail(KEYCLOAK_ID_EXISTING, CORREO + ".ar");
+
+            EditSuperUsuarioCommand cmd = new EditSuperUsuarioCommand(id, CORREO + ".ar", KEYCLOAK_ID_EXISTING);
+
+            // When / Then
+            assertThrows(IdentityProvisioningException.class, () -> service.edit(cmd));
+            verify(savePort, never()).save(any());
+        }
+    }
+
+    // ── Enabled flag sync ─────────────────────────────────────────
+
+    @Nested
+    @DisplayName("enabled flag sync to Keycloak")
+    class SincronizacionEnabled {
+
+        @Test
+        @DisplayName("syncs enabled=true when superusuario is active")
+        void edit_activo_sincronizaEnabledTrue() {
+            UUID id = UUID.randomUUID();
+            SuperUsuarioId suId = SuperUsuarioId.from(id);
+            SuperUsuario existing = SuperUsuario.reconstitute(
+                    suId, CORREO,
+                    AHORA.minusDays(1), true, KEYCLOAK_ID_EXISTING
+            );
+            when(findPort.findById(suId)).thenReturn(Optional.of(existing));
+            when(savePort.save(any(SuperUsuario.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            EditSuperUsuarioCommand cmd = new EditSuperUsuarioCommand(id, CORREO, KEYCLOAK_ID_EXISTING);
+
+            service.edit(cmd);
+
+            verify(identityPort).setEnabled(KEYCLOAK_ID_EXISTING, true);
+        }
+
+        @Test
+        @DisplayName("syncs enabled=false when superusuario is inactive")
+        void edit_inactivo_sincronizaEnabledFalse() {
+            UUID id = UUID.randomUUID();
+            SuperUsuarioId suId = SuperUsuarioId.from(id);
+            SuperUsuario existing = SuperUsuario.reconstitute(
+                    suId, CORREO,
+                    AHORA.minusDays(1), false, KEYCLOAK_ID_EXISTING
+            );
+            when(findPort.findById(suId)).thenReturn(Optional.of(existing));
+            when(savePort.save(any(SuperUsuario.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            EditSuperUsuarioCommand cmd = new EditSuperUsuarioCommand(id, CORREO, KEYCLOAK_ID_EXISTING);
+
+            service.edit(cmd);
+
+            verify(identityPort).setEnabled(KEYCLOAK_ID_EXISTING, false);
+        }
+
+        @Test
+        @DisplayName("skips Keycloak sync when keycloakId is null")
+        void edit_sinKeycloakId_noSincroniza() {
+            UUID id = UUID.randomUUID();
+            SuperUsuarioId suId = SuperUsuarioId.from(id);
+            SuperUsuario existing = SuperUsuario.reconstitute(
+                    suId, CORREO,
+                    AHORA.minusDays(1), true, null
+            );
+            when(findPort.findById(suId)).thenReturn(Optional.of(existing));
+            when(savePort.save(any(SuperUsuario.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            EditSuperUsuarioCommand cmd = new EditSuperUsuarioCommand(id, CORREO + ".ar", null);
+
+            service.edit(cmd);
+
+            verify(identityPort, never()).syncEmail(any(), any());
+            verify(identityPort, never()).setEnabled(any(), anyBoolean());
         }
     }
 }

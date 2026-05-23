@@ -1,5 +1,6 @@
 package com.ar.crm2.application.usuario.service;
 
+import com.ar.crm2.application.identity.port.out.IdentityProviderUserPort;
 import com.ar.crm2.application.usuario.command.EditUsuarioCommand;
 import com.ar.crm2.application.usuario.exception.UsuarioNotFoundException;
 import com.ar.crm2.application.usuario.port.in.EditUsuarioUseCase;
@@ -43,6 +44,9 @@ class EditUsuarioServiceKeycloakTest {
 
     @Mock
     private SaveUsuarioPort savePort;
+
+    @Mock
+    private IdentityProviderUserPort identityPort;
 
     @InjectMocks
     private EditUsuarioService service;
