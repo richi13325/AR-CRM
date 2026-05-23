@@ -5,6 +5,7 @@ import com.ar.crm2.adapter.in.rest.dto.request.AsignarColumnaRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.CreateTableroRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.EditTableroRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.ReordenarColumnasRequest;
+import com.ar.crm2.application.security.ActorContext;
 import com.ar.crm2.application.tablero.command.AgregarColumnaTableroCommand;
 import com.ar.crm2.application.tablero.command.AsignarColumnaTableroCommand;
 import com.ar.crm2.application.tablero.command.CreateTableroCommand;
@@ -25,14 +26,19 @@ public final class TableroCommandMapper {
 
     /**
      * Maps a REST create request to an application command.
+     * The superUsuarioId is derived from the authenticated {@link ActorContext}
+     * (token-provided) rather than the request body — eliminating spoofable field.
      */
-    public static CreateTableroCommand toCommand(CreateTableroRequest request) {
+    public static CreateTableroCommand toCommand(CreateTableroRequest request, ActorContext actorContext) {
+        UUID superUsuarioId = actorContext.superUsuarioId()
+                .orElseThrow(() -> new IllegalStateException(
+                        "superUsuarioId not found in actor context — ensure the JWT contains the super_usuario_id claim"));
         return new CreateTableroCommand(
             request.nombre(),
             request.descripcion(),
             request.tipoTablero(),
             request.columnasPredeterminadas(),
-            request.superUsuarioId()
+            superUsuarioId
         );
     }
 

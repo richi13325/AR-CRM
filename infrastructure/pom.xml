@@ -67,6 +67,16 @@
             <version>2.8.4</version>
         </dependency>
 
+        <!-- Spring Security OAuth2 Resource Server — JWT validation. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+
         <!-- PostgreSQL JDBC driver: persistence runtime dependency owned by infrastructure. -->
         <!-- Boot module (when created) will provide spring-boot-starter-data-jpa which brings
              HikariCP connection pooling; this driver enables PostgreSQL as the actual DB. -->
@@ -98,6 +108,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Spring Security test support for MockMvc security tests. -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
