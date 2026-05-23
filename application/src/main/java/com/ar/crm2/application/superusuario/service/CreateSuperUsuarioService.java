@@ -20,7 +20,8 @@ public class CreateSuperUsuarioService implements CreateSuperUsuarioUseCase {
     public SuperUsuario create(CreateSuperUsuarioCommand command) {
         SuperUsuario superUsuario = SuperUsuario.create(
             command.correo(),
-            command.passwordHash()
+            command.passwordHash(),
+            command.keycloakId()
         );
         return savePort.save(superUsuario);
     }

@@ -29,14 +29,19 @@ public class EditUsuarioService implements EditUsuarioUseCase {
         Usuario existing = findPort.findById(usuarioId)
                 .orElseThrow(() -> UsuarioNotFoundException.forId(command.id()));
 
+        String keycloakId = command.keycloakId() != null
+                ? command.keycloakId()
+                : existing.getKeycloakId();
+
         Usuario updated = Usuario.reconstitute(
                 existing.getId(),
                 command.nombre(),
                 command.correo(),
-                command.passwordHash(),
+                existing.getPasswordHash(),
                 existing.getRolId(),
                 existing.getCreadoEn(),
-                existing.isActivo()
+                existing.isActivo(),
+                keycloakId
         );
 
         return savePort.save(updated);

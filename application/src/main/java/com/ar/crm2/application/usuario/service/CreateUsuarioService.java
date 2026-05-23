@@ -23,7 +23,8 @@ public class CreateUsuarioService implements CreateUsuarioUseCase {
             command.nombre(),
             command.correo(),
             command.passwordHash(),
-            RolId.from(command.rolId())
+            RolId.from(command.rolId()),
+            command.keycloakId()
         );
         return savePort.save(usuario);
     }

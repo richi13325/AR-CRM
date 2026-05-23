@@ -5,12 +5,14 @@ import java.util.UUID;
 /**
  * Command to create a new Usuario.
  * Required fields validated at construction time.
+ * keycloakId is optional and may be null.
  */
 public record CreateUsuarioCommand(
     String nombre,
     String correo,
     String passwordHash,
-    UUID rolId
+    UUID rolId,
+    String keycloakId
 ) {
 
     public CreateUsuarioCommand {

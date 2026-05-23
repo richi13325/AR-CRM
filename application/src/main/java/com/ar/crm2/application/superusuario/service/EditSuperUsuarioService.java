@@ -28,12 +28,17 @@ public class EditSuperUsuarioService implements EditSuperUsuarioUseCase {
         SuperUsuario existing = findPort.findById(superUsuarioId)
                 .orElseThrow(() -> SuperUsuarioNotFoundException.forId(command.id()));
 
+        String keycloakId = command.keycloakId() != null
+                ? command.keycloakId()
+                : existing.getKeycloakId();
+
         SuperUsuario updated = SuperUsuario.reconstitute(
                 existing.getId(),
                 command.correo(),
                 existing.getPasswordHash(),
                 existing.getCreadoEn(),
-                existing.isActivo()
+                existing.isActivo(),
+                keycloakId
         );
 
         return savePort.save(updated);

@@ -6,13 +6,15 @@ import java.util.UUID;
  * Command to edit an existing Usuario.
  * Validates id and fields at construction time.
  * Does NOT include id/rolId/creadoEn/activo — preserved from the existing entity via Usuario.reconstitute.
+ * keycloakId is optional — if present, updates the Keycloak linkage; if null, preserves it.
  */
 public record EditUsuarioCommand(
     UUID id,
     String nombre,
     String correo,
     String passwordHash,
-    UUID rolId
+    UUID rolId,
+    String keycloakId
 ) {
 
     public EditUsuarioCommand {
