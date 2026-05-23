@@ -31,7 +31,6 @@ class GetUsuarioByIdServiceKeycloakTest {
 
     private static final String NOMBRE = "Juan Perez";
     private static final String CORREO = "juan@example.com";
-    private static final String PASSWORD_HASH = "legacy-hash-abc";
     private static final String KEYCLOAK_ID = "kc-uuid-retrieval-test-123";
     private static final LocalDateTime AHORA = LocalDateTime.now();
 
@@ -53,7 +52,7 @@ class GetUsuarioByIdServiceKeycloakTest {
             UUID id = UUID.randomUUID();
             UsuarioId usuarioId = UsuarioId.from(id);
             Usuario existing = Usuario.reconstitute(
-                    usuarioId, NOMBRE, CORREO, PASSWORD_HASH, RolId.create(),
+                    usuarioId, NOMBRE, CORREO, RolId.create(),
                     AHORA.minusDays(1), true, KEYCLOAK_ID
             );
             when(findPort.findById(usuarioId)).thenReturn(Optional.of(existing));
@@ -72,7 +71,7 @@ class GetUsuarioByIdServiceKeycloakTest {
             UUID id = UUID.randomUUID();
             UsuarioId usuarioId = UsuarioId.from(id);
             Usuario existing = Usuario.reconstitute(
-                    usuarioId, NOMBRE, CORREO, PASSWORD_HASH, RolId.create(),
+                    usuarioId, NOMBRE, CORREO, RolId.create(),
                     AHORA.minusDays(1), true, null
             );
             when(findPort.findById(usuarioId)).thenReturn(Optional.of(existing));

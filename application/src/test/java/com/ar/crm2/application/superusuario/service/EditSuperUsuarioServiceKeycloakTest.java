@@ -26,13 +26,11 @@ import static org.mockito.Mockito.*;
 /**
  * Unit tests for {@link EditSuperUsuarioService} keycloakId preserve-vs-update semantics.
  * Verifies: preserve when command.keycloakId() is null, update when provided.
- * Verifies passwordHash is always preserved from existing entity (not from command).
  */
 @ExtendWith(MockitoExtension.class)
 class EditSuperUsuarioServiceKeycloakTest {
 
     private static final String CORREO = "admin@example.com";
-    private static final String PASSWORD_HASH = "legacy-super-hash-456";
     private static final String KEYCLOAK_ID_EXISTING = "existing-super-kc-uuid";
     private static final String KEYCLOAK_ID_NEW = "new-super-kc-uuid-789";
     private static final LocalDateTime AHORA = LocalDateTime.now();
@@ -58,7 +56,7 @@ class EditSuperUsuarioServiceKeycloakTest {
             UUID id = UUID.randomUUID();
             SuperUsuarioId suId = SuperUsuarioId.from(id);
             SuperUsuario existing = SuperUsuario.reconstitute(
-                    suId, CORREO, PASSWORD_HASH,
+                    suId, CORREO,
                     AHORA.minusDays(1), true, KEYCLOAK_ID_EXISTING
             );
             when(findPort.findById(suId)).thenReturn(Optional.of(existing));
@@ -78,7 +76,7 @@ class EditSuperUsuarioServiceKeycloakTest {
             UUID id = UUID.randomUUID();
             SuperUsuarioId suId = SuperUsuarioId.from(id);
             SuperUsuario existing = SuperUsuario.reconstitute(
-                    suId, CORREO, PASSWORD_HASH,
+                    suId, CORREO,
                     AHORA.minusDays(1), true, null
             );
             when(findPort.findById(suId)).thenReturn(Optional.of(existing));
@@ -93,7 +91,7 @@ class EditSuperUsuarioServiceKeycloakTest {
         }
     }
 
-    // ── keycloakId UPDATE semantics (command.keycloakId != null) ──────
+    // ── keycloakId UPDATE semantics (command.keycloakId != null) ─────
 
     @Nested
     @DisplayName("keycloakId update — command.keycloakId() is non-null")
@@ -105,7 +103,7 @@ class EditSuperUsuarioServiceKeycloakTest {
             UUID id = UUID.randomUUID();
             SuperUsuarioId suId = SuperUsuarioId.from(id);
             SuperUsuario existing = SuperUsuario.reconstitute(
-                    suId, CORREO, PASSWORD_HASH,
+                    suId, CORREO,
                     AHORA.minusDays(1), true, KEYCLOAK_ID_EXISTING
             );
             when(findPort.findById(suId)).thenReturn(Optional.of(existing));
@@ -120,35 +118,6 @@ class EditSuperUsuarioServiceKeycloakTest {
         }
     }
 
-    // ── passwordHash preservation (SuperUsuario-specific) ─────────────
-
-    @Nested
-    @DisplayName("passwordHash is ALWAYS preserved from existing SuperUsuario")
-    class PreservaPasswordHashSuperUsuario {
-
-        @Test
-        @DisplayName("passwordHash from existing is preserved regardless of any command value")
-        void edit_preservaPasswordHashDelExistente() {
-            UUID id = UUID.randomUUID();
-            SuperUsuarioId suId = SuperUsuarioId.from(id);
-            String existingPasswordHash = "original-super-secret-hash";
-            SuperUsuario existing = SuperUsuario.reconstitute(
-                    suId, CORREO, existingPasswordHash,
-                    AHORA.minusDays(1), true, KEYCLOAK_ID_EXISTING
-            );
-            when(findPort.findById(suId)).thenReturn(Optional.of(existing));
-
-            // Note: EditSuperUsuarioCommand does NOT carry passwordHash at all
-            EditSuperUsuarioCommand cmd = new EditSuperUsuarioCommand(id, CORREO + ".ar", KEYCLOAK_ID_NEW);
-
-            service.edit(cmd);
-
-            ArgumentCaptor<SuperUsuario> captor = ArgumentCaptor.forClass(SuperUsuario.class);
-            verify(savePort).save(captor.capture());
-            assertEquals(existingPasswordHash, captor.getValue().getPasswordHash());
-        }
-    }
-
     // ── aggregate identity preservation ───────────────────────────────
 
     @Nested
@@ -156,13 +125,13 @@ class EditSuperUsuarioServiceKeycloakTest {
     class PreservaIdentidad {
 
         @Test
-        @DisplayName("preserves existing id, passwordHash, creadoEn, activo")
+        @DisplayName("preserves existing id, creadoEn, activo")
         void edit_preservaCamposDeIdentidad() {
             UUID id = UUID.randomUUID();
             SuperUsuarioId suId = SuperUsuarioId.from(id);
             LocalDateTime originalCreadoEn = AHORA.minusDays(5);
             SuperUsuario existing = SuperUsuario.reconstitute(
-                    suId, CORREO, PASSWORD_HASH,
+                    suId, CORREO,
                     originalCreadoEn, true, KEYCLOAK_ID_EXISTING
             );
             when(findPort.findById(suId)).thenReturn(Optional.of(existing));
@@ -175,7 +144,6 @@ class EditSuperUsuarioServiceKeycloakTest {
             verify(savePort).save(captor.capture());
             SuperUsuario saved = captor.getValue();
             assertEquals(suId, saved.getId());
-            assertEquals(PASSWORD_HASH, saved.getPasswordHash());
             assertEquals(originalCreadoEn, saved.getCreadoEn());
             assertTrue(saved.isActivo());
         }

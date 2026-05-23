@@ -27,15 +27,13 @@ import static org.mockito.Mockito.*;
 /**
  * Unit tests for {@link EditUsuarioService} keycloakId preserve-vs-update semantics.
  * Verifies the service correctly preserves keycloakId when command.keycloakId() is null
- * and updates it when a new value is provided. Also verifies passwordHash is ALWAYS
- * preserved from the existing entity (never taken from command) per spec.
+ * and updates it when a new value is provided.
  */
 @ExtendWith(MockitoExtension.class)
 class EditUsuarioServiceKeycloakTest {
 
     private static final String NOMBRE = "Juan Perez";
     private static final String CORREO = "juan@example.com";
-    private static final String PASSWORD_HASH = "legacy-hash-123";
     private static final String KEYCLOAK_ID_EXISTING = "existing-kc-uuid-abc";
     private static final String KEYCLOAK_ID_NEW = "new-kc-uuid-xyz";
     private static final LocalDateTime AHORA = LocalDateTime.now();
@@ -50,8 +48,8 @@ class EditUsuarioServiceKeycloakTest {
     private EditUsuarioService service;
 
     private EditUsuarioCommand buildCommand(UUID id, String nombre, String correo,
-                                            String passwordHash, UUID rolId, String keycloakId) {
-        return new EditUsuarioCommand(id, nombre, correo, passwordHash, rolId, keycloakId);
+                                            UUID rolId, String keycloakId) {
+        return new EditUsuarioCommand(id, nombre, correo, rolId, keycloakId);
     }
 
     // ── keycloakId PRESERVE semantics (command.keycloakId == null) ─────
@@ -66,13 +64,13 @@ class EditUsuarioServiceKeycloakTest {
             UUID id = UUID.randomUUID();
             UsuarioId usuarioId = UsuarioId.from(id);
             Usuario existing = Usuario.reconstitute(
-                    usuarioId, NOMBRE, CORREO, PASSWORD_HASH, RolId.create(),
+                    usuarioId, NOMBRE, CORREO, RolId.create(),
                     AHORA.minusDays(1), true, KEYCLOAK_ID_EXISTING
             );
             when(findPort.findById(usuarioId)).thenReturn(Optional.of(existing));
 
             EditUsuarioCommand cmd = buildCommand(
-                    id, NOMBRE + " Updated", CORREO, "new-password-hash",
+                    id, NOMBRE + " Updated", CORREO,
                     UUID.randomUUID(), null
             );
 
@@ -89,13 +87,13 @@ class EditUsuarioServiceKeycloakTest {
             UUID id = UUID.randomUUID();
             UsuarioId usuarioId = UsuarioId.from(id);
             Usuario existing = Usuario.reconstitute(
-                    usuarioId, NOMBRE, CORREO, PASSWORD_HASH, RolId.create(),
+                    usuarioId, NOMBRE, CORREO, RolId.create(),
                     AHORA.minusDays(1), true, null
             );
             when(findPort.findById(usuarioId)).thenReturn(Optional.of(existing));
 
             EditUsuarioCommand cmd = buildCommand(
-                    id, NOMBRE + " Updated", CORREO, "new-password-hash",
+                    id, NOMBRE + " Updated", CORREO,
                     UUID.randomUUID(), null
             );
 
@@ -119,13 +117,13 @@ class EditUsuarioServiceKeycloakTest {
             UUID id = UUID.randomUUID();
             UsuarioId usuarioId = UsuarioId.from(id);
             Usuario existing = Usuario.reconstitute(
-                    usuarioId, NOMBRE, CORREO, PASSWORD_HASH, RolId.create(),
+                    usuarioId, NOMBRE, CORREO, RolId.create(),
                     AHORA.minusDays(1), true, KEYCLOAK_ID_EXISTING
             );
             when(findPort.findById(usuarioId)).thenReturn(Optional.of(existing));
 
             EditUsuarioCommand cmd = buildCommand(
-                    id, NOMBRE + " Updated", CORREO, "new-password-hash",
+                    id, NOMBRE + " Updated", CORREO,
                     UUID.randomUUID(), KEYCLOAK_ID_NEW
             );
 
@@ -142,13 +140,13 @@ class EditUsuarioServiceKeycloakTest {
             UUID id = UUID.randomUUID();
             UsuarioId usuarioId = UsuarioId.from(id);
             Usuario existing = Usuario.reconstitute(
-                    usuarioId, NOMBRE, CORREO, PASSWORD_HASH, RolId.create(),
+                    usuarioId, NOMBRE, CORREO, RolId.create(),
                     AHORA.minusDays(1), true, KEYCLOAK_ID_EXISTING
             );
             when(findPort.findById(usuarioId)).thenReturn(Optional.of(existing));
 
             EditUsuarioCommand cmd = buildCommand(
-                    id, NOMBRE + " Updated", CORREO, "new-password-hash",
+                    id, NOMBRE + " Updated", CORREO,
                     UUID.randomUUID(), "   "
             );
 
@@ -157,38 +155,6 @@ class EditUsuarioServiceKeycloakTest {
             ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
             verify(savePort).save(captor.capture());
             assertNull(captor.getValue().getKeycloakId());
-        }
-    }
-
-    // ── passwordHash preservation ────────────────────────────────────
-
-    @Nested
-    @DisplayName("passwordHash preservation during edit")
-    class PreservaPasswordHash {
-
-        @Test
-        @DisplayName("preserves existing passwordHash regardless of command.passwordHash() value")
-        void edit_preservaPasswordHashDelExistente() {
-            UUID id = UUID.randomUUID();
-            UsuarioId usuarioId = UsuarioId.from(id);
-            String existingPasswordHash = "existing-legacy-hash";
-            Usuario existing = Usuario.reconstitute(
-                    usuarioId, NOMBRE, CORREO, existingPasswordHash, RolId.create(),
-                    AHORA.minusDays(1), true, KEYCLOAK_ID_EXISTING
-            );
-            when(findPort.findById(usuarioId)).thenReturn(Optional.of(existing));
-
-            EditUsuarioCommand cmd = buildCommand(
-                    id, NOMBRE + " Updated", CORREO, "new-password-hash-from-command",
-                    UUID.randomUUID(), KEYCLOAK_ID_NEW
-            );
-
-            service.edit(cmd);
-
-            ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
-            verify(savePort).save(captor.capture());
-            // Spec: passwordHash MUST be preserved during edit — command value is ignored
-            assertEquals(existingPasswordHash, captor.getValue().getPasswordHash());
         }
     }
 
@@ -205,13 +171,13 @@ class EditUsuarioServiceKeycloakTest {
             UsuarioId usuarioId = UsuarioId.from(id);
             LocalDateTime originalCreadoEn = AHORA.minusDays(5);
             Usuario existing = Usuario.reconstitute(
-                    usuarioId, NOMBRE, CORREO, PASSWORD_HASH, RolId.create(),
+                    usuarioId, NOMBRE, CORREO, RolId.create(),
                     originalCreadoEn, true, KEYCLOAK_ID_EXISTING
             );
             when(findPort.findById(usuarioId)).thenReturn(Optional.of(existing));
 
             EditUsuarioCommand cmd = buildCommand(
-                    id, NOMBRE + " Updated", CORREO + ".ar", "another-password",
+                    id, NOMBRE + " Updated", CORREO + ".ar",
                     UUID.randomUUID(), KEYCLOAK_ID_NEW
             );
 
@@ -234,7 +200,7 @@ class EditUsuarioServiceKeycloakTest {
             when(findPort.findById(usuarioId)).thenReturn(Optional.empty());
 
             EditUsuarioCommand cmd = buildCommand(
-                    id, NOMBRE + " Updated", CORREO, "password",
+                    id, NOMBRE + " Updated", CORREO,
                     UUID.randomUUID(), KEYCLOAK_ID_NEW
             );
 

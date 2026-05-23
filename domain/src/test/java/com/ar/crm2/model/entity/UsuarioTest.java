@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -21,7 +20,6 @@ class UsuarioTest {
 
     private static final String NOMBRE = "Juan Perez";
     private static final String CORREO = "juan@example.com";
-    private static final String PASSWORD_HASH = "hashedpassword123";
     private static final RolId ROL_ID = RolId.create();
     private static final LocalDateTime AHORA = LocalDateTime.now();
 
@@ -39,7 +37,6 @@ class UsuarioTest {
             assertThatCode(() -> Usuario.create(
                     NOMBRE,
                     CORREO,
-                    PASSWORD_HASH,
                     ROL_ID,
                     keycloakId
             )).doesNotThrowAnyException();
@@ -53,7 +50,6 @@ class UsuarioTest {
             Usuario usuario = Usuario.create(
                     NOMBRE,
                     CORREO,
-                    PASSWORD_HASH,
                     ROL_ID,
                     keycloakId
             );
@@ -67,7 +63,6 @@ class UsuarioTest {
             Usuario usuario = Usuario.create(
                     NOMBRE,
                     CORREO,
-                    PASSWORD_HASH,
                     ROL_ID,
                     "   "
             );
@@ -81,7 +76,6 @@ class UsuarioTest {
             Usuario usuario = Usuario.create(
                     NOMBRE,
                     CORREO,
-                    PASSWORD_HASH,
                     ROL_ID,
                     null
             );
@@ -97,7 +91,6 @@ class UsuarioTest {
             assertThatThrownBy(() -> Usuario.create(
                     NOMBRE,
                     CORREO,
-                    PASSWORD_HASH,
                     ROL_ID,
                     keycloakIdTooLong
             )).isInstanceOf(Exception.class);
@@ -121,7 +114,6 @@ class UsuarioTest {
                     id,
                     NOMBRE,
                     CORREO,
-                    PASSWORD_HASH,
                     ROL_ID,
                     haceUnaSemana,
                     true,
@@ -141,7 +133,6 @@ class UsuarioTest {
                     id,
                     NOMBRE,
                     CORREO,
-                    PASSWORD_HASH,
                     ROL_ID,
                     haceUnaSemana,
                     true,
@@ -161,7 +152,6 @@ class UsuarioTest {
                     id,
                     NOMBRE,
                     CORREO,
-                    PASSWORD_HASH,
                     ROL_ID,
                     haceUnaSemana,
                     true,
@@ -182,7 +172,6 @@ class UsuarioTest {
                     id,
                     NOMBRE,
                     CORREO,
-                    PASSWORD_HASH,
                     ROL_ID,
                     haceUnaSemana,
                     true,
@@ -205,7 +194,7 @@ class UsuarioTest {
             UsuarioId id = UsuarioId.create();
             LocalDateTime haceUnaSemana = AHORA.minusDays(7);
             Usuario original = Usuario.reconstitute(
-                    id, NOMBRE, CORREO, PASSWORD_HASH, ROL_ID, haceUnaSemana, true, null
+                    id, NOMBRE, CORREO, ROL_ID, haceUnaSemana, true, null
             );
 
             Usuario linked = original.withKeycloakId("new-keycloak-id");
@@ -221,7 +210,7 @@ class UsuarioTest {
             UsuarioId id = UsuarioId.create();
             LocalDateTime haceUnaSemana = AHORA.minusDays(7);
             Usuario original = Usuario.reconstitute(
-                    id, NOMBRE, CORREO, PASSWORD_HASH, ROL_ID, haceUnaSemana, true, "original-id"
+                    id, NOMBRE, CORREO, ROL_ID, haceUnaSemana, true, "original-id"
             );
 
             Usuario linked = original.withKeycloakId("new-id");
@@ -236,43 +225,12 @@ class UsuarioTest {
             UsuarioId id = UsuarioId.create();
             LocalDateTime haceUnaSemana = AHORA.minusDays(7);
             Usuario original = Usuario.reconstitute(
-                    id, NOMBRE, CORREO, PASSWORD_HASH, ROL_ID, haceUnaSemana, true, "existing-id"
+                    id, NOMBRE, CORREO, ROL_ID, haceUnaSemana, true, "existing-id"
             );
 
             Usuario cleared = original.withKeycloakId(null);
 
             assertThat(cleared.getKeycloakId()).isNull();
-        }
-    }
-
-    // ── passwordHash preservation ─────────────────────────────────────────
-
-    @Nested
-    @DisplayName("passwordHash preservation")
-    class PasswordHashPreservation {
-
-        @Test
-        @DisplayName("passwordHash is excluded from toString")
-        void passwordHash_noApareceEnToString() {
-            Usuario usuario = Usuario.create(NOMBRE, CORREO, PASSWORD_HASH, ROL_ID, null);
-
-            String representation = usuario.toString();
-
-            assertThat(representation).doesNotContain("passwordHash");
-            assertThat(representation).doesNotContain(PASSWORD_HASH);
-        }
-
-        @Test
-        @DisplayName("reconstitute preserves passwordHash as provided")
-        void reconstituir_preservaPasswordHash() {
-            UsuarioId id = UsuarioId.create();
-            LocalDateTime haceUnaSemana = AHORA.minusDays(7);
-
-            Usuario usuario = Usuario.reconstitute(
-                    id, NOMBRE, CORREO, PASSWORD_HASH, ROL_ID, haceUnaSemana, true, null
-            );
-
-            assertThat(usuario.getPasswordHash()).isEqualTo(PASSWORD_HASH);
         }
     }
 }

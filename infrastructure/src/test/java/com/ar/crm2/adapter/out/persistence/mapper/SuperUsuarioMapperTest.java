@@ -19,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class SuperUsuarioMapperTest {
 
     private static final String CORREO = "admin@example.com";
-    private static final String PASSWORD_HASH = "secret-hash-xyz";
     private static final LocalDateTime AHORA = LocalDateTime.now();
 
     // ── toDomain() with keycloakId ─────────────────────────────────
@@ -35,7 +34,6 @@ class SuperUsuarioMapperTest {
             SuperUsuarioEntity entity = SuperUsuarioEntity.builder()
                     .id(UUID.randomUUID().toString())
                     .correo(CORREO)
-                    .passwordHash(PASSWORD_HASH)
                     .creadoEn(AHORA)
                     .activo(true)
                     .keycloakId(keycloakId)
@@ -52,7 +50,6 @@ class SuperUsuarioMapperTest {
             SuperUsuarioEntity entity = SuperUsuarioEntity.builder()
                     .id(UUID.randomUUID().toString())
                     .correo(CORREO)
-                    .passwordHash(PASSWORD_HASH)
                     .creadoEn(AHORA)
                     .activo(true)
                     .keycloakId(null)
@@ -69,7 +66,6 @@ class SuperUsuarioMapperTest {
             SuperUsuarioEntity entity = SuperUsuarioEntity.builder()
                     .id(null)
                     .correo(CORREO)
-                    .passwordHash(PASSWORD_HASH)
                     .creadoEn(AHORA)
                     .activo(true)
                     .build();
@@ -91,7 +87,6 @@ class SuperUsuarioMapperTest {
             SuperUsuario domain = SuperUsuario.reconstitute(
                     SuperUsuarioId.create(),
                     CORREO,
-                    PASSWORD_HASH,
                     AHORA,
                     true,
                     keycloakId
@@ -108,7 +103,6 @@ class SuperUsuarioMapperTest {
             SuperUsuario domain = SuperUsuario.reconstitute(
                     SuperUsuarioId.create(),
                     CORREO,
-                    PASSWORD_HASH,
                     AHORA,
                     true,
                     null

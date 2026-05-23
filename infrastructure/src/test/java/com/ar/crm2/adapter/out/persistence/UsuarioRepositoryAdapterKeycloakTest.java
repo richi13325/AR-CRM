@@ -36,7 +36,6 @@ class UsuarioRepositoryAdapterKeycloakTest {
 
     private static final String NOMBRE = "Juan Perez";
     private static final String CORREO = "juan@example.com";
-    private static final String PASSWORD_HASH = "hash-abc-123";
     private static final String KEYCLOAK_ID = "kc-uuid-abc123";
     private static final LocalDateTime AHORA = LocalDateTime.now();
 
@@ -65,7 +64,6 @@ class UsuarioRepositoryAdapterKeycloakTest {
                     .id(id)
                     .nombre(NOMBRE)
                     .correo(CORREO)
-                    .passwordHash(PASSWORD_HASH)
                     .rolId(UUID.randomUUID().toString())
                     .creadoEn(AHORA)
                     .activo(true)
@@ -107,7 +105,6 @@ class UsuarioRepositoryAdapterKeycloakTest {
                     usuarioId,
                     NOMBRE,
                     CORREO,
-                    PASSWORD_HASH,
                     RolId.create(),
                     AHORA,
                     true,
@@ -119,7 +116,6 @@ class UsuarioRepositoryAdapterKeycloakTest {
                     .id(id)
                     .nombre(NOMBRE)
                     .correo(CORREO)
-                    .passwordHash(PASSWORD_HASH)
                     .rolId(UUID.randomUUID().toString())
                     .creadoEn(AHORA)
                     .activo(true)
@@ -142,7 +138,6 @@ class UsuarioRepositoryAdapterKeycloakTest {
                     usuarioId,
                     NOMBRE,
                     CORREO,
-                    PASSWORD_HASH,
                     RolId.create(),
                     AHORA,
                     true,
@@ -154,7 +149,6 @@ class UsuarioRepositoryAdapterKeycloakTest {
                     .id(id)
                     .nombre(NOMBRE)
                     .correo(CORREO)
-                    .passwordHash(PASSWORD_HASH)
                     .rolId(UUID.randomUUID().toString())
                     .creadoEn(AHORA)
                     .activo(true)

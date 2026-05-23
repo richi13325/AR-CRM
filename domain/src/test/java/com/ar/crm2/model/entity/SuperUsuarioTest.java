@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class SuperUsuarioTest {
 
     private static final String CORREO = "admin@example.com";
-    private static final String PASSWORD_HASH = "secret-hash-456";
     private static final LocalDateTime AHORA = LocalDateTime.now();
 
     // ── create() with keycloakId ───────────────────────────────────
@@ -34,7 +33,6 @@ class SuperUsuarioTest {
 
             assertThatCode(() -> SuperUsuario.create(
                     CORREO,
-                    PASSWORD_HASH,
                     keycloakId
             )).doesNotThrowAnyException();
         }
@@ -46,7 +44,6 @@ class SuperUsuarioTest {
 
             SuperUsuario superUsuario = SuperUsuario.create(
                     CORREO,
-                    PASSWORD_HASH,
                     keycloakId
             );
 
@@ -58,7 +55,6 @@ class SuperUsuarioTest {
         void crear_sinKeycloakId_keycloakIdEsNull() {
             SuperUsuario superUsuario = SuperUsuario.create(
                     CORREO,
-                    PASSWORD_HASH,
                     null
             );
 
@@ -70,7 +66,6 @@ class SuperUsuarioTest {
         void crear_conKeycloakIdBlank_normalizaANull() {
             SuperUsuario superUsuario = SuperUsuario.create(
                     CORREO,
-                    PASSWORD_HASH,
                     "   "
             );
 
@@ -84,7 +79,6 @@ class SuperUsuarioTest {
 
             assertThatThrownBy(() -> SuperUsuario.create(
                     CORREO,
-                    PASSWORD_HASH,
                     keycloakIdTooLong
             )).isInstanceOf(Exception.class);
         }
@@ -106,7 +100,6 @@ class SuperUsuarioTest {
             SuperUsuario superUsuario = SuperUsuario.reconstitute(
                     id,
                     CORREO,
-                    PASSWORD_HASH,
                     haceUnaSemana,
                     true,
                     keycloakId
@@ -124,7 +117,6 @@ class SuperUsuarioTest {
             SuperUsuario superUsuario = SuperUsuario.reconstitute(
                     id,
                     CORREO,
-                    PASSWORD_HASH,
                     haceUnaSemana,
                     true,
                     null
@@ -143,7 +135,6 @@ class SuperUsuarioTest {
             SuperUsuario superUsuario = SuperUsuario.reconstitute(
                     id,
                     CORREO,
-                    PASSWORD_HASH,
                     haceUnaSemana,
                     true,
                     keycloakIdWithSpaces
@@ -165,7 +156,7 @@ class SuperUsuarioTest {
             SuperUsuarioId id = SuperUsuarioId.create();
             LocalDateTime haceUnaSemana = AHORA.minusDays(7);
             SuperUsuario original = SuperUsuario.reconstitute(
-                    id, CORREO, PASSWORD_HASH, haceUnaSemana, true, null
+                    id, CORREO, haceUnaSemana, true, null
             );
 
             SuperUsuario linked = original.withKeycloakId("new-superuser-keycloak");
@@ -181,44 +172,13 @@ class SuperUsuarioTest {
             SuperUsuarioId id = SuperUsuarioId.create();
             LocalDateTime haceUnaSemana = AHORA.minusDays(7);
             SuperUsuario original = SuperUsuario.reconstitute(
-                    id, CORREO, PASSWORD_HASH, haceUnaSemana, true, "original-super-id"
+                    id, CORREO, haceUnaSemana, true, "original-super-id"
             );
 
             SuperUsuario linked = original.withKeycloakId("new-super-id");
 
             assertThat(original.getKeycloakId()).isEqualTo("original-super-id");
             assertThat(original).isNotSameAs(linked);
-        }
-    }
-
-    // ── passwordHash preservation ─────────────────────────────────────────
-
-    @Nested
-    @DisplayName("passwordHash preservation")
-    class PasswordHashPreservation {
-
-        @Test
-        @DisplayName("passwordHash is excluded from toString")
-        void passwordHash_noApareceEnToString() {
-            SuperUsuario superUsuario = SuperUsuario.create(CORREO, PASSWORD_HASH, null);
-
-            String representation = superUsuario.toString();
-
-            assertThat(representation).doesNotContain("passwordHash");
-            assertThat(representation).doesNotContain(PASSWORD_HASH);
-        }
-
-        @Test
-        @DisplayName("reconstitute preserves passwordHash as provided")
-        void reconstituir_preservaPasswordHash() {
-            SuperUsuarioId id = SuperUsuarioId.create();
-            LocalDateTime haceUnaSemana = AHORA.minusDays(7);
-
-            SuperUsuario superUsuario = SuperUsuario.reconstitute(
-                    id, CORREO, PASSWORD_HASH, haceUnaSemana, true, null
-            );
-
-            assertThat(superUsuario.getPasswordHash()).isEqualTo(PASSWORD_HASH);
         }
     }
 }

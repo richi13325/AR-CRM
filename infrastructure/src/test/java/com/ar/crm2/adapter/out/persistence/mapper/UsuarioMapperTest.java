@@ -21,7 +21,6 @@ class UsuarioMapperTest {
 
     private static final String NOMBRE = "Juan Perez";
     private static final String CORREO = "juan@example.com";
-    private static final String PASSWORD_HASH = "hash-abc-123";
     private static final LocalDateTime AHORA = LocalDateTime.now();
 
     // ── toDomain() with keycloakId ─────────────────────────────────
@@ -38,7 +37,6 @@ class UsuarioMapperTest {
                     .id(UUID.randomUUID().toString())
                     .nombre(NOMBRE)
                     .correo(CORREO)
-                    .passwordHash(PASSWORD_HASH)
                     .rolId(UUID.randomUUID().toString())
                     .creadoEn(AHORA)
                     .activo(true)
@@ -57,7 +55,6 @@ class UsuarioMapperTest {
                     .id(UUID.randomUUID().toString())
                     .nombre(NOMBRE)
                     .correo(CORREO)
-                    .passwordHash(PASSWORD_HASH)
                     .rolId(UUID.randomUUID().toString())
                     .creadoEn(AHORA)
                     .activo(true)
@@ -76,7 +73,6 @@ class UsuarioMapperTest {
                     .id(null)
                     .nombre(NOMBRE)
                     .correo(CORREO)
-                    .passwordHash(PASSWORD_HASH)
                     .rolId(UUID.randomUUID().toString())
                     .creadoEn(AHORA)
                     .activo(true)
@@ -100,7 +96,6 @@ class UsuarioMapperTest {
                     UsuarioId.create(),
                     NOMBRE,
                     CORREO,
-                    PASSWORD_HASH,
                     RolId.create(),
                     AHORA,
                     true,
@@ -119,7 +114,6 @@ class UsuarioMapperTest {
                     UsuarioId.create(),
                     NOMBRE,
                     CORREO,
-                    PASSWORD_HASH,
                     RolId.create(),
                     AHORA,
                     true,

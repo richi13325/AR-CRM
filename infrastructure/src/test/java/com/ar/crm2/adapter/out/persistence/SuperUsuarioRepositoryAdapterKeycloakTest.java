@@ -33,7 +33,6 @@ class SuperUsuarioRepositoryAdapterKeycloakTest {
     private SuperUsuarioRepositoryAdapter adapter;
 
     private static final String CORREO = "admin@example.com";
-    private static final String PASSWORD_HASH = "secret-hash-456";
     private static final String KEYCLOAK_ID = "super-kc-uuid-xyz";
     private static final LocalDateTime AHORA = LocalDateTime.now();
 
@@ -61,7 +60,6 @@ class SuperUsuarioRepositoryAdapterKeycloakTest {
             SuperUsuarioEntity entity = SuperUsuarioEntity.builder()
                     .id(id)
                     .correo(CORREO)
-                    .passwordHash(PASSWORD_HASH)
                     .creadoEn(AHORA)
                     .activo(true)
                     .keycloakId(KEYCLOAK_ID)
@@ -89,7 +87,6 @@ class SuperUsuarioRepositoryAdapterKeycloakTest {
             SuperUsuario domain = SuperUsuario.reconstitute(
                     suId,
                     CORREO,
-                    PASSWORD_HASH,
                     AHORA,
                     true,
                     KEYCLOAK_ID
@@ -99,7 +96,6 @@ class SuperUsuarioRepositoryAdapterKeycloakTest {
             SuperUsuarioEntity savedEntity = SuperUsuarioEntity.builder()
                     .id(id)
                     .correo(CORREO)
-                    .passwordHash(PASSWORD_HASH)
                     .creadoEn(AHORA)
                     .activo(true)
                     .keycloakId(KEYCLOAK_ID)

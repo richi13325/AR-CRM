@@ -29,7 +29,6 @@ import static org.mockito.Mockito.*;
 class GetSuperUsuarioByIdServiceKeycloakTest {
 
     private static final String CORREO = "admin@example.com";
-    private static final String PASSWORD_HASH = "super-secret-hash-456";
     private static final String KEYCLOAK_ID = "kc-uuid-super-retrieval-789";
     private static final LocalDateTime AHORA = LocalDateTime.now();
 
@@ -51,7 +50,7 @@ class GetSuperUsuarioByIdServiceKeycloakTest {
             UUID id = UUID.randomUUID();
             SuperUsuarioId suId = SuperUsuarioId.from(id);
             SuperUsuario existing = SuperUsuario.reconstitute(
-                    suId, CORREO, PASSWORD_HASH,
+                    suId, CORREO,
                     AHORA.minusDays(1), true, KEYCLOAK_ID
             );
             when(findPort.findById(suId)).thenReturn(Optional.of(existing));
@@ -69,7 +68,7 @@ class GetSuperUsuarioByIdServiceKeycloakTest {
             UUID id = UUID.randomUUID();
             SuperUsuarioId suId = SuperUsuarioId.from(id);
             SuperUsuario existing = SuperUsuario.reconstitute(
-                    suId, CORREO, PASSWORD_HASH,
+                    suId, CORREO,
                     AHORA.minusDays(1), true, null
             );
             when(findPort.findById(suId)).thenReturn(Optional.of(existing));
