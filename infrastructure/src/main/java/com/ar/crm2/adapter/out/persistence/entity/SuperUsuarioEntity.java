@@ -33,9 +33,6 @@ public class SuperUsuarioEntity {
     @Column(name = "correo", nullable = false, length = 120)
     private String correo;
 
-    @Column(name = "password_hash", nullable = false, length = 255)
-    private String passwordHash;
-
     @Column(name = "creado_en", nullable = false)
     private java.time.LocalDateTime creadoEn;
 

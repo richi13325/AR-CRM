@@ -25,7 +25,6 @@ public final class UsuarioMapper {
             .id(domain.getId().value().toString())
             .nombre(domain.getNombre())
             .correo(domain.getCorreo())
-            .passwordHash(domain.getPasswordHash())
             .rolId(domain.getRolId().value().toString())
             .creadoEn(domain.getCreadoEn())
             .activo(domain.isActivo())
@@ -48,7 +47,6 @@ public final class UsuarioMapper {
             UsuarioId.from(java.util.UUID.fromString(entity.getId())),
             entity.getNombre(),
             entity.getCorreo(),
-            entity.getPasswordHash(),
             RolId.from(java.util.UUID.fromString(entity.getRolId())),
             entity.getCreadoEn(),
             entity.isActivo(),

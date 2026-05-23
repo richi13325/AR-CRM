@@ -23,7 +23,6 @@ public final class UsuarioCommandMapper {
         return new CreateUsuarioCommand(
             request.nombre(),
             request.correo(),
-            request.passwordHash(),
             request.rolId(),
             request.keycloakId()
         );
@@ -37,7 +36,6 @@ public final class UsuarioCommandMapper {
             id,
             request.nombre(),
             request.correo(),
-            request.passwordHash(),
             request.rolId(),
             request.keycloakId()
         );
