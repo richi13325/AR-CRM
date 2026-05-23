@@ -104,4 +104,20 @@ public class Usuario {
             DomainAssert.optionalLength(keycloakId, 255, "keycloakId")
         );
     }
+
+    /**
+     * Returns a new Usuario with the given active flag.
+     * Used by application services when synchronizing state to Keycloak.
+     */
+    public Usuario withActivo(boolean activo) {
+        return new Usuario(
+            this.id,
+            this.nombre,
+            this.correo,
+            this.rolId,
+            this.creadoEn,
+            activo,
+            this.keycloakId
+        );
+    }
 }

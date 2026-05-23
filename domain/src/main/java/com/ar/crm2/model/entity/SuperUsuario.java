@@ -91,4 +91,18 @@ public class SuperUsuario {
             DomainAssert.optionalLength(keycloakId, 255, "keycloakId")
         );
     }
+
+    /**
+     * Returns a new SuperUsuario with the given active flag.
+     * Used by application services when synchronizing state to Keycloak.
+     */
+    public SuperUsuario withActivo(boolean activo) {
+        return new SuperUsuario(
+            this.id,
+            this.correo,
+            this.creadoEn,
+            activo,
+            this.keycloakId
+        );
+    }
 }
