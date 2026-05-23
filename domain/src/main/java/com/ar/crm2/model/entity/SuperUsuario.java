@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
  */
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(exclude = {"passwordHash"})
+@ToString(exclude = {})
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class SuperUsuario {
 
@@ -31,7 +31,6 @@ public class SuperUsuario {
     private final SuperUsuarioId id;
 
     private final String correo;
-    private final String passwordHash;
     private final LocalDateTime creadoEn;
     private final boolean activo;
     private final String keycloakId;
@@ -45,13 +44,11 @@ public class SuperUsuario {
      */
     public static SuperUsuario create(
         String correo,
-        String passwordHash,
         String keycloakId
     ) {
         return new SuperUsuario(
             SuperUsuarioId.create(),
             DomainAssert.email(correo, "correo"),
-            DomainAssert.lengthBetween(passwordHash, "passwordHash", 1, 255),
             LocalDateTime.now(),
             true,
             DomainAssert.optionalLength(keycloakId, 255, "keycloakId")
@@ -64,7 +61,6 @@ public class SuperUsuario {
     public static SuperUsuario reconstitute(
         SuperUsuarioId id,
         String correo,
-        String passwordHash,
         LocalDateTime creadoEn,
         boolean activo,
         String keycloakId
@@ -72,7 +68,6 @@ public class SuperUsuario {
         return new SuperUsuario(
             DomainAssert.notNull(id, "id"),
             DomainAssert.email(correo, "correo"),
-            DomainAssert.lengthBetween(passwordHash, "passwordHash", 1, 255),
             DomainAssert.notNull(creadoEn, "creadoEn"),
             activo,
             DomainAssert.optionalLength(keycloakId, 255, "keycloakId")
@@ -91,7 +86,6 @@ public class SuperUsuario {
         return new SuperUsuario(
             this.id,
             this.correo,
-            this.passwordHash,
             this.creadoEn,
             this.activo,
             DomainAssert.optionalLength(keycloakId, 255, "keycloakId")

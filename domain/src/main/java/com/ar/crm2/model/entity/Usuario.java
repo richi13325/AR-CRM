@@ -1,6 +1,5 @@
 package com.ar.crm2.model.entity;
 
-import com.ar.crm2.exception.CambioPasswordNoConfirmadoException;
 import com.ar.crm2.model.vo.RolId;
 import com.ar.crm2.model.vo.UsuarioId;
 import com.ar.crm2.shared.DomainAssert;
@@ -24,7 +23,7 @@ import java.time.LocalDateTime;
  */
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(exclude = {"passwordHash"})
+@ToString(exclude = {})
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Usuario {
 
@@ -33,7 +32,6 @@ public class Usuario {
 
     private final String nombre;
     private final String correo;
-    private final String passwordHash;
     private final RolId rolId;
     private final LocalDateTime creadoEn;
     private final boolean activo;
@@ -50,7 +48,6 @@ public class Usuario {
     public static Usuario create(
         String nombre,
         String correo,
-        String passwordHash,
         RolId rolId,
         String keycloakId
     ) {
@@ -58,7 +55,6 @@ public class Usuario {
             UsuarioId.create(),
             DomainAssert.lengthBetween(nombre, "nombre", 1, 100),
             DomainAssert.email(correo, "correo"),
-            DomainAssert.lengthBetween(passwordHash, "passwordHash", 1, 255),
             DomainAssert.notNull(rolId, "rolId"),
             LocalDateTime.now(),
             true,
@@ -73,7 +69,6 @@ public class Usuario {
         UsuarioId id,
         String nombre,
         String correo,
-        String passwordHash,
         RolId rolId,
         LocalDateTime creadoEn,
         boolean activo,
@@ -83,7 +78,6 @@ public class Usuario {
             DomainAssert.notNull(id, "id"),
             DomainAssert.lengthBetween(nombre, "nombre", 1, 100),
             DomainAssert.email(correo, "correo"),
-            DomainAssert.lengthBetween(passwordHash, "passwordHash", 1, 255),
             DomainAssert.notNull(rolId, "rolId"),
             DomainAssert.notNull(creadoEn, "creadoEn"),
             activo,
@@ -104,32 +98,10 @@ public class Usuario {
             this.id,
             this.nombre,
             this.correo,
-            this.passwordHash,
             this.rolId,
             this.creadoEn,
             this.activo,
             DomainAssert.optionalLength(keycloakId, 255, "keycloakId")
         );
-    }
-
-    // ── Password Change ───────────────────────────────────────────
-
-    /**
-     * Changes the password hash for this usuario.
-     *
-     * @param nuevoPasswordHash the new password hash (required, 1–255 chars)
-     * @param codigoConfirmado  true only if email confirmation code was verified externally
-     * @return a new Usuario instance with the updated passwordHash, or this instance if idempotent
-     * @throws CambioPasswordNoConfirmadoException if codigoConfirmado is false
-     */
-    public Usuario cambiarPasswordHash(String nuevoPasswordHash, boolean codigoConfirmado) {
-        if (!codigoConfirmado) {
-            throw new CambioPasswordNoConfirmadoException();
-        }
-        DomainAssert.lengthBetween(nuevoPasswordHash, "nuevoPasswordHash", 1, 255);
-        if (nuevoPasswordHash.equals(this.passwordHash)) {
-            return this;
-        }
-        return new Usuario(id, nombre, correo, nuevoPasswordHash, rolId, creadoEn, activo, keycloakId);
     }
 }
