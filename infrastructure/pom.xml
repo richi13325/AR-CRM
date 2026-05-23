@@ -37,6 +37,12 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- Spring WebFlux for WebClient (Keycloak Admin API). -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+
         <!-- Spring Data JPA for persistence. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

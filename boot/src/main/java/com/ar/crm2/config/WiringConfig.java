@@ -15,6 +15,8 @@ import com.ar.crm2.adapter.out.persistence.TratoRepositoryAdapter;
 import com.ar.crm2.adapter.out.persistence.TareaRepositoryAdapter;
 import com.ar.crm2.adapter.out.persistence.UsuarioRepositoryAdapter;
 import com.ar.crm2.adapter.out.persistence.mapper.TableroMapper;
+import com.ar.crm2.adapter.out.keycloak.KeycloakUserProvisioningAdapter;
+import com.ar.crm2.application.identity.port.out.IdentityProviderUserPort;
 import com.ar.crm2.application.columna.port.in.CreateColumnaUseCase;
 import com.ar.crm2.application.columna.port.in.DeleteColumnaUseCase;
 import com.ar.crm2.application.columna.port.in.EditColumnaUseCase;
@@ -565,6 +567,13 @@ public class WiringConfig {
         return new DeleteFichaService(findPort, deletePort);
     }
 
+    // ── Identity Provider Adapter Bean ──
+
+    @Bean
+    public IdentityProviderUserPort identityProviderUserPort(KeycloakUserProvisioningAdapter adapter) {
+        return adapter;
+    }
+
     // ── Usuario Adapter Beans (type-level narrowing) ──
 
     @Bean
@@ -595,8 +604,8 @@ public class WiringConfig {
     // ── Usuario UseCase Beans ──
 
     @Bean
-    public CreateUsuarioUseCase createUsuarioUseCase(SaveUsuarioPort savePort) {
-        return new CreateUsuarioService(savePort);
+    public CreateUsuarioUseCase createUsuarioUseCase(SaveUsuarioPort savePort, IdentityProviderUserPort identityPort) {
+        return new CreateUsuarioService(savePort, identityPort);
     }
 
     @Bean
@@ -610,16 +619,17 @@ public class WiringConfig {
     }
 
     @Bean
-    public EditUsuarioUseCase editUsuarioUseCase(FindUsuarioByIdPort findPort, SaveUsuarioPort savePort) {
-        return new EditUsuarioService(findPort, savePort);
+    public EditUsuarioUseCase editUsuarioUseCase(FindUsuarioByIdPort findPort, SaveUsuarioPort savePort, IdentityProviderUserPort identityPort) {
+        return new EditUsuarioService(findPort, savePort, identityPort);
     }
 
     @Bean
     public DeleteUsuarioUseCase deleteUsuarioUseCase(
             FindUsuarioByIdPort findPort,
-            DeleteUsuarioByIdPort deletePort
+            DeleteUsuarioByIdPort deletePort,
+            IdentityProviderUserPort identityPort
     ) {
-        return new DeleteUsuarioService(findPort, deletePort);
+        return new DeleteUsuarioService(findPort, deletePort, identityPort);
     }
 
     // ── Rol Adapter Beans (type-level narrowing) ──
@@ -710,8 +720,8 @@ public class WiringConfig {
     // ── SuperUsuario UseCase Beans ──
 
     @Bean
-    public CreateSuperUsuarioUseCase createSuperUsuarioUseCase(SaveSuperUsuarioPort savePort) {
-        return new CreateSuperUsuarioService(savePort);
+    public CreateSuperUsuarioUseCase createSuperUsuarioUseCase(SaveSuperUsuarioPort savePort, IdentityProviderUserPort identityPort) {
+        return new CreateSuperUsuarioService(savePort, identityPort);
     }
 
     @Bean
@@ -725,16 +735,17 @@ public class WiringConfig {
     }
 
     @Bean
-    public EditSuperUsuarioUseCase editSuperUsuarioUseCase(FindSuperUsuarioByIdPort findPort, SaveSuperUsuarioPort savePort) {
-        return new EditSuperUsuarioService(findPort, savePort);
+    public EditSuperUsuarioUseCase editSuperUsuarioUseCase(FindSuperUsuarioByIdPort findPort, SaveSuperUsuarioPort savePort, IdentityProviderUserPort identityPort) {
+        return new EditSuperUsuarioService(findPort, savePort, identityPort);
     }
 
     @Bean
     public DeleteSuperUsuarioUseCase deleteSuperUsuarioUseCase(
             FindSuperUsuarioByIdPort findPort,
-            DeleteSuperUsuarioByIdPort deletePort
+            DeleteSuperUsuarioByIdPort deletePort,
+            IdentityProviderUserPort identityPort
     ) {
-        return new DeleteSuperUsuarioService(findPort, deletePort);
+        return new DeleteSuperUsuarioService(findPort, deletePort, identityPort);
     }
 
     // ── Columna Adapter Beans (type-level narrowing) ──

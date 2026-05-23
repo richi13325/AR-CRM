@@ -31,3 +31,13 @@ spring:
 
 server:
   port: 8080
+
+crm2:
+  keycloak:
+    admin:
+      server-url: http://localhost:8180
+      realm: crm2-local
+      client-id: crm-backend-admin
+      client-secret: ${KEYCLOAK_ADMIN_SECRET:admin-secret}
+      connect-timeout-ms: 5000
+      read-timeout-ms: 10000
