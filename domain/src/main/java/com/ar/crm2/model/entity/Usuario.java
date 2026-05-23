@@ -37,6 +37,7 @@ public class Usuario {
     private final RolId rolId;
     private final LocalDateTime creadoEn;
     private final boolean activo;
+    private final String keycloakId;
 
     // ── Factory ──────────────────────────────────────────────────
 
@@ -44,12 +45,14 @@ public class Usuario {
      * Creates a new active Usuario for a client.
      * Generates id and creadoEn internally.
      * rolId is mandatory — every client user must have a role within their company.
+     * keycloakId is optional — links this CRM user to a Keycloak identity.
      */
     public static Usuario create(
         String nombre,
         String correo,
         String passwordHash,
-        RolId rolId
+        RolId rolId,
+        String keycloakId
     ) {
         return new Usuario(
             UsuarioId.create(),
@@ -58,7 +61,8 @@ public class Usuario {
             DomainAssert.lengthBetween(passwordHash, "passwordHash", 1, 255),
             DomainAssert.notNull(rolId, "rolId"),
             LocalDateTime.now(),
-            true
+            true,
+            DomainAssert.optionalLength(keycloakId, 255, "keycloakId")
         );
     }
 
@@ -72,7 +76,8 @@ public class Usuario {
         String passwordHash,
         RolId rolId,
         LocalDateTime creadoEn,
-        boolean activo
+        boolean activo,
+        String keycloakId
     ) {
         return new Usuario(
             DomainAssert.notNull(id, "id"),
@@ -81,12 +86,30 @@ public class Usuario {
             DomainAssert.lengthBetween(passwordHash, "passwordHash", 1, 255),
             DomainAssert.notNull(rolId, "rolId"),
             DomainAssert.notNull(creadoEn, "creadoEn"),
-            activo
+            activo,
+            DomainAssert.optionalLength(keycloakId, 255, "keycloakId")
         );
     }
 
     public boolean isActivo() {
         return activo;
+    }
+
+    /**
+     * Returns a new Usuario with the given keycloakId.
+     * Allows external systems to set the Keycloak linkage without exposing a public setter.
+     */
+    public Usuario withKeycloakId(String keycloakId) {
+        return new Usuario(
+            this.id,
+            this.nombre,
+            this.correo,
+            this.passwordHash,
+            this.rolId,
+            this.creadoEn,
+            this.activo,
+            DomainAssert.optionalLength(keycloakId, 255, "keycloakId")
+        );
     }
 
     // ── Password Change ───────────────────────────────────────────
@@ -107,6 +130,6 @@ public class Usuario {
         if (nuevoPasswordHash.equals(this.passwordHash)) {
             return this;
         }
-        return new Usuario(id, nombre, correo, nuevoPasswordHash, rolId, creadoEn, activo);
+        return new Usuario(id, nombre, correo, nuevoPasswordHash, rolId, creadoEn, activo, keycloakId);
     }
 }
