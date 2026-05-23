@@ -22,7 +22,6 @@ public class CreateUsuarioService implements CreateUsuarioUseCase {
         Usuario usuario = Usuario.create(
             command.nombre(),
             command.correo(),
-            command.passwordHash(),
             RolId.from(command.rolId()),
             command.keycloakId()
         );

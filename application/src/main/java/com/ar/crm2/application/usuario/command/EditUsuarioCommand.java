@@ -12,7 +12,6 @@ public record EditUsuarioCommand(
     UUID id,
     String nombre,
     String correo,
-    String passwordHash,
     UUID rolId,
     String keycloakId
 ) {
@@ -26,9 +25,6 @@ public record EditUsuarioCommand(
         }
         if (correo == null || correo.isBlank()) {
             throw new IllegalArgumentException("correo is required");
-        }
-        if (passwordHash == null || passwordHash.isBlank()) {
-            throw new IllegalArgumentException("passwordHash is required");
         }
         if (rolId == null) {
             throw new IllegalArgumentException("rolId is required");

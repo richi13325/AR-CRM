@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 /**
  * Application service implementing EditSuperUsuarioUseCase.
  * Orchestrates loading the aggregate, applying the immutable domain update via reconstitute,
- * and saving. Preserves: id, passwordHash, creadoEn, activo.
+ * and saving. Preserves: id, creadoEn, activo.
  * No Spring annotations — constructor injection via Lombok.
  */
 @RequiredArgsConstructor
@@ -35,7 +35,6 @@ public class EditSuperUsuarioService implements EditSuperUsuarioUseCase {
         SuperUsuario updated = SuperUsuario.reconstitute(
                 existing.getId(),
                 command.correo(),
-                existing.getPasswordHash(),
                 existing.getCreadoEn(),
                 existing.isActivo(),
                 keycloakId

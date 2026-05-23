@@ -37,7 +37,6 @@ public class EditUsuarioService implements EditUsuarioUseCase {
                 existing.getId(),
                 command.nombre(),
                 command.correo(),
-                existing.getPasswordHash(),
                 existing.getRolId(),
                 existing.getCreadoEn(),
                 existing.isActivo(),
