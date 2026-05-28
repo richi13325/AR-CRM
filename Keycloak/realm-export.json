@@ -44,6 +44,61 @@
         "phone",
         "offline_access",
         "microprofile-jwt"
+      ],
+      "protocolMappers": [
+        {
+          "name": "usuario_id-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "usuario_id",
+            "claim.name": "usuario_id",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "access.tokenResponse.claim": "false"
+          }
+        },
+        {
+          "name": "super_usuario_id-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "super_usuario_id",
+            "claim.name": "super_usuario_id",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "access.tokenResponse.claim": "false"
+          }
+        },
+        {
+          "name": "audience-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "crm2-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        },
+        {
+          "name": "realm-roles-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "realm_access.roles",
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
       ]
     }
   ],
@@ -123,61 +178,6 @@
       },
       "attributes": {
         "usuario_id": ["550e8400-e29b-41d4-a716-446655440002"]
-      }
-    }
-  ],
-  "mappers": [
-    {
-      "name": "usuario_id-mapper",
-      "protocol": "openid-connect",
-      "protocolMapper": "oidc-usermodel-attribute-mapper",
-      "consentRequired": false,
-      "config": {
-        "user.attribute": "usuario_id",
-        "claim.name": "usuario_id",
-        "jsonType.label": "String",
-        "access.token.claim": "true",
-        "id.token.claim": "false",
-        "access.tokenResponse.claim": "false"
-      }
-    },
-    {
-      "name": "super_usuario_id-mapper",
-      "protocol": "openid-connect",
-      "protocolMapper": "oidc-usermodel-attribute-mapper",
-      "consentRequired": false,
-      "config": {
-        "user.attribute": "super_usuario_id",
-        "claim.name": "super_usuario_id",
-        "jsonType.label": "String",
-        "access.token.claim": "true",
-        "id.token.claim": "false",
-        "access.tokenResponse.claim": "false"
-      }
-    },
-    {
-      "name": "audience-mapper",
-      "protocol": "openid-connect",
-      "protocolMapper": "oidc-audience-mapper",
-      "consentRequired": false,
-      "config": {
-        "included.client.audience": "crm2-api",
-        "access.token.claim": "true",
-        "id.token.claim": "false"
-      }
-    },
-    {
-      "name": "realm-roles-mapper",
-      "protocol": "openid-connect",
-      "protocolMapper": "oidc-usermodel-realm-role-mapper",
-      "consentRequired": false,
-      "config": {
-        "user.attribute": "realm_access.roles",
-        "claim.name": "roles",
-        "jsonType.label": "String",
-        "multivalued": "true",
-        "access.token.claim": "true",
-        "id.token.claim": "false"
       }
     }
   ],
