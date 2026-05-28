@@ -13,17 +13,10 @@ import com.ar.crm2.model.entity.Usuario;
 import com.ar.crm2.model.vo.RolId;
 import com.ar.crm2.model.vo.UsuarioId;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Persistence adapter implementing Usuario outbound ports and ExistsUsuariosByRolIdPort.
- * Bridges application outbound port contracts to Spring Data JPA storage.
- * Replaces the temporary fail-closed implementation in RolRepositoryAdapter.
- */
-@Repository
 @RequiredArgsConstructor
 public class UsuarioRepositoryAdapter implements SaveUsuarioPort, FindAllUsuariosPort, FindUsuarioByIdPort, DeleteUsuarioByIdPort, ExistsUsuariosByRolIdPort, FindUsuarioByKeycloakIdPort {
 

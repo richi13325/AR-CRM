@@ -16,19 +16,10 @@ import com.ar.crm2.model.entity.Tablero;
 import com.ar.crm2.model.vo.ColumnaId;
 import com.ar.crm2.model.vo.TableroId;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Persistence adapter implementing granular outbound ports for the Tablero aggregate.
- * Bridges application outbound port contracts to Spring Data JPA storage.
- *
- * <p>Implements: SaveTableroPort, FindAllTablerosPort, FindTableroByIdPort,
- * DeleteTableroByIdPort, ExistsColumnaEnTableroPort, FindColumnaByIdPort.
- */
-@Repository
 @RequiredArgsConstructor
 public class TableroRepositoryAdapter implements SaveTableroPort, FindAllTablerosPort, FindTableroByIdPort, DeleteTableroByIdPort, ExistsColumnaEnTableroPort, FindColumnaByIdPort {
 
@@ -63,7 +54,7 @@ public class TableroRepositoryAdapter implements SaveTableroPort, FindAllTablero
 
     @Override
     public boolean existsByTableroIdAndColumnaId(TableroId tableroId, ColumnaId columnaId) {
-        return repository.existsByTableroIdAndColumnaId(
+        return repository.existsByIdAndColumnasTableroColumnaId(
             tableroId.value().toString(),
             columnaId.value().toString()
         );

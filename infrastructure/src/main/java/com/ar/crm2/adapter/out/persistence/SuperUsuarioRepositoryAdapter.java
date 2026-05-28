@@ -12,16 +12,10 @@ import com.ar.crm2.application.superusuario.port.out.SaveSuperUsuarioPort;
 import com.ar.crm2.model.entity.SuperUsuario;
 import com.ar.crm2.model.vo.SuperUsuarioId;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Persistence adapter implementing SuperUsuario outbound ports.
- * Bridges application outbound port contracts to Spring Data JPA storage.
- */
-@Repository
 @RequiredArgsConstructor
 public class SuperUsuarioRepositoryAdapter implements SaveSuperUsuarioPort, FindAllSuperUsuariosPort, FindSuperUsuarioByIdPort, DeleteSuperUsuarioByIdPort, FindSuperUsuarioByKeycloakIdPort {
 

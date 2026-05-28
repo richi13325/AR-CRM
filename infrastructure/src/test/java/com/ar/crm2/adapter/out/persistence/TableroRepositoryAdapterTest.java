@@ -216,7 +216,7 @@ class TableroRepositoryAdapterTest {
         UUID tableroId = UUID.randomUUID();
         UUID columnaId = UUID.randomUUID();
 
-        when(repository.existsByTableroIdAndColumnaId(
+        when(repository.existsByIdAndColumnasTableroColumnaId(
             tableroId.toString(),
             columnaId.toString()
         )).thenReturn(true);
@@ -227,7 +227,7 @@ class TableroRepositoryAdapterTest {
         );
 
         assertTrue(result);
-        verify(repository).existsByTableroIdAndColumnaId(
+        verify(repository).existsByIdAndColumnasTableroColumnaId(
             tableroId.toString(),
             columnaId.toString()
         );
@@ -238,7 +238,7 @@ class TableroRepositoryAdapterTest {
         UUID tableroId = UUID.randomUUID();
         UUID columnaId = UUID.randomUUID();
 
-        when(repository.existsByTableroIdAndColumnaId(
+        when(repository.existsByIdAndColumnasTableroColumnaId(
             tableroId.toString(),
             columnaId.toString()
         )).thenReturn(false);
@@ -256,7 +256,7 @@ class TableroRepositoryAdapterTest {
         UUID tableroId = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
         UUID columnaId = UUID.fromString("660e8400-e29b-41d4-a716-446655440001");
 
-        when(repository.existsByTableroIdAndColumnaId(
+        when(repository.existsByIdAndColumnasTableroColumnaId(
             "550e8400-e29b-41d4-a716-446655440000",
             "660e8400-e29b-41d4-a716-446655440001"
         )).thenReturn(false);
@@ -266,7 +266,7 @@ class TableroRepositoryAdapterTest {
             ColumnaId.from(columnaId)
         );
 
-        verify(repository).existsByTableroIdAndColumnaId(
+        verify(repository).existsByIdAndColumnasTableroColumnaId(
             "550e8400-e29b-41d4-a716-446655440000",
             "660e8400-e29b-41d4-a716-446655440001"
         );
@@ -282,7 +282,7 @@ class TableroRepositoryAdapterTest {
             ColumnaId.from(columnaId)
         );
 
-        verify(repository).existsByTableroIdAndColumnaId(
+        verify(repository).existsByIdAndColumnasTableroColumnaId(
             tableroId.toString(),
             columnaId.toString()
         );

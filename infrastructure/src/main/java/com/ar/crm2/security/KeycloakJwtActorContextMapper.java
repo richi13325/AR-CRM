@@ -26,7 +26,7 @@ import java.util.*;
  * actor context is still valid but identity fields will be absent.
  */
 @Component
-public class KeycloakJwtActorContextMapper {
+public class  KeycloakJwtActorContextMapper {
 
     private static final String CLAIM_SUB = "sub";
     private static final String CLAIM_PREFERRED_USERNAME = "preferred_username";

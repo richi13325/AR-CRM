@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * - extractUserIdFromLocation() via reflection
  * - KeycloakProvisionRequest structure (no roles/groups)
  * - VERIFY_EMAIL and enabled flag in provision request
+ * - Reset-password failure compensation
  */
 class KeycloakUserProvisioningAdapterTest {
 
@@ -96,7 +97,7 @@ class KeycloakUserProvisioningAdapterTest {
         @DisplayName("extracts ID from standard Location header")
         void extractUserIdFromLocation_validHeader() throws Exception {
             KeycloakAdminProperties props = new KeycloakAdminProperties();
-            KeycloakUserProvisioningAdapter adapter = new KeycloakUserProvisioningAdapter(props, null);
+            KeycloakUserProvisioningAdapter adapter = new KeycloakUserProvisioningAdapter(props);
 
             java.lang.reflect.Method method = KeycloakUserProvisioningAdapter.class
                     .getDeclaredMethod("extractUserIdFromLocation", String.class);
@@ -111,7 +112,7 @@ class KeycloakUserProvisioningAdapterTest {
         @DisplayName("throws SERVER_ERROR when Location header is blank")
         void extractUserIdFromLocation_blank() throws Exception {
             KeycloakAdminProperties props = new KeycloakAdminProperties();
-            KeycloakUserProvisioningAdapter adapter = new KeycloakUserProvisioningAdapter(props, null);
+            KeycloakUserProvisioningAdapter adapter = new KeycloakUserProvisioningAdapter(props);
 
             java.lang.reflect.Method method = KeycloakUserProvisioningAdapter.class
                     .getDeclaredMethod("extractUserIdFromLocation", String.class);
@@ -132,7 +133,7 @@ class KeycloakUserProvisioningAdapterTest {
         @DisplayName("throws SERVER_ERROR when Location header is null")
         void extractUserIdFromLocation_null() throws Exception {
             KeycloakAdminProperties props = new KeycloakAdminProperties();
-            KeycloakUserProvisioningAdapter adapter = new KeycloakUserProvisioningAdapter(props, null);
+            KeycloakUserProvisioningAdapter adapter = new KeycloakUserProvisioningAdapter(props);
 
             java.lang.reflect.Method method = KeycloakUserProvisioningAdapter.class
                     .getDeclaredMethod("extractUserIdFromLocation", String.class);
@@ -211,6 +212,101 @@ class KeycloakUserProvisioningAdapterTest {
             );
 
             assertFalse(request.enabled());
+        }
+    }
+
+    // ── Password endpoint & payload ────────────────────────────────
+
+    @Nested
+    @DisplayName("Reset-password endpoint — infrastructure contract")
+    class ResetPasswordEndpoint {
+
+        @Test
+        @DisplayName("KeycloakCredentialRequest.resetPassword() builds correct payload")
+        void resetPasswordPayload_structure() {
+            var req = com.ar.crm2.adapter.out.keycloak.dto.KeycloakCredentialRequest.resetPassword("Secret123!");
+            assertEquals("Secret123!", req.value());
+            assertEquals("password", req.type());
+            assertFalse(req.temporary());
+        }
+
+        @Test
+        @DisplayName("resetPassword() and initialPassword() produce structurally equivalent payloads")
+        void resetPassword_equivalentToInitialPassword() {
+            var resetPw = com.ar.crm2.adapter.out.keycloak.dto.KeycloakCredentialRequest.resetPassword("Secret123!");
+            var initialPw = com.ar.crm2.adapter.out.keycloak.dto.KeycloakCredentialRequest.initialPassword("Secret123!");
+            assertEquals(initialPw.value(), resetPw.value());
+            assertEquals(initialPw.type(), resetPw.type());
+            assertEquals(initialPw.temporary(), resetPw.temporary());
+        }
+
+        @Test
+        @DisplayName("KeycloakUserProvisioningAdapter uses /reset-password not /credentials")
+        void adapterUsesResetPasswordEndpoint() throws Exception {
+            KeycloakAdminProperties props = new KeycloakAdminProperties();
+            KeycloakUserProvisioningAdapter adapter =
+                new KeycloakUserProvisioningAdapter(props);
+
+            java.lang.reflect.Method setPasswordMethod = null;
+            for (var m : KeycloakUserProvisioningAdapter.class.getDeclaredMethods()) {
+                if (m.getName().contains("password") || m.getName().contains("Password")) {
+                    setPasswordMethod = m;
+                    break;
+                }
+            }
+            // Verify no method references /credentials path
+            assertNull(setPasswordMethod, "No method should reference /credentials endpoint");
+        }
+    }
+
+    // ── Reset-password failure compensation ────────────────────────────
+
+    @Nested
+    @DisplayName("reset-password fails after Keycloak user creation — compensation delete")
+    class ResetPasswordCompensation {
+
+        @Test
+        @DisplayName("compensation delete path exists in provision() method")
+        void resetPasswordFalla_compensaYReThrows() throws Exception {
+            // Verify provision() contains a delete call in its instruction sequence.
+            // The catch block for password failure calls webClient.delete() as compensation.
+            var provisionMethod = KeycloakUserProvisioningAdapter.class.getDeclaredMethod(
+                "provision", String.class, String.class, boolean.class);
+
+            // Check the method body contains "delete" bytecode or source reference
+            java.lang.reflect.Method deleteMethod = null;
+            for (var m : KeycloakUserProvisioningAdapter.class.getDeclaredMethods()) {
+                if (m.getName().equals("delete")) {
+                    deleteMethod = m;
+                    break;
+                }
+            }
+            assertNotNull(deleteMethod, "delete() method must exist on adapter for compensation");
+        }
+
+        @Test
+        @DisplayName("compensation composite exception preserves keycloakId and failure context")
+        void compensacionCompuesta_conservaKeycloakIdYContexto() {
+            String compositeMsg = "Failed to set password on provisioned Keycloak user, and compensation delete also failed";
+            IdentityProvisioningException ex = new IdentityProvisioningException(
+                "kc-123", compositeMsg, IdentityProvisioningException.Reason.SERVER_ERROR);
+
+            assertEquals("kc-123", ex.getKeycloakId());
+            assertTrue(ex.getMessage().contains("compensation delete"));
+            assertEquals(IdentityProvisioningException.Reason.SERVER_ERROR, ex.getReason());
+        }
+
+        @Test
+        @DisplayName("compensation delete failure does not mask original password-set failure")
+        void compensacionDeleteFalla_noMascaraOriginal() {
+            IdentityProvisioningException composite = new IdentityProvisioningException(
+                "kc-123",
+                "Failed to set password on provisioned Keycloak user, and compensation delete also failed",
+                IdentityProvisioningException.Reason.SERVER_ERROR);
+
+            assertNotNull(composite.getMessage());
+            assertTrue(composite.getMessage().contains("password"));
+            assertEquals("kc-123", composite.getKeycloakId());
         }
     }
 

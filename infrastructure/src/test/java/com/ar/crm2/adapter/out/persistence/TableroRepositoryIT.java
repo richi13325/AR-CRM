@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @DataJpaTest loads only JPA layer (entities, repositories, Hibernate).
  * Tests the aggregate root behavior, cascade operations, orphan removal,
- * and the custom query methods (existsByTableroIdAndColumnaId, existsByColumnaId).
+ * and the custom query methods (existsByIdAndColumnasTableroColumnaId, existsByColumnasTableroColumnaId).
  */
 @DataJpaTest
 @ActiveProfiles("test")
@@ -133,10 +133,10 @@ class TableroRepositoryIT {
         assertTrue(repository.findById(tableroId).isEmpty());
     }
 
-    // ── existsByTableroIdAndColumnaId ───────────────────────────────
+    // ── existsByIdAndColumnasTableroColumnaId ───────────────────────────────
 
     @Test
-    void existsByTableroIdAndColumnaId_shouldReturnTrueWhenRelationExists() {
+    void existsByIdAndColumnasTableroColumnaId_shouldReturnTrueWhenRelationExists() {
         String tableroId = UUID.randomUUID().toString();
         String columnaId = UUID.randomUUID().toString();
 
@@ -147,12 +147,12 @@ class TableroRepositoryIT {
         repository.save(entity);
 
         assertTrue(
-            repository.existsByTableroIdAndColumnaId(tableroId, columnaId)
+            repository.existsByIdAndColumnasTableroColumnaId(tableroId, columnaId)
         );
     }
 
     @Test
-    void existsByTableroIdAndColumnaId_shouldReturnFalseWhenRelationDoesNotExist() {
+    void existsByIdAndColumnasTableroColumnaId_shouldReturnFalseWhenRelationDoesNotExist() {
         String tableroId = UUID.randomUUID().toString();
         String columnaId = UUID.randomUUID().toString();
 
@@ -164,22 +164,22 @@ class TableroRepositoryIT {
         repository.save(entity);
 
         assertFalse(
-            repository.existsByTableroIdAndColumnaId(tableroId, columnaId)
+            repository.existsByIdAndColumnasTableroColumnaId(tableroId, columnaId)
         );
     }
 
     @Test
-    void existsByTableroIdAndColumnaId_shouldReturnFalseWhenTableroDoesNotExist() {
+    void existsByIdAndColumnasTableroColumnaId_shouldReturnFalseWhenTableroDoesNotExist() {
         String tableroId = UUID.randomUUID().toString();
         String columnaId = UUID.randomUUID().toString();
 
         assertFalse(
-            repository.existsByTableroIdAndColumnaId(tableroId, columnaId)
+            repository.existsByIdAndColumnasTableroColumnaId(tableroId, columnaId)
         );
     }
 
     @Test
-    void existsByTableroIdAndColumnaId_shouldBeCaseSensitive() {
+    void existsByIdAndColumnasTableroColumnaId_shouldBeCaseSensitive() {
         String tableroId = UUID.randomUUID().toString();
         String columnaId = UUID.randomUUID().toString();
 
@@ -189,14 +189,14 @@ class TableroRepositoryIT {
 
         repository.save(entity);
 
-        assertTrue(repository.existsByTableroIdAndColumnaId(tableroId, columnaId));
+        assertTrue(repository.existsByIdAndColumnasTableroColumnaId(tableroId, columnaId));
         // Different case should not match (H2 stores as-is)
     }
 
-    // ── existsByColumnaId ──────────────────────────────────────────
+    // ── existsByColumnasTableroColumnaId ──────────────────────────────────────────
 
     @Test
-    void existsByColumnaId_shouldReturnTrueWhenColumnaIsAssigned() {
+    void existsByColumnasTableroColumnaId_shouldReturnTrueWhenColumnaIsAssigned() {
         String tableroId = UUID.randomUUID().toString();
         String columnaId = UUID.randomUUID().toString();
 
@@ -206,19 +206,19 @@ class TableroRepositoryIT {
 
         repository.save(entity);
 
-        assertTrue(repository.existsByColumnaId(columnaId));
+        assertTrue(repository.existsByColumnasTableroColumnaId(columnaId));
     }
 
     @Test
-    void existsByColumnaId_shouldReturnFalseWhenColumnaIsNotAssigned() {
+    void existsByColumnasTableroColumnaId_shouldReturnFalseWhenColumnaIsNotAssigned() {
         String columnaId = UUID.randomUUID().toString();
 
         // No board has this column
-        assertFalse(repository.existsByColumnaId(columnaId));
+        assertFalse(repository.existsByColumnasTableroColumnaId(columnaId));
     }
 
     @Test
-    void existsByColumnaId_shouldReturnFalseWhenColumnaAssignedToDifferentBoard() {
+    void existsByColumnasTableroColumnaId_shouldReturnFalseWhenColumnaAssignedToDifferentBoard() {
         String columnaId = UUID.randomUUID().toString();
         String otherTableroId = UUID.randomUUID().toString();
 
@@ -234,7 +234,7 @@ class TableroRepositoryIT {
             UUID.randomUUID().toString(), board2, columnaId, 3, 0));
         repository.save(board2);
 
-        assertTrue(repository.existsByColumnaId(columnaId));
+        assertTrue(repository.existsByColumnasTableroColumnaId(columnaId));
     }
 
     // ── uniqueness constraint ───────────────────────────────────────

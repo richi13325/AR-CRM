@@ -18,7 +18,7 @@ public interface TableroRepository extends JpaRepository<TableroEntity, String> 
      * @param columnaId the string form of the ColumnaId
      * @return true if the column is already assigned to the board
      */
-    boolean existsByTableroIdAndColumnaId(String tableroId, String columnaId);
+    boolean existsByIdAndColumnasTableroColumnaId(String tableroId, String columnaId);
 
     /**
      * Checks whether a Columna is assigned to any Tablero.
@@ -26,5 +26,5 @@ public interface TableroRepository extends JpaRepository<TableroEntity, String> 
      * @param columnaId the string form of the ColumnaId
      * @return true if the column is assigned to at least one board
      */
-    boolean existsByColumnaId(String columnaId);
+    boolean existsByColumnasTableroColumnaId(String columnaId);
 }

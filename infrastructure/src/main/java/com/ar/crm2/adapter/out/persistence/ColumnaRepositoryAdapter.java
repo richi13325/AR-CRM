@@ -10,16 +10,10 @@ import com.ar.crm2.application.columna.port.out.SaveColumnaPort;
 import com.ar.crm2.model.entity.Columna;
 import com.ar.crm2.model.vo.ColumnaId;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Persistence adapter implementing granular outbound ports.
- * Bridges application outbound port contracts to Spring Data JPA storage.
- */
-@Repository
 @RequiredArgsConstructor
 public class ColumnaRepositoryAdapter implements SaveColumnaPort, FindAllColumnasPort, FindColumnaByIdPort, DeleteColumnaByIdPort {
 

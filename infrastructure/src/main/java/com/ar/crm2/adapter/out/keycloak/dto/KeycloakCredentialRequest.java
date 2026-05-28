@@ -14,4 +14,12 @@ public record KeycloakCredentialRequest(
     public static KeycloakCredentialRequest initialPassword(String password) {
         return new KeycloakCredentialRequest(password, "password", false);
     }
+
+    /**
+     * Factory for the Keycloak Admin REST reset-password endpoint.
+     * Payload is identical to initialPassword but named for endpoint clarity.
+     */
+    public static KeycloakCredentialRequest resetPassword(String password) {
+        return new KeycloakCredentialRequest(password, "password", false);
+    }
 }

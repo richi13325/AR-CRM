@@ -10,16 +10,10 @@ import com.ar.crm2.application.rol.port.out.SaveRolPort;
 import com.ar.crm2.model.entity.Rol;
 import com.ar.crm2.model.vo.RolId;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Persistence adapter implementing granular outbound ports.
- * Bridges application outbound port contracts to Spring Data JPA storage.
- */
-@Repository
 @RequiredArgsConstructor
 public class RolRepositoryAdapter implements SaveRolPort, FindAllRolesPort, FindRolByIdPort, DeleteRolByIdPort {
 

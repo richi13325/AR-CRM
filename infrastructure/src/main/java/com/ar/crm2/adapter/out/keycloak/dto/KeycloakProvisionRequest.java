@@ -1,7 +1,5 @@
 package com.ar.crm2.adapter.out.keycloak.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
 
 /**
@@ -9,16 +7,10 @@ import java.util.List;
  */
 public record KeycloakProvisionRequest(
     String username,
-    Email email,
+    String email,
     boolean enabled,
     List<String> requiredActions
 ) {
-
-    /**
-     * Nested email representation.
-     */
-    public record Email(String value) {
-    }
 
     /**
      * Factory method to build a new user with VERIFY_EMAIL required action.
@@ -30,7 +22,7 @@ public record KeycloakProvisionRequest(
     ) {
         return new KeycloakProvisionRequest(
             username,
-            new Email(email),
+            email,
             enabled,
             List.of("VERIFY_EMAIL")
         );

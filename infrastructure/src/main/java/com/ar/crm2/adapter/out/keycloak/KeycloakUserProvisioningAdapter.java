@@ -3,46 +3,31 @@ package com.ar.crm2.adapter.out.keycloak;
 import com.ar.crm2.adapter.out.keycloak.dto.KeycloakCredentialRequest;
 import com.ar.crm2.adapter.out.keycloak.dto.KeycloakProvisionRequest;
 import com.ar.crm2.adapter.out.keycloak.dto.KeycloakTokenResponse;
-import com.ar.crm2.adapter.out.keycloak.dto.KeycloakUserResponse;
 import com.ar.crm2.application.identity.model.IdentityProvisioningException;
 import com.ar.crm2.application.identity.model.ProvisionedIdentity;
 import com.ar.crm2.config.KeycloakAdminProperties;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.reactive.function.BodyInserters;
 
-import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
 import reactor.core.publisher.Mono;
 
-/**
- * Infrastructure adapter implementing {@link com.ar.crm2.application.identity.port.out.IdentityProviderUserPort}
- * using the Keycloak Admin REST API.
- *
- * <p>Authentication uses the confidential client grant (client_id + client_secret)
- * to obtain a bearer token before each admin operation.
- *
- * <p>All operations translate Keycloak errors into {@link IdentityProvisioningException}
- * with appropriate {@link IdentityProvisioningException.Reason}.
- */
-@Component
 public class KeycloakUserProvisioningAdapter implements com.ar.crm2.application.identity.port.out.IdentityProviderUserPort {
 
     private final KeycloakAdminProperties props;
     private final WebClient webClient;
-    private final ObjectMapper objectMapper;
 
     public KeycloakUserProvisioningAdapter(
-            KeycloakAdminProperties props,
-            ObjectMapper objectMapper
+            KeycloakAdminProperties props
     ) {
         this.props = props;
-        this.objectMapper = objectMapper;
         this.webClient = WebClient.builder()
                 .baseUrl(props.getServerUrl())
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -54,15 +39,12 @@ public class KeycloakUserProvisioningAdapter implements com.ar.crm2.application.
         String token = obtainAdminToken();
         String username = email; // Keycloak uses email as username
 
-        // Create user with VERIFY_EMAIL required action
         KeycloakProvisionRequest provisionRequest = KeycloakProvisionRequest.createNew(
             username,
             email,
             enabled
         );
 
-        // Keycloak returns 201 Created with Location header: /admin/realms/{realm}/users/{id}
-        // Use exchangeToMono to capture the Location header in a single call.
         String location = webClient.post()
                 .uri("/admin/realms/{realm}/users", props.getRealm())
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
@@ -83,24 +65,41 @@ public class KeycloakUserProvisioningAdapter implements com.ar.crm2.application.
                 })
                 .block();
 
-        // Extract userId from Location header: {server}/admin/realms/{realm}/users/{id}
         String keycloakId = extractUserIdFromLocation(location);
 
-        // Set the initial password
-        setInitialPassword(keycloakId, initialPassword, token);
+        try {
+            KeycloakCredentialRequest credRequest = KeycloakCredentialRequest.resetPassword(initialPassword);
+            webClient.put()
+                    .uri("/admin/realms/{realm}/users/{id}/reset-password", props.getRealm(), keycloakId)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .bodyValue(credRequest)
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .block();
+        } catch (RuntimeException ePassword) {
+            try {
+                webClient.delete()
+                        .uri("/admin/realms/{realm}/users/{id}", props.getRealm(), keycloakId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .retrieve()
+                        .bodyToMono(Void.class)
+                        .block();
+            } catch (RuntimeException eDelete) {
+                throw new IdentityProvisioningException(
+                    keycloakId,
+                    "Failed to set password on provisioned Keycloak user, and compensation delete also failed: "
+                        + eDelete.getMessage(),
+                    IdentityProvisioningException.Reason.SERVER_ERROR
+                );
+            }
+            throw new IdentityProvisioningException(
+                keycloakId,
+                "Failed to set initial password on provisioned Keycloak user: " + ePassword.getMessage(),
+                IdentityProvisioningException.Reason.SERVER_ERROR
+            );
+        }
 
         return new ProvisionedIdentity(keycloakId, email);
-    }
-
-    private void setInitialPassword(String keycloakId, String password, String token) {
-        KeycloakCredentialRequest credRequest = KeycloakCredentialRequest.initialPassword(password);
-        webClient.put()
-                .uri("/admin/realms/{realm}/users/{id}/credentials", props.getRealm(), keycloakId)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                .bodyValue(credRequest)
-                .retrieve()
-                .bodyToMono(Void.class)
-                .block();
     }
 
     @Override
@@ -140,20 +139,16 @@ public class KeycloakUserProvisioningAdapter implements com.ar.crm2.application.
                 .block();
     }
 
-    /**
-     * Obtains an admin access token using client credentials grant.
-     */
     private String obtainAdminToken() {
-        Map<String, String> tokenRequest = Map.of(
-            "grant_type", "client_credentials",
-            "client_id", props.getClientId(),
-            "client_secret", props.getClientSecret()
-        );
+        MultiValueMap<String, String> tokenRequest = new LinkedMultiValueMap<>();
+        tokenRequest.add("grant_type", "client_credentials");
+        tokenRequest.add("client_id", props.getClientId());
+        tokenRequest.add("client_secret", props.getClientSecret());
 
         KeycloakTokenResponse tokenResponse = webClient.post()
                 .uri("/realms/{realm}/protocol/openid-connect/token", props.getRealm())
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .bodyValue(tokenRequest)
+                .body(BodyInserters.fromFormData(tokenRequest))
                 .retrieve()
                 .bodyToMono(KeycloakTokenResponse.class)
                 .block();
@@ -168,7 +163,6 @@ public class KeycloakUserProvisioningAdapter implements com.ar.crm2.application.
                 IdentityProvisioningException.Reason.SERVER_ERROR
             );
         }
-        // Location format: {server}/admin/realms/{realm}/users/{id}
         String[] parts = location.split("/");
         return parts[parts.length - 1];
     }

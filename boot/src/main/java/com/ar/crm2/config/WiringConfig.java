@@ -3,19 +3,29 @@ package com.ar.crm2.config;
 import com.ar.crm2.adapter.out.persistence.ColumnaExistsFichasByColumnaIdAdapter;
 import com.ar.crm2.adapter.out.persistence.ColumnaRepositoryAdapter;
 import com.ar.crm2.adapter.out.persistence.repository.ColumnaRepository;
+import com.ar.crm2.adapter.out.persistence.repository.ContactoRepository;
 import com.ar.crm2.adapter.out.persistence.ContactoRepositoryAdapter;
 import com.ar.crm2.adapter.out.persistence.EmpresaRepositoryAdapter;
+import com.ar.crm2.adapter.out.persistence.repository.EmpresaRepository;
 import com.ar.crm2.adapter.out.persistence.ExistsColumnaAsignadaAdapter;
 import com.ar.crm2.adapter.out.persistence.ExistsFichasByColumnaIdAdapter;
+import com.ar.crm2.adapter.out.persistence.repository.FichaRepository;
 import com.ar.crm2.adapter.out.persistence.FichaRepositoryAdapter;
+import com.ar.crm2.adapter.out.persistence.repository.RolRepository;
 import com.ar.crm2.adapter.out.persistence.RolRepositoryAdapter;
+import com.ar.crm2.adapter.out.persistence.repository.SuperUsuarioRepository;
 import com.ar.crm2.adapter.out.persistence.SuperUsuarioRepositoryAdapter;
+import com.ar.crm2.adapter.out.persistence.repository.TableroRepository;
 import com.ar.crm2.adapter.out.persistence.TableroRepositoryAdapter;
+import com.ar.crm2.adapter.out.persistence.repository.TratoRepository;
 import com.ar.crm2.adapter.out.persistence.TratoRepositoryAdapter;
+import com.ar.crm2.adapter.out.persistence.repository.TareaRepository;
 import com.ar.crm2.adapter.out.persistence.TareaRepositoryAdapter;
+import com.ar.crm2.adapter.out.persistence.repository.UsuarioRepository;
 import com.ar.crm2.adapter.out.persistence.UsuarioRepositoryAdapter;
 import com.ar.crm2.adapter.out.persistence.mapper.TableroMapper;
 import com.ar.crm2.adapter.out.keycloak.KeycloakUserProvisioningAdapter;
+import com.ar.crm2.config.KeycloakAdminProperties;
 import com.ar.crm2.application.identity.port.out.IdentityProviderUserPort;
 import com.ar.crm2.application.columna.port.in.CreateColumnaUseCase;
 import com.ar.crm2.application.columna.port.in.DeleteColumnaUseCase;
@@ -171,8 +181,10 @@ import com.ar.crm2.application.tablero.service.EliminarColumnaDelTableroService;
 import com.ar.crm2.application.tablero.service.GetAllTablerosService;
 import com.ar.crm2.application.tablero.service.GetTableroByIdService;
 import com.ar.crm2.application.tablero.service.ReordenarColumnasService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
  * Application wiring configuration.
@@ -184,6 +196,87 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class WiringConfig {
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
+    }
+
+    // ── Infrastructure Adapter Beans (created explicitly to avoid component-scan duplication) ──
+
+    @Bean
+    public EmpresaRepositoryAdapter empresaRepositoryAdapter(EmpresaRepository repository) {
+        return new EmpresaRepositoryAdapter(repository);
+    }
+
+    @Bean
+    public ContactoRepositoryAdapter contactoRepositoryAdapter(ContactoRepository repository) {
+        return new ContactoRepositoryAdapter(repository);
+    }
+
+    @Bean
+    public TableroRepositoryAdapter tableroRepositoryAdapter(
+            TableroRepository tableroRepository,
+            ColumnaRepository columnaRepository,
+            TableroMapper tableroMapper
+    ) {
+        return new TableroRepositoryAdapter(tableroRepository, columnaRepository, tableroMapper);
+    }
+
+    @Bean
+    public TratoRepositoryAdapter tratoRepositoryAdapter(TratoRepository repository) {
+        return new TratoRepositoryAdapter(repository);
+    }
+
+    @Bean
+    public TareaRepositoryAdapter tareaRepositoryAdapter(TareaRepository repository) {
+        return new TareaRepositoryAdapter(repository);
+    }
+
+    @Bean
+    public FichaRepositoryAdapter fichaRepositoryAdapter(FichaRepository repository) {
+        return new FichaRepositoryAdapter(repository);
+    }
+
+    @Bean
+    public RolRepositoryAdapter rolRepositoryAdapter(RolRepository repository) {
+        return new RolRepositoryAdapter(repository);
+    }
+
+    @Bean
+    public ColumnaRepositoryAdapter columnaRepositoryAdapter(ColumnaRepository repository) {
+        return new ColumnaRepositoryAdapter(repository);
+    }
+
+    @Bean
+    public UsuarioRepositoryAdapter usuarioRepositoryAdapter(UsuarioRepository repository) {
+        return new UsuarioRepositoryAdapter(repository);
+    }
+
+    @Bean
+    public SuperUsuarioRepositoryAdapter superUsuarioRepositoryAdapter(SuperUsuarioRepository repository) {
+        return new SuperUsuarioRepositoryAdapter(repository);
+    }
+
+    @Bean
+    public ExistsFichasByColumnaIdAdapter existsFichasByColumnaIdAdapter(FichaRepository fichaRepository) {
+        return new ExistsFichasByColumnaIdAdapter(fichaRepository);
+    }
+
+    @Bean
+    public ColumnaExistsFichasByColumnaIdAdapter columnaExistsFichasByColumnaIdAdapter(FichaRepository fichaRepository) {
+        return new ColumnaExistsFichasByColumnaIdAdapter(fichaRepository);
+    }
+
+    @Bean
+    public ExistsColumnaAsignadaAdapter existsColumnaAsignadaAdapter(TableroRepository tableroRepository) {
+        return new ExistsColumnaAsignadaAdapter(tableroRepository);
+    }
+
+    @Bean
+    public KeycloakUserProvisioningAdapter keycloakUserProvisioningAdapter(KeycloakAdminProperties props) {
+        return new KeycloakUserProvisioningAdapter(props);
+    }
 
     // ── Empresa UseCase Beans ──
 
@@ -751,26 +844,6 @@ public class WiringConfig {
     // ── Columna Adapter Beans (type-level narrowing) ──
 
     @Bean
-    public SaveColumnaPort saveColumnaPort(ColumnaRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public FindAllColumnasPort findAllColumnasPort(ColumnaRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public FindColumnaByIdPort findColumnaByIdPort(ColumnaRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public DeleteColumnaByIdPort deleteColumnaByIdPort(ColumnaRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
     public com.ar.crm2.application.columna.port.out.ExistsFichasByColumnaIdPort columnaExistsFichasByColumnaIdPort(ColumnaExistsFichasByColumnaIdAdapter adapter) {
         return adapter;
     }
@@ -783,35 +856,38 @@ public class WiringConfig {
     // ── Columna UseCase Beans ──
 
     @Bean
-    public CreateColumnaUseCase createColumnaUseCase(SaveColumnaPort savePort, FindAllColumnasPort findAllPort) {
+    public CreateColumnaUseCase createColumnaUseCase(
+            ColumnaRepositoryAdapter savePort,
+            ColumnaRepositoryAdapter findAllPort
+    ) {
         return new CreateColumnaService(savePort, findAllPort);
     }
 
     @Bean
-    public GetAllColumnasUseCase getAllColumnasUseCase(FindAllColumnasPort findAllPort) {
+    public GetAllColumnasUseCase getAllColumnasUseCase(ColumnaRepositoryAdapter findAllPort) {
         return new GetAllColumnasService(findAllPort);
     }
 
     @Bean
-    public GetColumnaByIdUseCase getColumnaByIdUseCase(FindColumnaByIdPort findPort) {
+    public GetColumnaByIdUseCase getColumnaByIdUseCase(ColumnaRepositoryAdapter findPort) {
         return new GetColumnaByIdService(findPort);
     }
 
     @Bean
     public EditColumnaUseCase editColumnaUseCase(
-            FindColumnaByIdPort findPort,
-            FindAllColumnasPort findAllPort,
-            SaveColumnaPort savePort
+            ColumnaRepositoryAdapter findPort,
+            ColumnaRepositoryAdapter findAllPort,
+            ColumnaRepositoryAdapter savePort
     ) {
         return new EditColumnaService(findPort, findAllPort, savePort);
     }
 
     @Bean
     public DeleteColumnaUseCase deleteColumnaUseCase(
-            FindColumnaByIdPort findPort,
+            ColumnaRepositoryAdapter findPort,
             ExistsColumnaAsignadaPort existsColumnaAsignadaPort,
             com.ar.crm2.application.columna.port.out.ExistsFichasByColumnaIdPort columnaExistsFichasByColumnaIdPort,
-            DeleteColumnaByIdPort deletePort
+            ColumnaRepositoryAdapter deletePort
     ) {
         return new DeleteColumnaService(findPort, existsColumnaAsignadaPort, columnaExistsFichasByColumnaIdPort, deletePort);
     }
