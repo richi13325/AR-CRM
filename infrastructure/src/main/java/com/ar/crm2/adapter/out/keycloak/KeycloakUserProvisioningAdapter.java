@@ -99,6 +99,31 @@ public class KeycloakUserProvisioningAdapter implements com.ar.crm2.application.
             );
         }
 
+        try {
+            sendVerificationEmail(keycloakId, token);
+        } catch (RuntimeException eEmail) {
+            try {
+                webClient.delete()
+                        .uri("/admin/realms/{realm}/users/{id}", props.getRealm(), keycloakId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .retrieve()
+                        .bodyToMono(Void.class)
+                        .block();
+            } catch (RuntimeException eDelete) {
+                throw new IdentityProvisioningException(
+                    keycloakId,
+                    "Failed to send verification email on provisioned Keycloak user, and compensation delete also failed: "
+                        + eDelete.getMessage(),
+                    IdentityProvisioningException.Reason.SERVER_ERROR
+                );
+            }
+            throw new IdentityProvisioningException(
+                keycloakId,
+                "Failed to send verification email on provisioned Keycloak user: " + eEmail.getMessage(),
+                IdentityProvisioningException.Reason.SERVER_ERROR
+            );
+        }
+
         return new ProvisionedIdentity(keycloakId, email);
     }
 
@@ -133,6 +158,15 @@ public class KeycloakUserProvisioningAdapter implements com.ar.crm2.application.
         String token = obtainAdminToken();
         webClient.delete()
                 .uri("/admin/realms/{realm}/users/{id}", props.getRealm(), keycloakId)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .retrieve()
+                .bodyToMono(Void.class)
+                .block();
+    }
+
+    private void sendVerificationEmail(String keycloakId, String token) {
+        webClient.put()
+                .uri("/admin/realms/{realm}/users/{id}/send-verify-email?client_id=account", props.getRealm(), keycloakId)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .retrieve()
                 .bodyToMono(Void.class)

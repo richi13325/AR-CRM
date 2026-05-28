@@ -138,6 +138,56 @@ docker compose config
 
 > **Development only.** These credentials are hardcoded for local convenience and must never appear in production. The Keycloak database is isolated from the CRM application database.
 
+## SMTP Configuration (Email Sending)
+
+To enable Keycloak to send verification emails, configure SMTP in the realm settings.
+
+### Option 1: Gmail with App Password
+
+1. **Enable 2FA** on your Gmail account
+2. **Generate an App Password**:
+   - Go to Google Account → Security
+   - Enable 2-Step Verification
+   - Search "App Passwords" → Create new app password for "Mail"
+3. **Configure in Keycloak UI**:
+   - Open http://localhost:8180 → Administration Console
+   - Select **crm2-local** realm → **Email** tab
+   - Fill in:
+     - **Host**: `smtp.gmail.com`
+     - **Port**: `587`
+     - **From**: `your-email@gmail.com`
+     - **From Display Name**: `CRM2 Local`
+     - **Enable SSL**: `OFF`
+     - **Enable StartTLS**: `ON`
+     - **Authentication**: `ON`
+     - **Username**: `your-email@gmail.com`
+     - **Password**: `your-app-password` (16-character App Password, NOT your regular password)
+
+### Option 2: Console (No Real Email)
+
+For development without real email, use the dummy SMTP server:
+
+```bash
+# Start dummy SMTP on port 1025
+docker run -d -p 1025:8025 --name maildev axllent/maildev
+```
+
+Then configure Keycloak:
+- **Host**: `host.docker.internal` (Windows/Mac) or `172.17.0.1` (Linux)
+- **Port**: `1025`
+- **Enable SSL/TLS**: `OFF`
+- **Authentication**: `OFF`
+
+### ⚠️ Important: UI Settings Persistence
+
+> **Warning**: SMTP settings configured through the Keycloak UI are stored **only in the Keycloak database** (PostgreSQL). This data lives in a Docker volume and **will NOT be committed to the repository**.
+>
+> After recreating containers with `docker compose down -v`, you must reconfigure SMTP manually through the UI.
+
+To persist SMTP config across restarts, keep the Docker volumes by avoiding `docker compose down -v`.
+
+For team sharing, document the SMTP settings but **do not commit real SMTP passwords or exported realm files containing secrets**.
+
 ## Tear Down
 
 ```bash
