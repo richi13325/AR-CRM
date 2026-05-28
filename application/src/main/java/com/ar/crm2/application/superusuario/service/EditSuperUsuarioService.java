@@ -1,5 +1,6 @@
 package com.ar.crm2.application.superusuario.service;
 
+import com.ar.crm2.application.identity.port.out.IdentityProviderUserPort;
 import com.ar.crm2.application.superusuario.command.EditSuperUsuarioCommand;
 import com.ar.crm2.application.superusuario.exception.SuperUsuarioNotFoundException;
 import com.ar.crm2.application.superusuario.port.in.EditSuperUsuarioUseCase;
@@ -12,7 +13,8 @@ import lombok.RequiredArgsConstructor;
 /**
  * Application service implementing EditSuperUsuarioUseCase.
  * Orchestrates loading the aggregate, applying the immutable domain update via reconstitute,
- * and saving. Preserves: id, passwordHash, creadoEn, activo.
+ * and saving. Preserves: id, creadoEn, activo.
+ * Syncs email and enabled state to Keycloak before local update.
  * No Spring annotations — constructor injection via Lombok.
  */
 @RequiredArgsConstructor
@@ -20,6 +22,7 @@ public class EditSuperUsuarioService implements EditSuperUsuarioUseCase {
 
     private final FindSuperUsuarioByIdPort findPort;
     private final SaveSuperUsuarioPort savePort;
+    private final IdentityProviderUserPort identityPort;
 
     @Override
     public SuperUsuario edit(EditSuperUsuarioCommand command) {
@@ -28,12 +31,26 @@ public class EditSuperUsuarioService implements EditSuperUsuarioUseCase {
         SuperUsuario existing = findPort.findById(superUsuarioId)
                 .orElseThrow(() -> SuperUsuarioNotFoundException.forId(command.id()));
 
+        String keycloakId = command.keycloakId() != null
+                ? command.keycloakId()
+                : existing.getKeycloakId();
+
+        // Sync email to Keycloak first — if this fails, do not update local
+        if (!command.correo().equals(existing.getCorreo()) && keycloakId != null) {
+            identityPort.syncEmail(keycloakId, command.correo());
+        }
+
+        // Sync enabled flag to Keycloak
+        if (keycloakId != null) {
+            identityPort.setEnabled(keycloakId, existing.isActivo());
+        }
+
         SuperUsuario updated = SuperUsuario.reconstitute(
                 existing.getId(),
                 command.correo(),
-                existing.getPasswordHash(),
                 existing.getCreadoEn(),
-                existing.isActivo()
+                existing.isActivo(),
+                keycloakId
         );
 
         return savePort.save(updated);

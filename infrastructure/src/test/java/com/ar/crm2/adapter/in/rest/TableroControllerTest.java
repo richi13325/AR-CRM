@@ -8,6 +8,7 @@ import com.ar.crm2.adapter.in.rest.dto.request.ReordenarColumnasRequest;
 import com.ar.crm2.adapter.in.rest.dto.response.TableroResponse;
 import com.ar.crm2.adapter.in.rest.mapper.TableroCommandMapper;
 import com.ar.crm2.adapter.out.persistence.repository.ColumnaRepository;
+import com.ar.crm2.application.security.ActorContext;
 import com.ar.crm2.application.tablero.command.AgregarColumnaTableroCommand;
 import com.ar.crm2.application.tablero.command.AsignarColumnaTableroCommand;
 import com.ar.crm2.application.tablero.command.CreateTableroCommand;
@@ -30,8 +31,9 @@ import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTarea;
 import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTrato;
 import com.ar.crm2.model.enums.TipoTablero;
 import com.ar.crm2.model.vo.ColumnaId;
-import com.ar.crm2.model.vo.SuperUsuarioId;
 import com.ar.crm2.model.vo.TableroId;
+import com.ar.crm2.security.ActorContextRequestAttributeFilter;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -44,6 +46,8 @@ import org.springframework.http.ResponseEntity;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -105,6 +109,7 @@ class TableroControllerTest {
     @Test
     void create_shouldReturnCreatedWithTableroResponse() {
         UUID id = UUID.randomUUID();
+        UUID actorSuperUsuarioId = UUID.randomUUID();
         Tablero tablero = createDomainTablero(id, "Sprint Board");
 
         when(createUseCase.create(any(CreateTableroCommand.class))).thenReturn(tablero);
@@ -113,16 +118,59 @@ class TableroControllerTest {
                 "Sprint Board",
                 "A board",
                 TipoTablero.TAREAS,
-                UUID.randomUUID(),
+                UUID.randomUUID(), // spoofable field — ignored
                 true
         );
 
-        ResponseEntity<TableroResponse> response = controller.create(request);
+        ActorContext actorContext = new ActorContext(
+                "auth-subject",
+                "testuser",
+                "test@example.com",
+                Optional.of(UUID.randomUUID()),
+                Optional.of(actorSuperUsuarioId),
+                Set.of("USER")
+        );
+
+        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        when(mockRequest.getAttribute(ActorContextRequestAttributeFilter.ACTOR_CONTEXT_ATTRIBUTE))
+                .thenReturn(actorContext);
+
+        ResponseEntity<TableroResponse> response = controller.create(mockRequest, request);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(id, response.getBody().id());
         verify(createUseCase).create(any(CreateTableroCommand.class));
+
+        // Verify superUsuarioId comes from ActorContext, NOT request body
+        ArgumentCaptor<CreateTableroCommand> cmdCaptor = ArgumentCaptor.forClass(CreateTableroCommand.class);
+        verify(createUseCase).create(cmdCaptor.capture());
+        assertEquals(actorSuperUsuarioId, cmdCaptor.getValue().superUsuarioId());
+    }
+
+    @Test
+    void create_shouldFailWhenActorContextMissingSuperUsuarioIdClaim() {
+        CreateTableroRequest request = new CreateTableroRequest(
+                "Board", "Desc", TipoTablero.TAREAS, UUID.randomUUID(), true
+        );
+
+        // ActorContext present but WITHOUT superUsuarioId claim
+        ActorContext actorWithoutClaim = new ActorContext(
+                "auth-subject",
+                "testuser",
+                "test@example.com",
+                Optional.of(UUID.randomUUID()),
+                Optional.empty(), // superUsuarioId claim missing
+                Set.of("USER")
+        );
+
+        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        when(mockRequest.getAttribute(ActorContextRequestAttributeFilter.ACTOR_CONTEXT_ATTRIBUTE))
+                .thenReturn(actorWithoutClaim);
+
+        // Mapper throws IllegalStateException when superUsuarioId is absent from token
+        assertThrows(IllegalStateException.class,
+                () -> controller.create(mockRequest, request));
     }
 
     // ── getAll ─────────────────────────────────────────────────────

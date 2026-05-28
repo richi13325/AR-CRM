@@ -1,0 +1,191 @@
+{
+  "realm": "crm2-local",
+  "enabled": true,
+  "displayName": "CRM2 Local Development",
+  "displayNameHtml": "<div>CRM2 Local Development</div>",
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "clients": [
+    {
+      "clientId": "crm2-api",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": false,
+      "redirectUris": [
+        "http://localhost:8080/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8080"
+      ],
+      "attributes": {
+        "oidc.cibaGrantsEnabled": "false",
+        "oauth2.deviceAuthorizationGrantEnabled": "false",
+        "backchannelLogoutRevokeResponseTypesEnabled": "false",
+        "backchannelLogoutSessionRequired": "true"
+      },
+      "clientAuthenticatorType": "client-secret",
+      "secret": "crm2-api-secret-local",
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ],
+      "protocolMappers": [
+        {
+          "name": "usuario_id-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "usuario_id",
+            "claim.name": "usuario_id",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "access.tokenResponse.claim": "false"
+          }
+        },
+        {
+          "name": "super_usuario_id-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "super_usuario_id",
+            "claim.name": "super_usuario_id",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "access.tokenResponse.claim": "false"
+          }
+        },
+        {
+          "name": "audience-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "crm2-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        },
+        {
+          "name": "realm-roles-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "realm_access.roles",
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "SUPER_USUARIO",
+        "description": "Super Usuario - full system access",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "USUARIO",
+        "description": "Usuario - standard user access",
+        "composite": false,
+        "clientRole": false
+      }
+    ],
+    "client": {
+      "crm2-api": [
+        {
+          "name": "SUPER_USUARIO",
+          "description": "Super Usuario role for CRM API",
+          "composite": false,
+          "clientRole": true
+        },
+        {
+          "name": "USUARIO",
+          "description": "Usuario role for CRM API",
+          "composite": false,
+          "clientRole": true
+        }
+      ]
+    }
+  },
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "admin@crm2.local",
+      "firstName": "Admin",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["SUPER_USUARIO"],
+      "clientRoles": {
+        "crm2-api": ["SUPER_USUARIO"]
+      },
+      "attributes": {
+        "usuario_id": ["550e8400-e29b-41d4-a716-446655440001"],
+        "super_usuario_id": ["550e8400-e29b-41d4-a716-446655440000"]
+      }
+    },
+    {
+      "username": "user",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "user@crm2.local",
+      "firstName": "Standard",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "user",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["USUARIO"],
+      "clientRoles": {
+        "crm2-api": ["USUARIO"]
+      },
+      "attributes": {
+        "usuario_id": ["550e8400-e29b-41d4-a716-446655440002"]
+      }
+    }
+  ],
+  "defaultDefaultClientScopes": [
+    "role_list",
+    "profile",
+    "email",
+    "roles",
+    "web-origins"
+  ]
+}

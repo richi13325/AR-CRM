@@ -12,7 +12,8 @@ public record SuperUsuarioResponse(
     String id,
     String correo,
     LocalDateTime creadoEn,
-    boolean activo
+    boolean activo,
+    String keycloakId
 ) {
 
     /**
@@ -23,7 +24,8 @@ public record SuperUsuarioResponse(
             usuario.getId().value().toString(),
             usuario.getCorreo(),
             usuario.getCreadoEn(),
-            usuario.isActivo()
+            usuario.isActivo(),
+            usuario.getKeycloakId()
         );
     }
 }

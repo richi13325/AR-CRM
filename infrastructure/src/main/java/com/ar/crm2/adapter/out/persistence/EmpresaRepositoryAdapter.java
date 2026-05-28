@@ -11,16 +11,10 @@ import com.ar.crm2.application.empresa.port.out.SaveEmpresaPort;
 import com.ar.crm2.model.entity.Empresa;
 import com.ar.crm2.model.vo.EmpresaId;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Persistence adapter implementing granular outbound ports.
- * Bridges application outbound port contracts to Spring Data JPA storage.
- */
-@Repository
 @RequiredArgsConstructor
 public class EmpresaRepositoryAdapter implements SaveEmpresaPort, FindAllEmpresasPort, FindEmpresaByIdPort, DeleteEmpresaByIdPort, ExistsTratosByEmpresaIdPort {
 

@@ -36,9 +36,6 @@ public class UsuarioEntity {
     @Column(name = "correo", nullable = false, length = 120)
     private String correo;
 
-    @Column(name = "password_hash", nullable = false, length = 255)
-    private String passwordHash;
-
     @Column(name = "rol_id", nullable = false, length = 36)
     private String rolId;
 
@@ -47,4 +44,7 @@ public class UsuarioEntity {
 
     @Column(name = "activo", nullable = false)
     private boolean activo;
+
+    @Column(name = "keycloak_id", nullable = true, length = 255)
+    private String keycloakId;
 }

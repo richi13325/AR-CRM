@@ -2,6 +2,7 @@ package com.ar.crm2.adapter.in.rest;
 
 import com.ar.crm2.application.columna.exception.ColumnaHasAssociatedFichasException;
 import com.ar.crm2.application.columna.exception.ColumnaNotFoundException;
+import com.ar.crm2.application.identity.model.IdentityProvisioningException;
 import com.ar.crm2.application.tablero.exception.TableroNotFoundException;
 import com.ar.crm2.exception.ColumnaConFichasNoPuedeEliminarseException;
 import com.ar.crm2.exception.DomainException;
@@ -97,6 +98,48 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals("Invalid UUID format", response.getBody().get("error"));
+    }
+
+    // ── IdentityProvisioningException (Keycloak) ─────────────────────
+
+    @Test
+    void handleIdentityProvisioningException_connectionFailure_returns502() {
+        IdentityProvisioningException ex = new IdentityProvisioningException(
+                "Connection refused",
+                IdentityProvisioningException.Reason.CONNECTION_FAILURE
+        );
+
+        ResponseEntity<Map<String, String>> response = handler.handleIdentityProvisioningException(ex);
+
+        assertEquals(HttpStatus.BAD_GATEWAY, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().get("error").contains("Connection refused"));
+    }
+
+    @Test
+    void handleIdentityProvisioningException_userAlreadyExists_returns409() {
+        IdentityProvisioningException ex = new IdentityProvisioningException(
+                "kc-123",
+                "User already exists",
+                IdentityProvisioningException.Reason.USER_ALREADY_EXISTS
+        );
+
+        ResponseEntity<Map<String, String>> response = handler.handleIdentityProvisioningException(ex);
+
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+    }
+
+    @Test
+    void handleIdentityProvisioningException_userNotFound_returns404() {
+        IdentityProvisioningException ex = new IdentityProvisioningException(
+                "kc-456",
+                "User not found",
+                IdentityProvisioningException.Reason.USER_NOT_FOUND
+        );
+
+        ResponseEntity<Map<String, String>> response = handler.handleIdentityProvisioningException(ex);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
 
     // ── Error body structure ────────────────────────────────────────

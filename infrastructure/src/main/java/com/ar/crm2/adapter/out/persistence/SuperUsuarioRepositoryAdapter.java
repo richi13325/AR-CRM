@@ -7,22 +7,17 @@ import com.ar.crm2.application.superusuario.exception.SuperUsuarioNotFoundExcept
 import com.ar.crm2.application.superusuario.port.out.DeleteSuperUsuarioByIdPort;
 import com.ar.crm2.application.superusuario.port.out.FindAllSuperUsuariosPort;
 import com.ar.crm2.application.superusuario.port.out.FindSuperUsuarioByIdPort;
+import com.ar.crm2.application.superusuario.port.out.FindSuperUsuarioByKeycloakIdPort;
 import com.ar.crm2.application.superusuario.port.out.SaveSuperUsuarioPort;
 import com.ar.crm2.model.entity.SuperUsuario;
 import com.ar.crm2.model.vo.SuperUsuarioId;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Persistence adapter implementing SuperUsuario outbound ports.
- * Bridges application outbound port contracts to Spring Data JPA storage.
- */
-@Repository
 @RequiredArgsConstructor
-public class SuperUsuarioRepositoryAdapter implements SaveSuperUsuarioPort, FindAllSuperUsuariosPort, FindSuperUsuarioByIdPort, DeleteSuperUsuarioByIdPort {
+public class SuperUsuarioRepositoryAdapter implements SaveSuperUsuarioPort, FindAllSuperUsuariosPort, FindSuperUsuarioByIdPort, DeleteSuperUsuarioByIdPort, FindSuperUsuarioByKeycloakIdPort {
 
     private final SuperUsuarioRepository repository;
 
@@ -49,5 +44,11 @@ public class SuperUsuarioRepositoryAdapter implements SaveSuperUsuarioPort, Find
     @Override
     public void deleteById(SuperUsuarioId id) {
         repository.deleteById(id.value().toString());
+    }
+
+    @Override
+    public Optional<SuperUsuario> findByKeycloakId(String keycloakId) {
+        return repository.findByKeycloakId(keycloakId)
+            .map(SuperUsuarioMapper::toDomain);
     }
 }

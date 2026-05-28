@@ -22,5 +22,22 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
-  server:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/crm2-local
+          audiences: crm2-api
+
+server:
   port: 8080
+
+crm2:
+  keycloak:
+    admin:
+      server-url: http://localhost:8180
+      realm: crm2-local
+      client-id: crm2-api
+      client-secret: ${KEYCLOAK_ADMIN_SECRET:admin-secret}
+      connect-timeout-ms: 5000
+      read-timeout-ms: 10000

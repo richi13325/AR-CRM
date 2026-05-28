@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 
 /**
  * REST request DTO for creating a new SuperUsuario.
+ * Authentication is handled by Keycloak — no passwordHash required here.
  * Required fields validated at construction time.
  */
 public record CreateSuperUsuarioRequest(
@@ -14,7 +15,9 @@ public record CreateSuperUsuarioRequest(
     @Size(max = 120, message = "correo must not exceed 120 characters")
     String correo,
 
-    @NotBlank(message = "passwordHash is required")
-    @Size(max = 255, message = "passwordHash must not exceed 255 characters")
-    String passwordHash
+    @NotBlank(message = "initialPassword is required for Keycloak provisioning")
+    String initialPassword,
+
+    @Size(max = 255, message = "keycloakId must not exceed 255 characters")
+    String keycloakId
 ) {}

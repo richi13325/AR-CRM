@@ -115,6 +115,22 @@ public final class DomainAssert {
     }
 
     /**
+     * Validates an optional string field — normalizes blank to null, then checks max length.
+     * Returns null for null/blank input; otherwise returns trimmed value capped at maxLen.
+     * @throws InvariantViolationException if value is non-blank and exceeds maxLen
+     */
+    public static String optionalLength(String value, int maxLen, String fieldName) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String trimmed = value.trim();
+        if (trimmed.length() > maxLen) {
+            throw InvariantViolationException.lengthOutsideRange(fieldName, 0, maxLen);
+        }
+        return trimmed;
+    }
+
+    /**
      * Validates email format and length (1–150 chars).
      * <p>
      * normalization: trims whitespace only — does NOT lowercase.

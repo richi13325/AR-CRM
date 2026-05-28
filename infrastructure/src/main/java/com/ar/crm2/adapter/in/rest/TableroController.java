@@ -24,7 +24,10 @@ import com.ar.crm2.application.tablero.port.in.EliminarColumnaDelTableroUseCase;
 import com.ar.crm2.application.tablero.port.in.GetAllTablerosUseCase;
 import com.ar.crm2.application.tablero.port.in.GetTableroByIdUseCase;
 import com.ar.crm2.application.tablero.port.in.ReordenarColumnasUseCase;
+import com.ar.crm2.application.security.ActorContext;
 import com.ar.crm2.model.entity.Tablero;
+import com.ar.crm2.security.ActorContextRequestAttributeFilter;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -65,10 +68,17 @@ public class TableroController {
 
     /**
      * Creates a new Tablero with 4 default columns.
+     * The superUsuarioId is derived from the authenticated actor context (JWT),
+     * not from the request body — eliminating the spoofable field for this endpoint.
      */
     @PostMapping("/create")
-    public ResponseEntity<TableroResponse> create(@Valid @RequestBody CreateTableroRequest request) {
-        CreateTableroCommand command = TableroCommandMapper.toCommand(request);
+    public ResponseEntity<TableroResponse> create(
+            HttpServletRequest httpRequest,
+            @Valid @RequestBody CreateTableroRequest request
+    ) {
+        ActorContext actorContext = (ActorContext) httpRequest.getAttribute(
+                ActorContextRequestAttributeFilter.ACTOR_CONTEXT_ATTRIBUTE);
+        CreateTableroCommand command = TableroCommandMapper.toCommand(request, actorContext);
         Tablero tablero = createUseCase.create(command);
         return ResponseEntity.status(HttpStatus.CREATED).body(TableroResponse.fromDomain(tablero, columnaRepository));
     }

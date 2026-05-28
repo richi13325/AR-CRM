@@ -14,7 +14,8 @@ public record UsuarioResponse(
     String correo,
     UUID rolId,
     LocalDateTime creadoEn,
-    boolean activo
+    boolean activo,
+    String keycloakId
 ) {
 
     /**
@@ -27,7 +28,8 @@ public record UsuarioResponse(
             usuario.getCorreo(),
             usuario.getRolId().value(),
             usuario.getCreadoEn(),
-            usuario.isActivo()
+            usuario.isActivo(),
+            usuario.getKeycloakId()
         );
     }
 }

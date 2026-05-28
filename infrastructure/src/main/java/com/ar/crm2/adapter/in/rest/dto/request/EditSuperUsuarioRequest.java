@@ -13,5 +13,8 @@ public record EditSuperUsuarioRequest(
     @NotBlank(message = "correo is required")
     @Email(message = "correo must be a valid email")
     @Size(max = 120, message = "correo must not exceed 120 characters")
-    String correo
+    String correo,
+
+    @Size(max = 255, message = "keycloakId must not exceed 255 characters")
+    String keycloakId
 ) {}

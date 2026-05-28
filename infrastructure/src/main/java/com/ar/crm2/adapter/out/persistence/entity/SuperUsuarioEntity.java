@@ -33,12 +33,12 @@ public class SuperUsuarioEntity {
     @Column(name = "correo", nullable = false, length = 120)
     private String correo;
 
-    @Column(name = "password_hash", nullable = false, length = 255)
-    private String passwordHash;
-
     @Column(name = "creado_en", nullable = false)
     private java.time.LocalDateTime creadoEn;
 
     @Column(name = "activo", nullable = false)
     private boolean activo;
+
+    @Column(name = "keycloak_id", nullable = true, length = 255)
+    private String keycloakId;
 }

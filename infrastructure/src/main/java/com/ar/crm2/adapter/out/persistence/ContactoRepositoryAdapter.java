@@ -11,16 +11,10 @@ import com.ar.crm2.application.contacto.port.out.SaveContactoPort;
 import com.ar.crm2.model.entity.Contacto;
 import com.ar.crm2.model.vo.ContactoId;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Persistence adapter implementing granular outbound ports.
- * Bridges application outbound port contracts to Spring Data JPA storage.
- */
-@Repository
 @RequiredArgsConstructor
 public class ContactoRepositoryAdapter implements SaveContactoPort, FindAllContactosPort, FindContactoByIdPort, DeleteContactoByIdPort, ExistsTratosByContactoIdPort {
 

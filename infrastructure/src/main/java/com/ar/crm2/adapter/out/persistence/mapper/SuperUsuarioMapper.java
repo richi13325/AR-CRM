@@ -23,9 +23,9 @@ public final class SuperUsuarioMapper {
         return SuperUsuarioEntity.builder()
             .id(domain.getId().value().toString())
             .correo(domain.getCorreo())
-            .passwordHash(domain.getPasswordHash())
             .creadoEn(domain.getCreadoEn())
             .activo(domain.isActivo())
+            .keycloakId(domain.getKeycloakId())
             .build();
     }
 
@@ -43,9 +43,9 @@ public final class SuperUsuarioMapper {
         return SuperUsuario.reconstitute(
             SuperUsuarioId.from(java.util.UUID.fromString(entity.getId())),
             entity.getCorreo(),
-            entity.getPasswordHash(),
             entity.getCreadoEn(),
-            entity.isActivo()
+            entity.isActivo(),
+            entity.getKeycloakId()
         );
     }
 }

@@ -10,16 +10,10 @@ import com.ar.crm2.application.ficha.port.out.SaveFichaPort;
 import com.ar.crm2.model.entity.Ficha;
 import com.ar.crm2.model.vo.FichaId;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Persistence adapter implementing granular outbound ports.
- * Bridges application outbound port contracts to Spring Data JPA storage.
- */
-@Repository
 @RequiredArgsConstructor
 public class FichaRepositoryAdapter implements SaveFichaPort, FindAllFichasPort, FindFichaByIdPort, DeleteFichaByIdPort {
 

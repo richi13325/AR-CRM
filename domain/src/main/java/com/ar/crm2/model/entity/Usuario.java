@@ -1,6 +1,5 @@
 package com.ar.crm2.model.entity;
 
-import com.ar.crm2.exception.CambioPasswordNoConfirmadoException;
 import com.ar.crm2.model.vo.RolId;
 import com.ar.crm2.model.vo.UsuarioId;
 import com.ar.crm2.shared.DomainAssert;
@@ -24,7 +23,7 @@ import java.time.LocalDateTime;
  */
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(exclude = {"passwordHash"})
+@ToString(exclude = {})
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Usuario {
 
@@ -33,10 +32,10 @@ public class Usuario {
 
     private final String nombre;
     private final String correo;
-    private final String passwordHash;
     private final RolId rolId;
     private final LocalDateTime creadoEn;
     private final boolean activo;
+    private final String keycloakId;
 
     // ── Factory ──────────────────────────────────────────────────
 
@@ -44,21 +43,22 @@ public class Usuario {
      * Creates a new active Usuario for a client.
      * Generates id and creadoEn internally.
      * rolId is mandatory — every client user must have a role within their company.
+     * keycloakId is optional — links this CRM user to a Keycloak identity.
      */
     public static Usuario create(
         String nombre,
         String correo,
-        String passwordHash,
-        RolId rolId
+        RolId rolId,
+        String keycloakId
     ) {
         return new Usuario(
             UsuarioId.create(),
             DomainAssert.lengthBetween(nombre, "nombre", 1, 100),
             DomainAssert.email(correo, "correo"),
-            DomainAssert.lengthBetween(passwordHash, "passwordHash", 1, 255),
             DomainAssert.notNull(rolId, "rolId"),
             LocalDateTime.now(),
-            true
+            true,
+            DomainAssert.optionalLength(keycloakId, 255, "keycloakId")
         );
     }
 
@@ -69,19 +69,19 @@ public class Usuario {
         UsuarioId id,
         String nombre,
         String correo,
-        String passwordHash,
         RolId rolId,
         LocalDateTime creadoEn,
-        boolean activo
+        boolean activo,
+        String keycloakId
     ) {
         return new Usuario(
             DomainAssert.notNull(id, "id"),
             DomainAssert.lengthBetween(nombre, "nombre", 1, 100),
             DomainAssert.email(correo, "correo"),
-            DomainAssert.lengthBetween(passwordHash, "passwordHash", 1, 255),
             DomainAssert.notNull(rolId, "rolId"),
             DomainAssert.notNull(creadoEn, "creadoEn"),
-            activo
+            activo,
+            DomainAssert.optionalLength(keycloakId, 255, "keycloakId")
         );
     }
 
@@ -89,24 +89,35 @@ public class Usuario {
         return activo;
     }
 
-    // ── Password Change ───────────────────────────────────────────
+    /**
+     * Returns a new Usuario with the given keycloakId.
+     * Allows external systems to set the Keycloak linkage without exposing a public setter.
+     */
+    public Usuario withKeycloakId(String keycloakId) {
+        return new Usuario(
+            this.id,
+            this.nombre,
+            this.correo,
+            this.rolId,
+            this.creadoEn,
+            this.activo,
+            DomainAssert.optionalLength(keycloakId, 255, "keycloakId")
+        );
+    }
 
     /**
-     * Changes the password hash for this usuario.
-     *
-     * @param nuevoPasswordHash the new password hash (required, 1–255 chars)
-     * @param codigoConfirmado  true only if email confirmation code was verified externally
-     * @return a new Usuario instance with the updated passwordHash, or this instance if idempotent
-     * @throws CambioPasswordNoConfirmadoException if codigoConfirmado is false
+     * Returns a new Usuario with the given active flag.
+     * Used by application services when synchronizing state to Keycloak.
      */
-    public Usuario cambiarPasswordHash(String nuevoPasswordHash, boolean codigoConfirmado) {
-        if (!codigoConfirmado) {
-            throw new CambioPasswordNoConfirmadoException();
-        }
-        DomainAssert.lengthBetween(nuevoPasswordHash, "nuevoPasswordHash", 1, 255);
-        if (nuevoPasswordHash.equals(this.passwordHash)) {
-            return this;
-        }
-        return new Usuario(id, nombre, correo, nuevoPasswordHash, rolId, creadoEn, activo);
+    public Usuario withActivo(boolean activo) {
+        return new Usuario(
+            this.id,
+            this.nombre,
+            this.correo,
+            this.rolId,
+            this.creadoEn,
+            activo,
+            this.keycloakId
+        );
     }
 }

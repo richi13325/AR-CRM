@@ -3,18 +3,30 @@ package com.ar.crm2.config;
 import com.ar.crm2.adapter.out.persistence.ColumnaExistsFichasByColumnaIdAdapter;
 import com.ar.crm2.adapter.out.persistence.ColumnaRepositoryAdapter;
 import com.ar.crm2.adapter.out.persistence.repository.ColumnaRepository;
+import com.ar.crm2.adapter.out.persistence.repository.ContactoRepository;
 import com.ar.crm2.adapter.out.persistence.ContactoRepositoryAdapter;
 import com.ar.crm2.adapter.out.persistence.EmpresaRepositoryAdapter;
+import com.ar.crm2.adapter.out.persistence.repository.EmpresaRepository;
 import com.ar.crm2.adapter.out.persistence.ExistsColumnaAsignadaAdapter;
 import com.ar.crm2.adapter.out.persistence.ExistsFichasByColumnaIdAdapter;
+import com.ar.crm2.adapter.out.persistence.repository.FichaRepository;
 import com.ar.crm2.adapter.out.persistence.FichaRepositoryAdapter;
+import com.ar.crm2.adapter.out.persistence.repository.RolRepository;
 import com.ar.crm2.adapter.out.persistence.RolRepositoryAdapter;
+import com.ar.crm2.adapter.out.persistence.repository.SuperUsuarioRepository;
 import com.ar.crm2.adapter.out.persistence.SuperUsuarioRepositoryAdapter;
+import com.ar.crm2.adapter.out.persistence.repository.TableroRepository;
 import com.ar.crm2.adapter.out.persistence.TableroRepositoryAdapter;
+import com.ar.crm2.adapter.out.persistence.repository.TratoRepository;
 import com.ar.crm2.adapter.out.persistence.TratoRepositoryAdapter;
+import com.ar.crm2.adapter.out.persistence.repository.TareaRepository;
 import com.ar.crm2.adapter.out.persistence.TareaRepositoryAdapter;
+import com.ar.crm2.adapter.out.persistence.repository.UsuarioRepository;
 import com.ar.crm2.adapter.out.persistence.UsuarioRepositoryAdapter;
 import com.ar.crm2.adapter.out.persistence.mapper.TableroMapper;
+import com.ar.crm2.adapter.out.keycloak.KeycloakUserProvisioningAdapter;
+import com.ar.crm2.config.KeycloakAdminProperties;
+import com.ar.crm2.application.identity.port.out.IdentityProviderUserPort;
 import com.ar.crm2.application.columna.port.in.CreateColumnaUseCase;
 import com.ar.crm2.application.columna.port.in.DeleteColumnaUseCase;
 import com.ar.crm2.application.columna.port.in.EditColumnaUseCase;
@@ -38,6 +50,7 @@ import com.ar.crm2.application.superusuario.port.in.GetSuperUsuarioByIdUseCase;
 import com.ar.crm2.application.superusuario.port.out.DeleteSuperUsuarioByIdPort;
 import com.ar.crm2.application.superusuario.port.out.FindAllSuperUsuariosPort;
 import com.ar.crm2.application.superusuario.port.out.FindSuperUsuarioByIdPort;
+import com.ar.crm2.application.superusuario.port.out.FindSuperUsuarioByKeycloakIdPort;
 import com.ar.crm2.application.superusuario.port.out.SaveSuperUsuarioPort;
 import com.ar.crm2.application.superusuario.service.CreateSuperUsuarioService;
 import com.ar.crm2.application.superusuario.service.DeleteSuperUsuarioService;
@@ -67,6 +80,7 @@ import com.ar.crm2.application.usuario.port.in.GetUsuarioByIdUseCase;
 import com.ar.crm2.application.usuario.port.out.DeleteUsuarioByIdPort;
 import com.ar.crm2.application.usuario.port.out.FindAllUsuariosPort;
 import com.ar.crm2.application.usuario.port.out.FindUsuarioByIdPort;
+import com.ar.crm2.application.usuario.port.out.FindUsuarioByKeycloakIdPort;
 import com.ar.crm2.application.usuario.port.out.SaveUsuarioPort;
 import com.ar.crm2.application.usuario.service.CreateUsuarioService;
 import com.ar.crm2.application.usuario.service.DeleteUsuarioService;
@@ -167,8 +181,10 @@ import com.ar.crm2.application.tablero.service.EliminarColumnaDelTableroService;
 import com.ar.crm2.application.tablero.service.GetAllTablerosService;
 import com.ar.crm2.application.tablero.service.GetTableroByIdService;
 import com.ar.crm2.application.tablero.service.ReordenarColumnasService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
  * Application wiring configuration.
@@ -181,116 +197,147 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class WiringConfig {
 
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
+    }
+
+    // ── Infrastructure Adapter Beans (created explicitly to avoid component-scan duplication) ──
+
+    @Bean
+    public EmpresaRepositoryAdapter empresaRepositoryAdapter(EmpresaRepository repository) {
+        return new EmpresaRepositoryAdapter(repository);
+    }
+
+    @Bean
+    public ContactoRepositoryAdapter contactoRepositoryAdapter(ContactoRepository repository) {
+        return new ContactoRepositoryAdapter(repository);
+    }
+
+    @Bean
+    public TableroRepositoryAdapter tableroRepositoryAdapter(
+            TableroRepository tableroRepository,
+            ColumnaRepository columnaRepository,
+            TableroMapper tableroMapper
+    ) {
+        return new TableroRepositoryAdapter(tableroRepository, columnaRepository, tableroMapper);
+    }
+
+    @Bean
+    public TratoRepositoryAdapter tratoRepositoryAdapter(TratoRepository repository) {
+        return new TratoRepositoryAdapter(repository);
+    }
+
+    @Bean
+    public TareaRepositoryAdapter tareaRepositoryAdapter(TareaRepository repository) {
+        return new TareaRepositoryAdapter(repository);
+    }
+
+    @Bean
+    public FichaRepositoryAdapter fichaRepositoryAdapter(FichaRepository repository) {
+        return new FichaRepositoryAdapter(repository);
+    }
+
+    @Bean
+    public RolRepositoryAdapter rolRepositoryAdapter(RolRepository repository) {
+        return new RolRepositoryAdapter(repository);
+    }
+
+    @Bean
+    public ColumnaRepositoryAdapter columnaRepositoryAdapter(ColumnaRepository repository) {
+        return new ColumnaRepositoryAdapter(repository);
+    }
+
+    @Bean
+    public UsuarioRepositoryAdapter usuarioRepositoryAdapter(UsuarioRepository repository) {
+        return new UsuarioRepositoryAdapter(repository);
+    }
+
+    @Bean
+    public SuperUsuarioRepositoryAdapter superUsuarioRepositoryAdapter(SuperUsuarioRepository repository) {
+        return new SuperUsuarioRepositoryAdapter(repository);
+    }
+
+    @Bean
+    public ExistsFichasByColumnaIdAdapter existsFichasByColumnaIdAdapter(FichaRepository fichaRepository) {
+        return new ExistsFichasByColumnaIdAdapter(fichaRepository);
+    }
+
+    @Bean
+    public ColumnaExistsFichasByColumnaIdAdapter columnaExistsFichasByColumnaIdAdapter(FichaRepository fichaRepository) {
+        return new ColumnaExistsFichasByColumnaIdAdapter(fichaRepository);
+    }
+
+    @Bean
+    public ExistsColumnaAsignadaAdapter existsColumnaAsignadaAdapter(TableroRepository tableroRepository) {
+        return new ExistsColumnaAsignadaAdapter(tableroRepository);
+    }
+
+    @Bean
+    public KeycloakUserProvisioningAdapter keycloakUserProvisioningAdapter(KeycloakAdminProperties props) {
+        return new KeycloakUserProvisioningAdapter(props);
+    }
+
     // ── Empresa UseCase Beans ──
 
     @Bean
-    public CreateEmpresaUseCase createEmpresaUseCase(SaveEmpresaPort savePort) {
-        return new CreateEmpresaService(savePort);
+    public CreateEmpresaUseCase createEmpresaUseCase(EmpresaRepositoryAdapter adapter) {
+        return new CreateEmpresaService(adapter);
     }
 
     @Bean
-    public GetAllEmpresasUseCase getAllEmpresasUseCase(FindAllEmpresasPort findAllPort) {
-        return new GetAllEmpresasService(findAllPort);
+    public GetAllEmpresasUseCase getAllEmpresasUseCase(EmpresaRepositoryAdapter adapter) {
+        return new GetAllEmpresasService(adapter);
     }
 
     @Bean
-    public EditEmpresaUseCase editEmpresaUseCase(FindEmpresaByIdPort findPort, SaveEmpresaPort savePort) {
+    public EditEmpresaUseCase editEmpresaUseCase(EmpresaRepositoryAdapter findPort, EmpresaRepositoryAdapter savePort) {
         return new EditEmpresaService(findPort, savePort);
     }
 
     @Bean
     public DeleteEmpresaUseCase deleteEmpresaUseCase(
-            FindEmpresaByIdPort findPort,
-            ExistsTratosByEmpresaIdPort existsTratosPort,
-            DeleteEmpresaByIdPort deletePort
+            EmpresaRepositoryAdapter findPort,
+            EmpresaRepositoryAdapter existsTratosPort,
+            EmpresaRepositoryAdapter deletePort
     ) {
         return new DeleteEmpresaService(findPort, existsTratosPort, deletePort);
     }
 
-    // ── Empresa Adapter Beans (type-level narrowing) ──
 
-    @Bean
-    public SaveEmpresaPort saveEmpresaPort(EmpresaRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public FindAllEmpresasPort findAllEmpresasPort(EmpresaRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public FindEmpresaByIdPort findEmpresaByIdPort(EmpresaRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public DeleteEmpresaByIdPort deleteEmpresaByIdPort(EmpresaRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public ExistsTratosByEmpresaIdPort existsTratosByEmpresaIdPort(EmpresaRepositoryAdapter adapter) {
-        return adapter;
-    }
 
     // ── Contacto UseCase Beans ──
 
     @Bean
-    public CreateContactoUseCase createContactoUseCase(SaveContactoPort savePort) {
-        return new CreateContactoService(savePort);
+    public CreateContactoUseCase createContactoUseCase(ContactoRepositoryAdapter adapter) {
+        return new CreateContactoService(adapter);
     }
 
     @Bean
-    public GetAllContactosUseCase getAllContactosUseCase(FindAllContactosPort findAllPort) {
-        return new GetAllContactosService(findAllPort);
+    public GetAllContactosUseCase getAllContactosUseCase(ContactoRepositoryAdapter adapter) {
+        return new GetAllContactosService(adapter);
     }
 
     @Bean
-    public GetContactoByIdUseCase getContactoByIdUseCase(FindContactoByIdPort findPort) {
-        return new GetContactoByIdService(findPort);
+    public GetContactoByIdUseCase getContactoByIdUseCase(ContactoRepositoryAdapter adapter) {
+        return new GetContactoByIdService(adapter);
     }
 
     @Bean
-    public EditContactoUseCase editContactoUseCase(FindContactoByIdPort findPort, SaveContactoPort savePort) {
+    public EditContactoUseCase editContactoUseCase(ContactoRepositoryAdapter findPort, ContactoRepositoryAdapter savePort) {
         return new EditContactoService(findPort, savePort);
     }
 
     @Bean
     public DeleteContactoUseCase deleteContactoUseCase(
-            FindContactoByIdPort findPort,
-            ExistsTratosByContactoIdPort existsTratosPort,
-            DeleteContactoByIdPort deletePort
+            ContactoRepositoryAdapter findPort,
+            ContactoRepositoryAdapter existsTratosPort,
+            ContactoRepositoryAdapter deletePort
     ) {
         return new DeleteContactoService(findPort, existsTratosPort, deletePort);
     }
 
-    // ── Contacto Adapter Beans (type-level narrowing) ──
 
-    @Bean
-    public SaveContactoPort saveContactoPort(ContactoRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public FindAllContactosPort findAllContactosPort(ContactoRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public FindContactoByIdPort findContactoByIdPort(ContactoRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public DeleteContactoByIdPort deleteContactoByIdPort(ContactoRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public ExistsTratosByContactoIdPort existsTratosByContactoIdPort(ContactoRepositoryAdapter adapter) {
-        return adapter;
-    }
 
     // ── Tablero Mapper Bean ──
 
@@ -305,490 +352,305 @@ public class WiringConfig {
         return new TableroMapper(columnaRepository);
     }
 
-    // ── Tablero Adapter Beans (type-level narrowing) ──
 
-    @Bean
-    public SaveTableroPort saveTableroPort(TableroRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public FindAllTablerosPort findAllTablerosPort(TableroRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public FindTableroByIdPort findTableroByIdPort(TableroRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public DeleteTableroByIdPort deleteTableroByIdPort(TableroRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public ExistsFichasByColumnaIdPort existsFichasByColumnaIdPort(ExistsFichasByColumnaIdAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public ExistsColumnaEnTableroPort existsColumnaEnTableroPort(TableroRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public com.ar.crm2.application.tablero.port.out.FindColumnaByIdPort tableroFindColumnaByIdPort(TableroRepositoryAdapter adapter) {
-        return adapter;
-    }
 
     // ── Tablero UseCase Beans ──
 
     @Bean
-    public CreateTableroUseCase createTableroUseCase(SaveTableroPort savePort) {
-        return new CreateTableroService(savePort);
+    public CreateTableroUseCase createTableroUseCase(TableroRepositoryAdapter adapter) {
+        return new CreateTableroService(adapter);
     }
 
     @Bean
-    public GetAllTablerosUseCase getAllTablerosUseCase(FindAllTablerosPort findAllPort) {
-        return new GetAllTablerosService(findAllPort);
+    public GetAllTablerosUseCase getAllTablerosUseCase(TableroRepositoryAdapter adapter) {
+        return new GetAllTablerosService(adapter);
     }
 
     @Bean
-    public GetTableroByIdUseCase getTableroByIdUseCase(FindTableroByIdPort findPort) {
-        return new GetTableroByIdService(findPort);
+    public GetTableroByIdUseCase getTableroByIdUseCase(TableroRepositoryAdapter adapter) {
+        return new GetTableroByIdService(adapter);
     }
 
     @Bean
-    public EditTableroUseCase editTableroUseCase(FindTableroByIdPort findPort, SaveTableroPort savePort) {
+    public EditTableroUseCase editTableroUseCase(TableroRepositoryAdapter findPort, TableroRepositoryAdapter savePort) {
         return new EditTableroService(findPort, savePort);
     }
 
     @Bean
     public DeleteTableroUseCase deleteTableroUseCase(
-            FindTableroByIdPort findPort,
-            DeleteTableroByIdPort deletePort
+            TableroRepositoryAdapter findPort,
+            TableroRepositoryAdapter deletePort
     ) {
         return new DeleteTableroService(findPort, deletePort);
     }
 
     @Bean
     public AgregarColumnaTableroUseCase agregarColumnaTableroUseCase(
-            FindTableroByIdPort findPort,
-            SaveTableroPort savePort
+            TableroRepositoryAdapter findPort,
+            TableroRepositoryAdapter savePort
     ) {
         return new AgregarColumnaTableroService(findPort, savePort);
     }
 
     @Bean
     public AsignarColumnaTableroUseCase asignarColumnaTableroUseCase(
-            FindTableroByIdPort findTableroPort,
-            com.ar.crm2.application.tablero.port.out.FindColumnaByIdPort findColumnaPort,
-            ExistsColumnaEnTableroPort existsColumnaEnTableroPort,
-            SaveTableroPort savePort
+            TableroRepositoryAdapter findTableroPort,
+            TableroRepositoryAdapter findColumnaPort,
+            TableroRepositoryAdapter existsColumnaEnTableroPort,
+            TableroRepositoryAdapter savePort
     ) {
         return new AsignarColumnaTableroService(findTableroPort, findColumnaPort, existsColumnaEnTableroPort, savePort);
     }
 
     @Bean
     public EliminarColumnaDelTableroUseCase eliminarColumnaDelTableroUseCase(
-            FindTableroByIdPort findPort,
-            ExistsFichasByColumnaIdPort existsFichasPort,
-            SaveTableroPort savePort
+            TableroRepositoryAdapter findPort,
+            ExistsFichasByColumnaIdAdapter existsFichasPort,
+            TableroRepositoryAdapter savePort
     ) {
         return new EliminarColumnaDelTableroService(findPort, existsFichasPort, savePort);
     }
 
     @Bean
     public ReordenarColumnasUseCase reordenarColumnasUseCase(
-            FindTableroByIdPort findPort,
-            SaveTableroPort savePort
+            TableroRepositoryAdapter findPort,
+            TableroRepositoryAdapter savePort
     ) {
         return new ReordenarColumnasService(findPort, savePort);
     }
 
-    // ── Trato Adapter Beans (type-level narrowing) ──
 
-    @Bean
-    public SaveTratoPort saveTratoPort(TratoRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public FindAllTratosPort findAllTratosPort(TratoRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public FindTratoByIdPort findTratoByIdPort(TratoRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public DeleteTratoByIdPort deleteTratoByIdPort(TratoRepositoryAdapter adapter) {
-        return adapter;
-    }
 
     // ── Trato UseCase Beans ──
 
     @Bean
-    public CreateTratoUseCase createTratoUseCase(SaveTratoPort savePort) {
-        return new CreateTratoService(savePort);
+    public CreateTratoUseCase createTratoUseCase(TratoRepositoryAdapter adapter) {
+        return new CreateTratoService(adapter);
     }
 
     @Bean
-    public GetAllTratosUseCase getAllTratosUseCase(FindAllTratosPort findAllPort) {
-        return new GetAllTratosService(findAllPort);
+    public GetAllTratosUseCase getAllTratosUseCase(TratoRepositoryAdapter adapter) {
+        return new GetAllTratosService(adapter);
     }
 
     @Bean
-    public GetTratoByIdUseCase getTratoByIdUseCase(FindTratoByIdPort findPort) {
-        return new GetTratoByIdService(findPort);
+    public GetTratoByIdUseCase getTratoByIdUseCase(TratoRepositoryAdapter adapter) {
+        return new GetTratoByIdService(adapter);
     }
 
     @Bean
-    public EditTratoUseCase editTratoUseCase(FindTratoByIdPort findPort, SaveTratoPort savePort) {
+    public EditTratoUseCase editTratoUseCase(TratoRepositoryAdapter findPort, TratoRepositoryAdapter savePort) {
         return new EditTratoService(findPort, savePort);
     }
 
     @Bean
     public DeleteTratoUseCase deleteTratoUseCase(
-            FindTratoByIdPort findPort,
-            DeleteTratoByIdPort deletePort
+            TratoRepositoryAdapter findPort,
+            TratoRepositoryAdapter deletePort
     ) {
         return new DeleteTratoService(findPort, deletePort);
     }
 
-    // ── Tarea Adapter Beans (type-level narrowing) ──
 
-    @Bean
-    public SaveTareaPort saveTareaPort(TareaRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public FindAllTareasPort findAllTareasPort(TareaRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public FindTareaByIdPort findTareaByIdPort(TareaRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public DeleteTareaByIdPort deleteTareaByIdPort(TareaRepositoryAdapter adapter) {
-        return adapter;
-    }
 
     // ── Tarea UseCase Beans ──
 
     @Bean
-    public CreateTareaUseCase createTareaUseCase(SaveTareaPort savePort) {
-        return new CreateTareaService(savePort);
+    public CreateTareaUseCase createTareaUseCase(TareaRepositoryAdapter adapter) {
+        return new CreateTareaService(adapter);
     }
 
     @Bean
-    public GetAllTareasUseCase getAllTareasUseCase(FindAllTareasPort findAllPort) {
-        return new GetAllTareasService(findAllPort);
+    public GetAllTareasUseCase getAllTareasUseCase(TareaRepositoryAdapter adapter) {
+        return new GetAllTareasService(adapter);
     }
 
     @Bean
-    public GetTareaByIdUseCase getTareaByIdUseCase(FindTareaByIdPort findPort) {
-        return new GetTareaByIdService(findPort);
+    public GetTareaByIdUseCase getTareaByIdUseCase(TareaRepositoryAdapter adapter) {
+        return new GetTareaByIdService(adapter);
     }
 
     @Bean
-    public EditTareaUseCase editTareaUseCase(FindTareaByIdPort findPort, SaveTareaPort savePort) {
+    public EditTareaUseCase editTareaUseCase(TareaRepositoryAdapter findPort, TareaRepositoryAdapter savePort) {
         return new EditTareaService(findPort, savePort);
     }
 
     @Bean
     public DeleteTareaUseCase deleteTareaUseCase(
-            FindTareaByIdPort findPort,
-            DeleteTareaByIdPort deletePort
+            TareaRepositoryAdapter findPort,
+            TareaRepositoryAdapter deletePort
     ) {
         return new DeleteTareaService(findPort, deletePort);
     }
 
-    // ── Ficha Adapter Beans (type-level narrowing) ──
 
-    @Bean
-    public SaveFichaPort saveFichaPort(FichaRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public FindAllFichasPort findAllFichasPort(FichaRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public FindFichaByIdPort findFichaByIdPort(FichaRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public DeleteFichaByIdPort deleteFichaByIdPort(FichaRepositoryAdapter adapter) {
-        return adapter;
-    }
 
     // ── Ficha UseCase Beans ──
 
     @Bean
-    public CreateFichaUseCase createFichaUseCase(SaveFichaPort savePort) {
-        return new CreateFichaService(savePort);
+    public CreateFichaUseCase createFichaUseCase(FichaRepositoryAdapter adapter) {
+        return new CreateFichaService(adapter);
     }
 
     @Bean
-    public GetAllFichasUseCase getAllFichasUseCase(FindAllFichasPort findAllPort) {
-        return new GetAllFichasService(findAllPort);
+    public GetAllFichasUseCase getAllFichasUseCase(FichaRepositoryAdapter adapter) {
+        return new GetAllFichasService(adapter);
     }
 
     @Bean
-    public GetFichaByIdUseCase getFichaByIdUseCase(FindFichaByIdPort findPort) {
-        return new GetFichaByIdService(findPort);
+    public GetFichaByIdUseCase getFichaByIdUseCase(FichaRepositoryAdapter adapter) {
+        return new GetFichaByIdService(adapter);
     }
 
     @Bean
-    public EditFichaUseCase editFichaUseCase(FindFichaByIdPort findPort, SaveFichaPort savePort) {
+    public EditFichaUseCase editFichaUseCase(FichaRepositoryAdapter findPort, FichaRepositoryAdapter savePort) {
         return new EditFichaService(findPort, savePort);
     }
 
     @Bean
     public DeleteFichaUseCase deleteFichaUseCase(
-            FindFichaByIdPort findPort,
-            DeleteFichaByIdPort deletePort
+            FichaRepositoryAdapter findPort,
+            FichaRepositoryAdapter deletePort
     ) {
         return new DeleteFichaService(findPort, deletePort);
     }
 
-    // ── Usuario Adapter Beans (type-level narrowing) ──
 
-    @Bean
-    public SaveUsuarioPort saveUsuarioPort(UsuarioRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public FindAllUsuariosPort findAllUsuariosPort(UsuarioRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public FindUsuarioByIdPort findUsuarioByIdPort(UsuarioRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public DeleteUsuarioByIdPort deleteUsuarioByIdPort(UsuarioRepositoryAdapter adapter) {
-        return adapter;
-    }
 
     // ── Usuario UseCase Beans ──
 
     @Bean
-    public CreateUsuarioUseCase createUsuarioUseCase(SaveUsuarioPort savePort) {
-        return new CreateUsuarioService(savePort);
+    public CreateUsuarioUseCase createUsuarioUseCase(UsuarioRepositoryAdapter adapter, KeycloakUserProvisioningAdapter identityAdapter) {
+        return new CreateUsuarioService(adapter, identityAdapter);
     }
 
     @Bean
-    public GetAllUsuariosUseCase getAllUsuariosUseCase(FindAllUsuariosPort findAllPort) {
-        return new GetAllUsuariosService(findAllPort);
+    public GetAllUsuariosUseCase getAllUsuariosUseCase(UsuarioRepositoryAdapter adapter) {
+        return new GetAllUsuariosService(adapter);
     }
 
     @Bean
-    public GetUsuarioByIdUseCase getUsuarioByIdUseCase(FindUsuarioByIdPort findPort) {
-        return new GetUsuarioByIdService(findPort);
+    public GetUsuarioByIdUseCase getUsuarioByIdUseCase(UsuarioRepositoryAdapter adapter) {
+        return new GetUsuarioByIdService(adapter);
     }
 
     @Bean
-    public EditUsuarioUseCase editUsuarioUseCase(FindUsuarioByIdPort findPort, SaveUsuarioPort savePort) {
-        return new EditUsuarioService(findPort, savePort);
+    public EditUsuarioUseCase editUsuarioUseCase(UsuarioRepositoryAdapter findPort, UsuarioRepositoryAdapter savePort, KeycloakUserProvisioningAdapter identityAdapter) {
+        return new EditUsuarioService(findPort, savePort, identityAdapter);
     }
 
     @Bean
     public DeleteUsuarioUseCase deleteUsuarioUseCase(
-            FindUsuarioByIdPort findPort,
-            DeleteUsuarioByIdPort deletePort
+            UsuarioRepositoryAdapter findPort,
+            UsuarioRepositoryAdapter deletePort,
+            KeycloakUserProvisioningAdapter identityAdapter
     ) {
-        return new DeleteUsuarioService(findPort, deletePort);
+        return new DeleteUsuarioService(findPort, deletePort, identityAdapter);
     }
 
-    // ── Rol Adapter Beans (type-level narrowing) ──
 
-    @Bean
-    public SaveRolPort saveRolPort(RolRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public FindAllRolesPort findAllRolesPort(RolRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public FindRolByIdPort findRolByIdPort(RolRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public DeleteRolByIdPort deleteRolByIdPort(RolRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public ExistsUsuariosByRolIdPort existsUsuariosByRolIdPort(UsuarioRepositoryAdapter adapter) {
-        return adapter;
-    }
 
     // ── Rol UseCase Beans ──
 
     @Bean
-    public CreateRolUseCase createRolUseCase(SaveRolPort savePort) {
-        return new CreateRolService(savePort);
+    public CreateRolUseCase createRolUseCase(RolRepositoryAdapter adapter) {
+        return new CreateRolService(adapter);
     }
 
     @Bean
-    public GetAllRolesUseCase getAllRolesUseCase(FindAllRolesPort findAllPort) {
-        return new GetAllRolesService(findAllPort);
+    public GetAllRolesUseCase getAllRolesUseCase(RolRepositoryAdapter adapter) {
+        return new GetAllRolesService(adapter);
     }
 
     @Bean
-    public GetRolByIdUseCase getRolByIdUseCase(FindRolByIdPort findPort) {
-        return new GetRolByIdService(findPort);
+    public GetRolByIdUseCase getRolByIdUseCase(RolRepositoryAdapter adapter) {
+        return new GetRolByIdService(adapter);
     }
 
     @Bean
-    public EditRolUseCase editRolUseCase(FindRolByIdPort findPort, SaveRolPort savePort) {
+    public EditRolUseCase editRolUseCase(RolRepositoryAdapter findPort, RolRepositoryAdapter savePort) {
         return new EditRolService(findPort, savePort);
     }
 
     @Bean
     public DeleteRolUseCase deleteRolUseCase(
-            FindRolByIdPort findPort,
-            ExistsUsuariosByRolIdPort existsUsuariosPort,
-            DeleteRolByIdPort deletePort
+            RolRepositoryAdapter findPort,
+            UsuarioRepositoryAdapter existsUsuariosPort,
+            RolRepositoryAdapter deletePort
     ) {
         return new DeleteRolService(findPort, existsUsuariosPort, deletePort);
     }
 
-    // ── SuperUsuario Adapter Beans (type-level narrowing) ──
 
-    @Bean
-    public SaveSuperUsuarioPort saveSuperUsuarioPort(SuperUsuarioRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public FindAllSuperUsuariosPort findAllSuperUsuariosPort(SuperUsuarioRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public FindSuperUsuarioByIdPort findSuperUsuarioByIdPort(SuperUsuarioRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public DeleteSuperUsuarioByIdPort deleteSuperUsuarioByIdPort(SuperUsuarioRepositoryAdapter adapter) {
-        return adapter;
-    }
 
     // ── SuperUsuario UseCase Beans ──
 
     @Bean
-    public CreateSuperUsuarioUseCase createSuperUsuarioUseCase(SaveSuperUsuarioPort savePort) {
-        return new CreateSuperUsuarioService(savePort);
+    public CreateSuperUsuarioUseCase createSuperUsuarioUseCase(SuperUsuarioRepositoryAdapter adapter, KeycloakUserProvisioningAdapter identityAdapter) {
+        return new CreateSuperUsuarioService(adapter, identityAdapter);
     }
 
     @Bean
-    public GetAllSuperUsuariosUseCase getAllSuperUsuariosUseCase(FindAllSuperUsuariosPort findAllPort) {
-        return new GetAllSuperUsuariosService(findAllPort);
+    public GetAllSuperUsuariosUseCase getAllSuperUsuariosUseCase(SuperUsuarioRepositoryAdapter adapter) {
+        return new GetAllSuperUsuariosService(adapter);
     }
 
     @Bean
-    public GetSuperUsuarioByIdUseCase getSuperUsuarioByIdUseCase(FindSuperUsuarioByIdPort findPort) {
-        return new GetSuperUsuarioByIdService(findPort);
+    public GetSuperUsuarioByIdUseCase getSuperUsuarioByIdUseCase(SuperUsuarioRepositoryAdapter adapter) {
+        return new GetSuperUsuarioByIdService(adapter);
     }
 
     @Bean
-    public EditSuperUsuarioUseCase editSuperUsuarioUseCase(FindSuperUsuarioByIdPort findPort, SaveSuperUsuarioPort savePort) {
-        return new EditSuperUsuarioService(findPort, savePort);
+    public EditSuperUsuarioUseCase editSuperUsuarioUseCase(SuperUsuarioRepositoryAdapter findPort, SuperUsuarioRepositoryAdapter savePort, KeycloakUserProvisioningAdapter identityAdapter) {
+        return new EditSuperUsuarioService(findPort, savePort, identityAdapter);
     }
 
     @Bean
     public DeleteSuperUsuarioUseCase deleteSuperUsuarioUseCase(
-            FindSuperUsuarioByIdPort findPort,
-            DeleteSuperUsuarioByIdPort deletePort
+            SuperUsuarioRepositoryAdapter findPort,
+            SuperUsuarioRepositoryAdapter deletePort,
+            KeycloakUserProvisioningAdapter identityAdapter
     ) {
-        return new DeleteSuperUsuarioService(findPort, deletePort);
+        return new DeleteSuperUsuarioService(findPort, deletePort, identityAdapter);
     }
 
-    // ── Columna Adapter Beans (type-level narrowing) ──
 
-    @Bean
-    public SaveColumnaPort saveColumnaPort(ColumnaRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public FindAllColumnasPort findAllColumnasPort(ColumnaRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public FindColumnaByIdPort findColumnaByIdPort(ColumnaRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public DeleteColumnaByIdPort deleteColumnaByIdPort(ColumnaRepositoryAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public com.ar.crm2.application.columna.port.out.ExistsFichasByColumnaIdPort columnaExistsFichasByColumnaIdPort(ColumnaExistsFichasByColumnaIdAdapter adapter) {
-        return adapter;
-    }
-
-    @Bean
-    public ExistsColumnaAsignadaPort existsColumnaAsignadaPort(ExistsColumnaAsignadaAdapter adapter) {
-        return adapter;
-    }
 
     // ── Columna UseCase Beans ──
 
     @Bean
-    public CreateColumnaUseCase createColumnaUseCase(SaveColumnaPort savePort, FindAllColumnasPort findAllPort) {
+    public CreateColumnaUseCase createColumnaUseCase(
+            ColumnaRepositoryAdapter savePort,
+            ColumnaRepositoryAdapter findAllPort
+    ) {
         return new CreateColumnaService(savePort, findAllPort);
     }
 
     @Bean
-    public GetAllColumnasUseCase getAllColumnasUseCase(FindAllColumnasPort findAllPort) {
+    public GetAllColumnasUseCase getAllColumnasUseCase(ColumnaRepositoryAdapter findAllPort) {
         return new GetAllColumnasService(findAllPort);
     }
 
     @Bean
-    public GetColumnaByIdUseCase getColumnaByIdUseCase(FindColumnaByIdPort findPort) {
+    public GetColumnaByIdUseCase getColumnaByIdUseCase(ColumnaRepositoryAdapter findPort) {
         return new GetColumnaByIdService(findPort);
     }
 
     @Bean
     public EditColumnaUseCase editColumnaUseCase(
-            FindColumnaByIdPort findPort,
-            FindAllColumnasPort findAllPort,
-            SaveColumnaPort savePort
+            ColumnaRepositoryAdapter findPort,
+            ColumnaRepositoryAdapter findAllPort,
+            ColumnaRepositoryAdapter savePort
     ) {
         return new EditColumnaService(findPort, findAllPort, savePort);
     }
 
     @Bean
     public DeleteColumnaUseCase deleteColumnaUseCase(
-            FindColumnaByIdPort findPort,
+            ColumnaRepositoryAdapter findPort,
             ExistsColumnaAsignadaPort existsColumnaAsignadaPort,
             com.ar.crm2.application.columna.port.out.ExistsFichasByColumnaIdPort columnaExistsFichasByColumnaIdPort,
-            DeleteColumnaByIdPort deletePort
+            ColumnaRepositoryAdapter deletePort
     ) {
         return new DeleteColumnaService(findPort, existsColumnaAsignadaPort, columnaExistsFichasByColumnaIdPort, deletePort);
     }

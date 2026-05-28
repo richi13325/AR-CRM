@@ -10,16 +10,10 @@ import com.ar.crm2.application.trato.port.out.SaveTratoPort;
 import com.ar.crm2.model.entity.Trato;
 import com.ar.crm2.model.vo.TratoId;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Persistence adapter implementing granular outbound ports.
- * Bridges application outbound port contracts to Spring Data JPA storage.
- */
-@Repository
 @RequiredArgsConstructor
 public class TratoRepositoryAdapter implements SaveTratoPort, FindAllTratosPort, FindTratoByIdPort, DeleteTratoByIdPort {
 

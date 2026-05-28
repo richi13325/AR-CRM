@@ -2,14 +2,15 @@ package com.ar.crm2.adapter.in.rest.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
 
 /**
  * REST request DTO for creating a new Usuario.
+ * Authentication is handled by Keycloak — no passwordHash required here.
  * Required fields validated at construction time.
- * passwordHash is treated as opaque input, not auth flow.
  */
 public record CreateUsuarioRequest(
     @NotBlank(message = "nombre is required")
@@ -21,9 +22,12 @@ public record CreateUsuarioRequest(
     @Size(max = 120, message = "correo must not exceed 120 characters")
     String correo,
 
-    @NotBlank(message = "passwordHash is required")
-    @Size(max = 255, message = "passwordHash must not exceed 255 characters")
-    String passwordHash,
+    @NotNull(message = "rolId is required")
+    UUID rolId,
 
-    UUID rolId
+    @NotBlank(message = "initialPassword is required for Keycloak provisioning")
+    String initialPassword,
+
+    @Size(max = 255, message = "keycloakId must not exceed 255 characters")
+    String keycloakId
 ) {}

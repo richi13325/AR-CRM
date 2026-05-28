@@ -8,8 +8,8 @@ import java.util.UUID;
 
 /**
  * REST request DTO for editing an existing Usuario.
+ * Authentication is handled by Keycloak — no passwordHash required here.
  * Required fields validated at construction time.
- * passwordHash is treated as opaque input, not auth flow.
  */
 public record EditUsuarioRequest(
     @NotBlank(message = "nombre is required")
@@ -21,9 +21,8 @@ public record EditUsuarioRequest(
     @Size(max = 120, message = "correo must not exceed 120 characters")
     String correo,
 
-    @NotBlank(message = "passwordHash is required")
-    @Size(max = 255, message = "passwordHash must not exceed 255 characters")
-    String passwordHash,
+    UUID rolId,
 
-    UUID rolId
+    @Size(max = 255, message = "keycloakId must not exceed 255 characters")
+    String keycloakId
 ) {}

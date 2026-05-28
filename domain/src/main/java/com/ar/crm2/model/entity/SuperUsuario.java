@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
  */
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(exclude = {"passwordHash"})
+@ToString(exclude = {})
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class SuperUsuario {
 
@@ -31,26 +31,27 @@ public class SuperUsuario {
     private final SuperUsuarioId id;
 
     private final String correo;
-    private final String passwordHash;
     private final LocalDateTime creadoEn;
     private final boolean activo;
+    private final String keycloakId;
 
     // ── Factory ──────────────────────────────────────────────────
 
     /**
      * Creates a new active SuperUsuario.
      * Generates id and creadoEn internally.
+     * keycloakId is optional — links this superuser to a Keycloak identity.
      */
     public static SuperUsuario create(
         String correo,
-        String passwordHash
+        String keycloakId
     ) {
         return new SuperUsuario(
             SuperUsuarioId.create(),
             DomainAssert.email(correo, "correo"),
-            DomainAssert.lengthBetween(passwordHash, "passwordHash", 1, 255),
             LocalDateTime.now(),
-            true
+            true,
+            DomainAssert.optionalLength(keycloakId, 255, "keycloakId")
         );
     }
 
@@ -60,20 +61,48 @@ public class SuperUsuario {
     public static SuperUsuario reconstitute(
         SuperUsuarioId id,
         String correo,
-        String passwordHash,
         LocalDateTime creadoEn,
-        boolean activo
+        boolean activo,
+        String keycloakId
     ) {
         return new SuperUsuario(
             DomainAssert.notNull(id, "id"),
             DomainAssert.email(correo, "correo"),
-            DomainAssert.lengthBetween(passwordHash, "passwordHash", 1, 255),
             DomainAssert.notNull(creadoEn, "creadoEn"),
-            activo
+            activo,
+            DomainAssert.optionalLength(keycloakId, 255, "keycloakId")
         );
     }
 
     public boolean isActivo() {
         return activo;
+    }
+
+    /**
+     * Returns a new SuperUsuario with the given keycloakId.
+     * Allows external systems to set the Keycloak linkage without exposing a public setter.
+     */
+    public SuperUsuario withKeycloakId(String keycloakId) {
+        return new SuperUsuario(
+            this.id,
+            this.correo,
+            this.creadoEn,
+            this.activo,
+            DomainAssert.optionalLength(keycloakId, 255, "keycloakId")
+        );
+    }
+
+    /**
+     * Returns a new SuperUsuario with the given active flag.
+     * Used by application services when synchronizing state to Keycloak.
+     */
+    public SuperUsuario withActivo(boolean activo) {
+        return new SuperUsuario(
+            this.id,
+            this.correo,
+            this.creadoEn,
+            activo,
+            this.keycloakId
+        );
     }
 }
