@@ -2,10 +2,13 @@ package com.ar.crm2.adapter.in.rest.mapper;
 
 import com.ar.crm2.adapter.in.rest.dto.request.CreateFichaRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.EditFichaRequest;
+import com.ar.crm2.adapter.in.rest.dto.request.MoverColumnaRequest;
 import com.ar.crm2.application.ficha.command.CreateFichaCommand;
 import com.ar.crm2.application.ficha.command.DeleteFichaCommand;
 import com.ar.crm2.application.ficha.command.EditFichaCommand;
 import com.ar.crm2.application.ficha.command.GetFichaByIdCommand;
+import com.ar.crm2.application.ficha.command.MoverColumnaFichaCommand;
+import com.ar.crm2.application.security.ActorContext;
 
 import java.util.UUID;
 
@@ -17,16 +20,15 @@ public final class FichaCommandMapper {
     private FichaCommandMapper() {}
 
     /**
-     * Maps a REST create request to an application command.
+     * Maps a REST create request with actor context to an application command.
+     * Note: responsableId/creadoPor now belong to Tarea/Trato, not Ficha.
      */
-    public static CreateFichaCommand toCommand(CreateFichaRequest request) {
+    public static CreateFichaCommand toCommand(CreateFichaRequest request, ActorContext actorContext) {
         return new CreateFichaCommand(
             request.columnaId(),
             request.tipoFicha(),
             request.tratoId(),
-            request.tareaId(),
-            request.responsableId(),
-            request.creadoPor()
+            request.tareaId()
         );
     }
 
@@ -39,9 +41,15 @@ public final class FichaCommandMapper {
             request.columnaId(),
             request.tipoFicha(),
             request.tratoId(),
-            request.tareaId(),
-            request.responsableId()
+            request.tareaId()
         );
+    }
+
+    /**
+     * Maps a REST request to a mover columna command.
+     */
+    public static MoverColumnaFichaCommand toMoverColumnaCommand(UUID id, MoverColumnaRequest request) {
+        return new MoverColumnaFichaCommand(id, request.targetColumnaId());
     }
 
     /**

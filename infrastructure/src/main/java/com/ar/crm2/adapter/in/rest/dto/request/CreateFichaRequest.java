@@ -6,9 +6,8 @@ import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
 /**
- * REST request DTO for creating a new Ficha.
+ * REST request DTO for creating a new Ficha (Kanban card).
  * Required fields validated at construction time.
- * Timestamps (creadoEn, actualizadoEn) and id are never accepted from the client.
  * Domain enforces TipoFicha invariants: TAREA requires tareaId and null tratoId,
  * TRATO requires tratoId and null tareaId.
  */
@@ -21,11 +20,5 @@ public record CreateFichaRequest(
 
     UUID tratoId,
 
-    UUID tareaId,
-
-    @NotNull(message = "responsableId is required")
-    UUID responsableId,
-
-    @NotNull(message = "creadoPor is required")
-    UUID creadoPor
+    UUID tareaId
 ) {}

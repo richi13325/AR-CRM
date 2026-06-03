@@ -2,18 +2,24 @@ package com.ar.crm2.adapter.in.rest;
 
 import com.ar.crm2.adapter.in.rest.dto.request.CreateFichaRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.EditFichaRequest;
+import com.ar.crm2.adapter.in.rest.dto.request.MoverColumnaRequest;
 import com.ar.crm2.adapter.in.rest.dto.response.FichaResponse;
 import com.ar.crm2.adapter.in.rest.mapper.FichaCommandMapper;
 import com.ar.crm2.application.ficha.command.CreateFichaCommand;
 import com.ar.crm2.application.ficha.command.DeleteFichaCommand;
 import com.ar.crm2.application.ficha.command.EditFichaCommand;
 import com.ar.crm2.application.ficha.command.GetFichaByIdCommand;
+import com.ar.crm2.application.ficha.command.MoverColumnaFichaCommand;
 import com.ar.crm2.application.ficha.port.in.CreateFichaUseCase;
 import com.ar.crm2.application.ficha.port.in.DeleteFichaUseCase;
 import com.ar.crm2.application.ficha.port.in.EditFichaUseCase;
 import com.ar.crm2.application.ficha.port.in.GetAllFichasUseCase;
 import com.ar.crm2.application.ficha.port.in.GetFichaByIdUseCase;
+import com.ar.crm2.application.ficha.port.in.MoverColumnaFichaUseCase;
+import com.ar.crm2.application.security.ActorContext;
 import com.ar.crm2.model.entity.Ficha;
+import com.ar.crm2.security.ActorContextRequestAttributeFilter;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -44,13 +50,20 @@ public class FichaController {
     private final GetFichaByIdUseCase getByIdUseCase;
     private final EditFichaUseCase editUseCase;
     private final DeleteFichaUseCase deleteUseCase;
+    private final MoverColumnaFichaUseCase moverAColumnaUseCase;
 
     /**
      * Creates a new Ficha.
+     * The creadoPor is derived from the authenticated actor context (JWT).
      */
     @PostMapping("/create")
-    public ResponseEntity<FichaResponse> create(@Valid @RequestBody CreateFichaRequest request) {
-        CreateFichaCommand command = FichaCommandMapper.toCommand(request);
+    public ResponseEntity<FichaResponse> create(
+            HttpServletRequest httpRequest,
+            @Valid @RequestBody CreateFichaRequest request
+    ) {
+        ActorContext actorContext = (ActorContext) httpRequest.getAttribute(
+                ActorContextRequestAttributeFilter.ACTOR_CONTEXT_ATTRIBUTE);
+        CreateFichaCommand command = FichaCommandMapper.toCommand(request, actorContext);
         Ficha ficha = createUseCase.create(command);
         return ResponseEntity.status(HttpStatus.CREATED).body(FichaResponse.fromDomain(ficha));
     }
@@ -93,5 +106,18 @@ public class FichaController {
         DeleteFichaCommand command = FichaCommandMapper.toDeleteCommand(id);
         deleteUseCase.delete(command);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Moves a Ficha to a different Columna.
+     */
+    @PutMapping("/mover-columna")
+    public ResponseEntity<FichaResponse> moverAColumna(
+            @RequestParam UUID id,
+            @Valid @RequestBody MoverColumnaRequest request
+    ) {
+        MoverColumnaFichaCommand command = FichaCommandMapper.toMoverColumnaCommand(id, request);
+        Ficha ficha = moverAColumnaUseCase.moverAColumna(command);
+        return ResponseEntity.ok(FichaResponse.fromDomain(ficha));
     }
 }
