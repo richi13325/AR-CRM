@@ -9,19 +9,21 @@ import com.ar.crm2.application.tablero.port.out.DeleteTableroByIdPort;
 import com.ar.crm2.application.tablero.port.out.ExistsColumnaEnTableroPort;
 import com.ar.crm2.application.tablero.port.out.FindAllTablerosPort;
 import com.ar.crm2.application.tablero.port.out.FindColumnaByIdPort;
+import com.ar.crm2.application.tablero.port.out.FindInitialColumnPort;
 import com.ar.crm2.application.tablero.port.out.FindTableroByIdPort;
 import com.ar.crm2.application.tablero.port.out.SaveTableroPort;
 import com.ar.crm2.model.entity.Columna;
 import com.ar.crm2.model.entity.Tablero;
 import com.ar.crm2.model.vo.ColumnaId;
 import com.ar.crm2.model.vo.TableroId;
+import com.ar.crm2.model.enums.TipoTablero;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
-public class TableroRepositoryAdapter implements SaveTableroPort, FindAllTablerosPort, FindTableroByIdPort, DeleteTableroByIdPort, ExistsColumnaEnTableroPort, FindColumnaByIdPort {
+public class TableroRepositoryAdapter implements SaveTableroPort, FindAllTablerosPort, FindTableroByIdPort, DeleteTableroByIdPort, ExistsColumnaEnTableroPort, FindColumnaByIdPort, FindInitialColumnPort {
 
     private final TableroRepository repository;
     private final ColumnaRepository columnaRepository;
@@ -64,5 +66,15 @@ public class TableroRepositoryAdapter implements SaveTableroPort, FindAllTablero
     public Optional<Columna> findById(ColumnaId id) {
         return columnaRepository.findById(id.value().toString())
             .map(ColumnaMapper::toDomain);
+    }
+
+    @Override
+    public Optional<Columna> findInitialColumn(TipoTablero tipoTablero) {
+        return repository.findFirstByTipoTablero(tipoTablero)
+            .map(mapper::toDomain)
+            .flatMap(tablero -> tablero.getColumnasTablero().stream()
+                .findFirst()
+                .flatMap(ct -> findById(ct.getColumnaId()))
+            );
     }
 }

@@ -6,8 +6,7 @@ import java.util.UUID;
 
 /**
  * Command to edit an existing Ficha.
- * Validates id, columnaId, tipoFicha, and responsableId at construction time.
- * Does NOT include id, creadoEn, creadoPor — those are preserved from the existing entity.
+ * Validates id, columnaId, tipoFicha at construction time.
  * Domain enforces TipoFicha invariants: TAREA requires tareaId and null tratoId,
  * TRATO requires tratoId and null tareaId.
  */
@@ -16,8 +15,7 @@ public record EditFichaCommand(
     UUID columnaId,
     TipoFicha tipoFicha,
     UUID tratoId,
-    UUID tareaId,
-    UUID responsableId
+    UUID tareaId
 ) {
 
     public EditFichaCommand {
@@ -29,9 +27,6 @@ public record EditFichaCommand(
         }
         if (tipoFicha == null) {
             throw new IllegalArgumentException("tipoFicha is required");
-        }
-        if (responsableId == null) {
-            throw new IllegalArgumentException("responsableId is required");
         }
     }
 }

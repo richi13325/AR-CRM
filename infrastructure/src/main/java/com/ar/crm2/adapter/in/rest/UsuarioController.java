@@ -2,18 +2,27 @@ package com.ar.crm2.adapter.in.rest;
 
 import com.ar.crm2.adapter.in.rest.dto.request.CreateUsuarioRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.EditUsuarioRequest;
+import com.ar.crm2.adapter.in.rest.dto.request.ForgotPasswordRequest;
 import com.ar.crm2.adapter.in.rest.dto.response.UsuarioResponse;
 import com.ar.crm2.adapter.in.rest.mapper.UsuarioCommandMapper;
+import com.ar.crm2.application.security.ActorContext;
+import com.ar.crm2.application.security.exception.AuthenticatedUsuarioRequiredException;
 import com.ar.crm2.application.usuario.command.CreateUsuarioCommand;
 import com.ar.crm2.application.usuario.command.DeleteUsuarioCommand;
 import com.ar.crm2.application.usuario.command.EditUsuarioCommand;
+import com.ar.crm2.application.usuario.command.ForgotPasswordCommand;
 import com.ar.crm2.application.usuario.command.GetUsuarioByIdCommand;
+import com.ar.crm2.application.usuario.command.RequestPasswordChangeCommand;
 import com.ar.crm2.application.usuario.port.in.CreateUsuarioUseCase;
 import com.ar.crm2.application.usuario.port.in.DeleteUsuarioUseCase;
 import com.ar.crm2.application.usuario.port.in.EditUsuarioUseCase;
+import com.ar.crm2.application.usuario.port.in.ForgotPasswordUseCase;
 import com.ar.crm2.application.usuario.port.in.GetAllUsuariosUseCase;
 import com.ar.crm2.application.usuario.port.in.GetUsuarioByIdUseCase;
+import com.ar.crm2.application.usuario.port.in.RequestPasswordChangeUseCase;
 import com.ar.crm2.model.entity.Usuario;
+import com.ar.crm2.security.ActorContextRequestAttributeFilter;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -44,6 +53,8 @@ public class UsuarioController {
     private final GetUsuarioByIdUseCase getByIdUseCase;
     private final EditUsuarioUseCase editUseCase;
     private final DeleteUsuarioUseCase deleteUseCase;
+    private final RequestPasswordChangeUseCase requestPasswordChangeUseCase;
+    private final ForgotPasswordUseCase forgotPasswordUseCase;
 
     /**
      * Creates a new Usuario.
@@ -93,5 +104,26 @@ public class UsuarioController {
         DeleteUsuarioCommand command = UsuarioCommandMapper.toDeleteCommand(id);
         deleteUseCase.delete(command);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/request-password-change")
+    public ResponseEntity<Void> requestPasswordChange(HttpServletRequest httpRequest) {
+        ActorContext actorContext = (ActorContext) httpRequest.getAttribute(
+                ActorContextRequestAttributeFilter.ACTOR_CONTEXT_ATTRIBUTE);
+        if (actorContext == null) {
+            throw AuthenticatedUsuarioRequiredException.forMissingActorContext();
+        }
+        UUID usuarioId = actorContext.usuarioId()
+                .orElseThrow(AuthenticatedUsuarioRequiredException::forMissingUsuarioId);
+        RequestPasswordChangeCommand command = new RequestPasswordChangeCommand(usuarioId);
+        requestPasswordChangeUseCase.requestChange(command);
+        return ResponseEntity.accepted().build();
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        ForgotPasswordCommand command = new ForgotPasswordCommand(request.correo());
+        forgotPasswordUseCase.requestReset(command);
+        return ResponseEntity.accepted().build();
     }
 }

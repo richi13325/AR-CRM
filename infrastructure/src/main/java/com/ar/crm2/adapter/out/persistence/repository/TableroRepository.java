@@ -1,6 +1,7 @@
 package com.ar.crm2.adapter.out.persistence.repository;
 
 import com.ar.crm2.adapter.out.persistence.entity.TableroEntity;
+import com.ar.crm2.model.enums.TipoTablero;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -10,6 +11,14 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface TableroRepository extends JpaRepository<TableroEntity, String> {
+
+    /**
+     * Finds the first Tablero by tipoTablero.
+     *
+     * @param tipoTablero the type of board (TAREAS or TRATOS)
+     * @return optional containing the first board of the given type, if any
+     */
+    java.util.Optional<TableroEntity> findFirstByTipoTablero(TipoTablero tipoTablero);
 
     /**
      * Checks whether a Columna is already assigned to the given Tablero.

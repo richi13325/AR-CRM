@@ -10,7 +10,6 @@ import com.ar.crm2.model.vo.ColumnaId;
 import com.ar.crm2.model.vo.FichaId;
 import com.ar.crm2.model.vo.TratoId;
 import com.ar.crm2.model.vo.TareaId;
-import com.ar.crm2.model.vo.UsuarioId;
 import lombok.RequiredArgsConstructor;
 
 import java.time.Instant;
@@ -18,7 +17,7 @@ import java.time.Instant;
 /**
  * Application service implementing EditFichaUseCase.
  * Orchestrates loading the aggregate, applying the immutable domain update via reconstitute,
- * and saving. Preserves: id, creadoEn, creadoPor.
+ * and saving.
  */
 @RequiredArgsConstructor
 public class EditFichaService implements EditFichaUseCase {
@@ -39,9 +38,6 @@ public class EditFichaService implements EditFichaUseCase {
                 command.tipoFicha(),
                 command.tratoId() != null ? TratoId.from(command.tratoId()) : null,
                 command.tareaId() != null ? TareaId.from(command.tareaId()) : null,
-                UsuarioId.from(command.responsableId()),
-                existing.getCreadoPor(),
-                existing.getCreadoEn(),
                 Instant.now()
         );
 

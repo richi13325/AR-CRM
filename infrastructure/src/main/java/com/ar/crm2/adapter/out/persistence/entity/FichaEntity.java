@@ -37,15 +37,6 @@ public class FichaEntity {
     @Column(name = "tarea_id")
     private String tareaId;
 
-    @Column(name = "responsable_id", nullable = false)
-    private String responsableId;
-
-    @Column(name = "creado_por", nullable = false)
-    private String creadoPor;
-
-    @Column(name = "creado_en", nullable = false)
-    private Instant creadoEn;
-
     @Column(name = "actualizado_en", nullable = false)
     private Instant actualizadoEn;
 }

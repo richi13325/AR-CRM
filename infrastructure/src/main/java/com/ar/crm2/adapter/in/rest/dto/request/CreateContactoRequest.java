@@ -29,7 +29,6 @@ public record CreateContactoRequest(
     EstadoRelacion estadoRelacion,
 
     UUID responsableId,
-    UUID creadoPor,
 
     @Size(max = 50, message = "telefono must be at most 50 characters")
     String telefono,
