@@ -16,8 +16,22 @@ services:
       timeout: 5s
       retries: 5
 
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: crm2-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@crm2.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    volumes:
+      - crm2-pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   keycloak:
-    image: quay.io/keycloak/keycloak:25.0.6
+    image: crm2-keycloak:1.0.2
     container_name: crm2-keycloak
     environment:
       KEYCLOAK_ADMIN: admin
@@ -63,5 +77,6 @@ services:
 
 volumes:
   crm2-pgdata:
+  crm2-pgadmin-data:
   crm2-keycloak-data:
   crm2-keycloak-pgdata:

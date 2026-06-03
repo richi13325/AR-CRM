@@ -75,42 +75,49 @@ import com.ar.crm2.application.rol.service.GetRolByIdService;
 import com.ar.crm2.application.usuario.port.in.CreateUsuarioUseCase;
 import com.ar.crm2.application.usuario.port.in.DeleteUsuarioUseCase;
 import com.ar.crm2.application.usuario.port.in.EditUsuarioUseCase;
+import com.ar.crm2.application.usuario.port.in.ForgotPasswordUseCase;
 import com.ar.crm2.application.usuario.port.in.GetAllUsuariosUseCase;
 import com.ar.crm2.application.usuario.port.in.GetUsuarioByIdUseCase;
+import com.ar.crm2.application.usuario.port.in.RequestPasswordChangeUseCase;
 import com.ar.crm2.application.usuario.port.out.DeleteUsuarioByIdPort;
 import com.ar.crm2.application.usuario.port.out.FindAllUsuariosPort;
+import com.ar.crm2.application.usuario.port.out.FindUsuarioByCorreoPort;
 import com.ar.crm2.application.usuario.port.out.FindUsuarioByIdPort;
 import com.ar.crm2.application.usuario.port.out.FindUsuarioByKeycloakIdPort;
 import com.ar.crm2.application.usuario.port.out.SaveUsuarioPort;
 import com.ar.crm2.application.usuario.service.CreateUsuarioService;
 import com.ar.crm2.application.usuario.service.DeleteUsuarioService;
 import com.ar.crm2.application.usuario.service.EditUsuarioService;
+import com.ar.crm2.application.usuario.service.ForgotPasswordService;
 import com.ar.crm2.application.usuario.service.GetAllUsuariosService;
 import com.ar.crm2.application.usuario.service.GetUsuarioByIdService;
+import com.ar.crm2.application.usuario.service.RequestPasswordChangeService;
+import com.ar.crm2.application.contacto.port.in.CambiarEstadoContactoUseCase;
 import com.ar.crm2.application.contacto.port.in.CreateContactoUseCase;
 import com.ar.crm2.application.contacto.port.in.DeleteContactoUseCase;
 import com.ar.crm2.application.contacto.port.in.EditContactoUseCase;
 import com.ar.crm2.application.contacto.port.in.GetAllContactosUseCase;
 import com.ar.crm2.application.contacto.port.in.GetContactoByIdUseCase;
 import com.ar.crm2.application.contacto.port.out.DeleteContactoByIdPort;
-import com.ar.crm2.application.contacto.port.out.ExistsTratosByContactoIdPort;
 import com.ar.crm2.application.contacto.port.out.FindAllContactosPort;
 import com.ar.crm2.application.contacto.port.out.FindContactoByIdPort;
 import com.ar.crm2.application.contacto.port.out.SaveContactoPort;
+import com.ar.crm2.application.contacto.service.CambiarEstadoContactoService;
 import com.ar.crm2.application.contacto.service.CreateContactoService;
 import com.ar.crm2.application.contacto.service.DeleteContactoService;
 import com.ar.crm2.application.contacto.service.EditContactoService;
 import com.ar.crm2.application.contacto.service.GetAllContactosService;
 import com.ar.crm2.application.contacto.service.GetContactoByIdService;
+import com.ar.crm2.application.empresa.port.in.CambiarEstadoEmpresaUseCase;
 import com.ar.crm2.application.empresa.port.in.CreateEmpresaUseCase;
 import com.ar.crm2.application.empresa.port.in.DeleteEmpresaUseCase;
 import com.ar.crm2.application.empresa.port.in.EditEmpresaUseCase;
 import com.ar.crm2.application.empresa.port.in.GetAllEmpresasUseCase;
 import com.ar.crm2.application.empresa.port.out.DeleteEmpresaByIdPort;
-import com.ar.crm2.application.empresa.port.out.ExistsTratosByEmpresaIdPort;
 import com.ar.crm2.application.empresa.port.out.FindAllEmpresasPort;
 import com.ar.crm2.application.empresa.port.out.FindEmpresaByIdPort;
 import com.ar.crm2.application.empresa.port.out.SaveEmpresaPort;
+import com.ar.crm2.application.empresa.service.CambiarEstadoEmpresaService;
 import com.ar.crm2.application.empresa.service.CreateEmpresaService;
 import com.ar.crm2.application.empresa.service.DeleteEmpresaService;
 import com.ar.crm2.application.empresa.service.EditEmpresaService;
@@ -143,11 +150,27 @@ import com.ar.crm2.application.tarea.service.DeleteTareaService;
 import com.ar.crm2.application.tarea.service.EditTareaService;
 import com.ar.crm2.application.tarea.service.GetAllTareasService;
 import com.ar.crm2.application.tarea.service.GetTareaByIdService;
+import com.ar.crm2.application.agenda.port.in.CreateAgendaUseCase;
+import com.ar.crm2.application.agenda.port.in.DeleteAgendaUseCase;
+import com.ar.crm2.application.agenda.port.in.EditAgendaUseCase;
+import com.ar.crm2.application.agenda.port.in.GetAgendaByIdUseCase;
+import com.ar.crm2.application.agenda.port.in.GetAgendasByUserUseCase;
+import com.ar.crm2.application.agenda.port.out.DeleteAgendaByIdPort;
+import com.ar.crm2.application.agenda.port.out.FindAgendaByIdPort;
+import com.ar.crm2.application.agenda.port.out.SaveAgendaPort;
+import com.ar.crm2.application.agenda.service.CreateAgendaService;
+import com.ar.crm2.application.agenda.service.DeleteAgendaService;
+import com.ar.crm2.application.agenda.service.EditAgendaService;
+import com.ar.crm2.application.agenda.service.GetAgendaByIdService;
+import com.ar.crm2.application.agenda.service.GetAgendasByUserService;
+import com.ar.crm2.adapter.out.persistence.AgendaRepositoryAdapter;
+import com.ar.crm2.adapter.out.persistence.repository.AgendaRepository;
 import com.ar.crm2.application.ficha.port.in.CreateFichaUseCase;
 import com.ar.crm2.application.ficha.port.in.DeleteFichaUseCase;
 import com.ar.crm2.application.ficha.port.in.EditFichaUseCase;
 import com.ar.crm2.application.ficha.port.in.GetAllFichasUseCase;
 import com.ar.crm2.application.ficha.port.in.GetFichaByIdUseCase;
+import com.ar.crm2.application.ficha.port.in.MoverColumnaFichaUseCase;
 import com.ar.crm2.application.ficha.port.out.DeleteFichaByIdPort;
 import com.ar.crm2.application.ficha.port.out.FindAllFichasPort;
 import com.ar.crm2.application.ficha.port.out.FindFichaByIdPort;
@@ -157,6 +180,7 @@ import com.ar.crm2.application.ficha.service.DeleteFichaService;
 import com.ar.crm2.application.ficha.service.EditFichaService;
 import com.ar.crm2.application.ficha.service.GetAllFichasService;
 import com.ar.crm2.application.ficha.service.GetFichaByIdService;
+import com.ar.crm2.application.ficha.service.MoverColumnaFichaService;
 import com.ar.crm2.application.tablero.port.in.AgregarColumnaTableroUseCase;
 import com.ar.crm2.application.tablero.port.in.AsignarColumnaTableroUseCase;
 import com.ar.crm2.application.tablero.port.in.CreateTableroUseCase;
@@ -304,6 +328,15 @@ public class WiringConfig {
         return new DeleteEmpresaService(findPort, existsTratosPort, deletePort);
     }
 
+    @Bean
+    public CambiarEstadoEmpresaUseCase cambiarEstadoEmpresaUseCase(
+            EmpresaRepositoryAdapter findPort,
+            EmpresaRepositoryAdapter savePort,
+            EmpresaRepositoryAdapter existsTratosPort
+    ) {
+        return new CambiarEstadoEmpresaService(findPort, savePort, existsTratosPort);
+    }
+
 
 
     // ── Contacto UseCase Beans ──
@@ -335,6 +368,15 @@ public class WiringConfig {
             ContactoRepositoryAdapter deletePort
     ) {
         return new DeleteContactoService(findPort, existsTratosPort, deletePort);
+    }
+
+    @Bean
+    public CambiarEstadoContactoUseCase cambiarEstadoContactoUseCase(
+            ContactoRepositoryAdapter findPort,
+            ContactoRepositoryAdapter savePort,
+            ContactoRepositoryAdapter existsTratosPort
+    ) {
+        return new CambiarEstadoContactoService(findPort, savePort, existsTratosPort);
     }
 
 
@@ -424,8 +466,12 @@ public class WiringConfig {
     // ── Trato UseCase Beans ──
 
     @Bean
-    public CreateTratoUseCase createTratoUseCase(TratoRepositoryAdapter adapter) {
-        return new CreateTratoService(adapter);
+    public CreateTratoUseCase createTratoUseCase(
+            TratoRepositoryAdapter saveTratoPort,
+            FichaRepositoryAdapter saveFichaPort,
+            TableroRepositoryAdapter findInitialColumnPort
+    ) {
+        return new CreateTratoService(saveTratoPort, saveFichaPort, findInitialColumnPort);
     }
 
     @Bean
@@ -456,8 +502,12 @@ public class WiringConfig {
     // ── Tarea UseCase Beans ──
 
     @Bean
-    public CreateTareaUseCase createTareaUseCase(TareaRepositoryAdapter adapter) {
-        return new CreateTareaService(adapter);
+    public CreateTareaUseCase createTareaUseCase(
+            TareaRepositoryAdapter saveTareaPort,
+            FichaRepositoryAdapter saveFichaPort,
+            TableroRepositoryAdapter findInitialColumnPort
+    ) {
+        return new CreateTareaService(saveTareaPort, saveFichaPort, findInitialColumnPort);
     }
 
     @Bean
@@ -483,6 +533,73 @@ public class WiringConfig {
         return new DeleteTareaService(findPort, deletePort);
     }
 
+    // ── Agenda UseCase Beans ──
+
+    @Bean
+    public AgendaRepositoryAdapter agendaRepositoryAdapter(AgendaRepository repository) {
+        return new AgendaRepositoryAdapter(repository);
+    }
+
+    @Bean
+    public CreateAgendaUseCase createAgendaUseCase(
+            AgendaRepositoryAdapter savePort,
+            TareaRepositoryAdapter findTareaPort,
+            TratoRepositoryAdapter findTratoPort,
+            UsuarioRepositoryAdapter findUsuarioPort,
+            com.ar.crm2.adapter.out.email.AgendaEmailAdapter agendaEmailAdapter
+    ) {
+        return new CreateAgendaService(savePort, findTareaPort, findTratoPort, findUsuarioPort, agendaEmailAdapter);
+    }
+
+    @Bean
+    public GetAgendasByUserUseCase getAgendasByUserUseCase(AgendaRepositoryAdapter adapter) {
+        return new GetAgendasByUserService(adapter);
+    }
+
+    @Bean
+    public GetAgendaByIdUseCase getAgendaByIdUseCase(AgendaRepositoryAdapter adapter) {
+        return new GetAgendaByIdService(adapter);
+    }
+
+    @Bean
+    public EditAgendaUseCase editAgendaUseCase(
+            AgendaRepositoryAdapter findPort,
+            AgendaRepositoryAdapter savePort,
+            TareaRepositoryAdapter findTareaPort,
+            TratoRepositoryAdapter findTratoPort
+    ) {
+        return new EditAgendaService(findPort, savePort, findTareaPort, findTratoPort);
+    }
+
+    @Bean
+    public DeleteAgendaUseCase deleteAgendaUseCase(
+            AgendaRepositoryAdapter findPort,
+            AgendaRepositoryAdapter deletePort
+    ) {
+        return new DeleteAgendaService(findPort, deletePort);
+    }
+
+    // ── Agenda Reminder Email Adapter ──
+
+    @Bean
+    public com.ar.crm2.adapter.out.email.AgendaEmailAdapter agendaEmailAdapter(
+            org.springframework.mail.javamail.JavaMailSender mailSender,
+            com.ar.crm2.adapter.out.email.config.EmailProperties emailProperties
+    ) {
+        return new com.ar.crm2.adapter.out.email.AgendaEmailAdapter(mailSender, emailProperties);
+    }
+
+    @Bean
+    public com.ar.crm2.application.agenda.port.in.SendAgendaRemindersUseCase sendAgendaRemindersUseCase(
+            AgendaRepositoryAdapter findDueAgendasPort,
+            UsuarioRepositoryAdapter findUsuarioPort,
+            com.ar.crm2.adapter.out.email.AgendaEmailAdapter sendEmailPort,
+            AgendaRepositoryAdapter saveAgendaPort
+    ) {
+        return new com.ar.crm2.application.agenda.service.SendAgendaRemindersService(
+                findDueAgendasPort, findUsuarioPort, sendEmailPort, saveAgendaPort
+        );
+    }
 
 
     // ── Ficha UseCase Beans ──
@@ -513,6 +630,14 @@ public class WiringConfig {
             FichaRepositoryAdapter deletePort
     ) {
         return new DeleteFichaService(findPort, deletePort);
+    }
+
+    @Bean
+    public MoverColumnaFichaUseCase moverColumnaFichaUseCase(
+            FichaRepositoryAdapter findPort,
+            FichaRepositoryAdapter savePort
+    ) {
+        return new MoverColumnaFichaService(findPort, savePort);
     }
 
 
@@ -546,6 +671,22 @@ public class WiringConfig {
             KeycloakUserProvisioningAdapter identityAdapter
     ) {
         return new DeleteUsuarioService(findPort, deletePort, identityAdapter);
+    }
+
+    @Bean
+    public RequestPasswordChangeUseCase requestPasswordChangeUseCase(
+            UsuarioRepositoryAdapter findPort,
+            KeycloakUserProvisioningAdapter identityAdapter
+    ) {
+        return new RequestPasswordChangeService(findPort, identityAdapter);
+    }
+
+    @Bean
+    public ForgotPasswordUseCase forgotPasswordUseCase(
+            UsuarioRepositoryAdapter findByCorreoPort,
+            KeycloakUserProvisioningAdapter identityAdapter
+    ) {
+        return new ForgotPasswordService(findByCorreoPort, identityAdapter);
     }
 
 

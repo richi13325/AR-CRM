@@ -13,6 +13,10 @@ spring:
       idle-timeout: 30000
       connection-timeout: 20000
 
+  sql:
+    init:
+      mode: always
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -29,6 +33,18 @@ spring:
           issuer-uri: http://localhost:8180/realms/crm2-local
           audiences: crm2-api
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${CRM2_NOTIFICATION_MAIL_USERNAME:}
+    password: ${CRM2_NOTIFICATION_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 server:
   port: 8080
 
@@ -41,3 +57,7 @@ crm2:
       client-secret: ${KEYCLOAK_ADMIN_SECRET:admin-secret}
       connect-timeout-ms: 5000
       read-timeout-ms: 10000
+  mail:
+    from-address: ${CRM2_MAIL_FROM_ADDRESS:${CRM2_NOTIFICATION_MAIL_USERNAME:}}
+  reminder:
+    fixed-delay-ms: 60000

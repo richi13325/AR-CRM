@@ -1,5 +1,6 @@
 package com.ar.crm2.adapter.in.rest;
 
+import com.ar.crm2.application.agenda.exception.AgendaNotFoundException;
 import com.ar.crm2.application.columna.exception.ColumnaHasAssociatedFichasException;
 import com.ar.crm2.application.columna.exception.ColumnaNotFoundException;
 import com.ar.crm2.application.contacto.exception.ContactoHasAssociatedTratosException;
@@ -10,6 +11,7 @@ import com.ar.crm2.application.ficha.exception.FichaNotFoundException;
 import com.ar.crm2.application.identity.model.IdentityProvisioningException;
 import com.ar.crm2.application.rol.exception.RolHasAssociatedUsuariosException;
 import com.ar.crm2.application.rol.exception.RolNotFoundException;
+import com.ar.crm2.application.security.exception.AuthenticatedUsuarioRequiredException;
 import com.ar.crm2.application.superusuario.exception.SuperUsuarioNotFoundException;
 import com.ar.crm2.application.tablero.exception.TableroNotFoundException;
 import com.ar.crm2.application.tarea.exception.TareaNotFoundException;
@@ -124,6 +126,12 @@ public class GlobalExceptionHandler {
             .body(Map.of("error", ex.getMessage()));
     }
 
+    @ExceptionHandler(AgendaNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleAgendaNotFoundException(AgendaNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
     /**
      * Handles EmpresaHasAssociatedTratosException as 409 Conflict.
      */
@@ -179,6 +187,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * Handles AuthenticatedUsuarioRequiredException as 403 Forbidden.
+     * This exception is thrown when the JWT token lacks the required usuario_id claim.
+     */
+    @ExceptionHandler(AuthenticatedUsuarioRequiredException.class)
+    public ResponseEntity<Map<String, String>> handleAuthenticatedUsuarioRequiredException(AuthenticatedUsuarioRequiredException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
             .body(Map.of("error", ex.getMessage()));
     }
 

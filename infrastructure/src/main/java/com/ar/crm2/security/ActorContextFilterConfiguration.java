@@ -1,5 +1,6 @@
 package com.ar.crm2.security;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,6 +24,7 @@ import org.springframework.util.ReflectionUtils;
 public class ActorContextFilterConfiguration {
 
     @Bean
+    @ConditionalOnProperty(name = "crm2.actor-context.filter-registration", havingValue = "true", matchIfMissing = false)
     public FilterRegistrationBean<ActorContextRequestAttributeFilter> actorContextFilterRegistration(
             ActorContextRequestAttributeFilter filter
     ) {
