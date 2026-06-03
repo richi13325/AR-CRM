@@ -1,11 +1,14 @@
 package com.ar.crm2.adapter.in.rest.mapper;
 
+import com.ar.crm2.adapter.in.rest.dto.request.CambiarEstadoContactoRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.CreateContactoRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.EditContactoRequest;
+import com.ar.crm2.application.contacto.command.CambiarEstadoContactoCommand;
 import com.ar.crm2.application.contacto.command.CreateContactoCommand;
 import com.ar.crm2.application.contacto.command.DeleteContactoCommand;
 import com.ar.crm2.application.contacto.command.EditContactoCommand;
 import com.ar.crm2.application.contacto.command.GetContactoByIdCommand;
+import com.ar.crm2.application.security.ActorContext;
 
 import java.util.UUID;
 
@@ -18,15 +21,19 @@ public final class ContactoCommandMapper {
 
     /**
      * Maps a REST create request to an application command.
+     * The creadoPor is derived from the authenticated {@link ActorContext}.
      */
-    public static CreateContactoCommand toCommand(CreateContactoRequest request) {
+    public static CreateContactoCommand toCommand(CreateContactoRequest request, ActorContext actorContext) {
+        UUID creadoPor = actorContext.usuarioId()
+                .orElseThrow(() -> new IllegalStateException(
+                        "usuarioId not found in actor context — ensure the JWT contains the usuario_id claim"));
         return new CreateContactoCommand(
             request.empresaId(),
             request.nombre(),
             request.correo(),
             request.estadoRelacion(),
             request.responsableId(),
-            request.creadoPor(),
+            creadoPor,
             request.telefono(),
             request.cargo(),
             request.comoNosConocio()
@@ -61,5 +68,15 @@ public final class ContactoCommandMapper {
      */
     public static GetContactoByIdCommand toGetByIdCommand(UUID id) {
         return new GetContactoByIdCommand(id);
+    }
+
+    /**
+     * Maps a REST change-state request to an application command.
+     */
+    public static CambiarEstadoContactoCommand toCambiarEstadoCommand(UUID id, CambiarEstadoContactoRequest request) {
+        return new CambiarEstadoContactoCommand(
+            id,
+            request.nuevoEstado()
+        );
     }
 }

@@ -24,6 +24,5 @@ public record CreateEmpresaRequest(
     String twitter,
     EstadoRelacion estadoRelacion,
     UUID responsableId,
-    UUID creadoPor,
     String notas
 ) {}

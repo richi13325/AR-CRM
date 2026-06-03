@@ -1,10 +1,13 @@
 package com.ar.crm2.adapter.in.rest.mapper;
 
+import com.ar.crm2.adapter.in.rest.dto.request.CambiarEstadoEmpresaRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.CreateEmpresaRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.EditEmpresaRequest;
+import com.ar.crm2.application.empresa.command.CambiarEstadoEmpresaCommand;
 import com.ar.crm2.application.empresa.command.CreateEmpresaCommand;
 import com.ar.crm2.application.empresa.command.DeleteEmpresaCommand;
 import com.ar.crm2.application.empresa.command.EditEmpresaCommand;
+import com.ar.crm2.application.security.ActorContext;
 
 import java.util.UUID;
 
@@ -17,8 +20,12 @@ public final class EmpresaCommandMapper {
 
     /**
      * Maps a REST create request to an application command.
+     * The creadoPor is derived from the authenticated {@link ActorContext}.
      */
-    public static CreateEmpresaCommand toCommand(CreateEmpresaRequest request) {
+    public static CreateEmpresaCommand toCommand(CreateEmpresaRequest request, ActorContext actorContext) {
+        UUID creadoPor = actorContext.usuarioId()
+                .orElseThrow(() -> new IllegalStateException(
+                        "usuarioId not found in actor context — ensure the JWT contains the usuario_id claim"));
         return new CreateEmpresaCommand(
             request.nombre(),
             request.sector(),
@@ -29,7 +36,7 @@ public final class EmpresaCommandMapper {
             request.twitter(),
             request.estadoRelacion(),
             request.responsableId(),
-            request.creadoPor(),
+            creadoPor,
             request.notas()
         );
     }
@@ -58,5 +65,15 @@ public final class EmpresaCommandMapper {
      */
     public static DeleteEmpresaCommand toDeleteCommand(UUID id) {
         return new DeleteEmpresaCommand(id);
+    }
+
+    /**
+     * Maps a REST change-state request to an application command.
+     */
+    public static CambiarEstadoEmpresaCommand toCambiarEstadoCommand(UUID id, CambiarEstadoEmpresaRequest request) {
+        return new CambiarEstadoEmpresaCommand(
+            id,
+            request.nuevoEstado()
+        );
     }
 }
