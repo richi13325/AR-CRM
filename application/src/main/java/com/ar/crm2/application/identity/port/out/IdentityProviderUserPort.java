@@ -45,4 +45,12 @@ public interface IdentityProviderUserPort {
      * @throws IdentityProvisioningException if deletion fails
      */
     void delete(String keycloakId);
+
+    /**
+     * Sends an UPDATE_PASSWORD execute-actions email to the user.
+     *
+     * @param keycloakId the Keycloak user id
+     * @throws IdentityProvisioningException if the operation fails
+     */
+    void sendUpdatePasswordEmail(String keycloakId);
 }

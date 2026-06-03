@@ -6,6 +6,7 @@ import com.ar.crm2.adapter.out.persistence.repository.UsuarioRepository;
 import com.ar.crm2.application.rol.port.out.ExistsUsuariosByRolIdPort;
 import com.ar.crm2.application.usuario.port.out.DeleteUsuarioByIdPort;
 import com.ar.crm2.application.usuario.port.out.FindAllUsuariosPort;
+import com.ar.crm2.application.usuario.port.out.FindUsuarioByCorreoPort;
 import com.ar.crm2.application.usuario.port.out.FindUsuarioByIdPort;
 import com.ar.crm2.application.usuario.port.out.FindUsuarioByKeycloakIdPort;
 import com.ar.crm2.application.usuario.port.out.SaveUsuarioPort;
@@ -18,7 +19,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
-public class UsuarioRepositoryAdapter implements SaveUsuarioPort, FindAllUsuariosPort, FindUsuarioByIdPort, DeleteUsuarioByIdPort, ExistsUsuariosByRolIdPort, FindUsuarioByKeycloakIdPort {
+public class UsuarioRepositoryAdapter implements SaveUsuarioPort, FindAllUsuariosPort, FindUsuarioByIdPort, DeleteUsuarioByIdPort, ExistsUsuariosByRolIdPort, FindUsuarioByKeycloakIdPort, FindUsuarioByCorreoPort {
 
     private final UsuarioRepository repository;
 
@@ -55,6 +56,12 @@ public class UsuarioRepositoryAdapter implements SaveUsuarioPort, FindAllUsuario
     @Override
     public Optional<Usuario> findByKeycloakId(String keycloakId) {
         return repository.findByKeycloakId(keycloakId)
+            .map(UsuarioMapper::toDomain);
+    }
+
+    @Override
+    public Optional<Usuario> findByCorreo(String correo) {
+        return repository.findByCorreo(correo)
             .map(UsuarioMapper::toDomain);
     }
 }

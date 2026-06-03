@@ -164,6 +164,22 @@ public class KeycloakUserProvisioningAdapter implements com.ar.crm2.application.
                 .block();
     }
 
+    @Override
+    public void sendUpdatePasswordEmail(String keycloakId) {
+        String token = obtainAdminToken();
+        List<String> actions = List.of("UPDATE_PASSWORD");
+        webClient.put()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/admin/realms/{realm}/users/{id}/execute-actions-email")
+                        .queryParam("client_id", "account")
+                        .build(props.getRealm(), keycloakId))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .bodyValue(actions)
+                .retrieve()
+                .bodyToMono(Void.class)
+                .block();
+    }
+
     private void sendVerificationEmail(String keycloakId, String token) {
         webClient.put()
                 .uri("/admin/realms/{realm}/users/{id}/send-verify-email?client_id=account", props.getRealm(), keycloakId)

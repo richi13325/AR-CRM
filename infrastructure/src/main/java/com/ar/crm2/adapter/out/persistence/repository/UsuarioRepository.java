@@ -18,4 +18,6 @@ public interface UsuarioRepository extends JpaRepository<UsuarioEntity, String> 
     boolean existsByKeycloakId(String keycloakId);
 
     java.util.Optional<UsuarioEntity> findByKeycloakId(String keycloakId);
+
+    java.util.Optional<UsuarioEntity> findByCorreo(String correo);
 }
