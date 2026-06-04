@@ -154,6 +154,34 @@
             "access.token.claim": "true",
             "id.token.claim": "false"
           }
+        },
+        {
+          "name": "usuario_id-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "usuario_id",
+            "claim.name": "usuario_id",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "access.tokenResponse.claim": "false"
+          }
+        },
+        {
+          "name": "super_usuario_id-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "super_usuario_id",
+            "claim.name": "super_usuario_id",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "access.tokenResponse.claim": "false"
+          }
         }
       ]
     }
@@ -234,6 +262,28 @@
       },
       "attributes": {
         "usuario_id": ["550e8400-e29b-41d4-a716-446655440002"]
+      }
+    },
+    {
+      "username": "richi13335",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "richi13335@gmail.com",
+      "firstName": "Ricardo",
+      "lastName": "Alonso",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "richi",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["USUARIO"],
+      "clientRoles": {
+        "crm2-api": ["USUARIO"]
+      },
+      "attributes": {
+        "usuario_id": ["080e3759-e158-442a-bc8f-826b4597d91d"]
       }
     }
   ],

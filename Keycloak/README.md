@@ -98,7 +98,7 @@ The realm ships with a pre-configured SPA client called `crm2-frontend` that the
 | `webOrigins` | `http://localhost:5173` |
 | `rootUrl` / `baseUrl` / `adminUrl` | `http://localhost:5173` |
 | Default client scopes | `web-origins`, `acr`, `profile`, `roles`, `email` |
-| Protocol mappers | `crm2-api-audience-mapper` (so the SPA can call the backend with a single audience) |
+| Protocol mappers | `crm2-api-audience-mapper` (so the SPA can call the backend with a single audience) + `usuario_id-mapper` + `super_usuario_id-mapper` (so the JWT access token carries the CRM2 custom claims needed by the backend) |
 
 In the frontend (e.g. `keycloak-js`), point at:
 
@@ -134,6 +134,9 @@ If you see a CORS error in the browser console after login (typically on `GET /r
 |----------|----------|-------|------------|------------------|
 | admin | admin | SUPER_USUARIO | 550e8400-e29b-41d4-a716-446655440001 | 550e8400-e29b-41d4-a716-446655440000 |
 | user | user | USUARIO | 550e8400-e29b-41d4-a716-446655440002 | — |
+| richi13335 | richi | USUARIO | 080e3759-e158-442a-bc8f-826b4597d91d | — |
+
+> **Local-dev parity only.** `richi13335` is seeded to mirror the original developer's working Keycloak account so the team has a third demo user with a non-canonical `usuario_id`. Replace or remove it before any non-local environment.
 
 ## Obtain Access Token
 
@@ -189,6 +192,37 @@ Expected custom claims in the decoded token:
   "aud": ["crm2-api"]
 }
 ```
+
+## Verify `crm2-frontend` Token Carries `usuario_id`
+
+The backend (`get-all`, `create`, etc.) reads `usuario_id` straight from the JWT. Because the browser logs in via the **public SPA client** `crm2-frontend` (not the confidential `crm2-api` client), the protocol mappers must be configured on `crm2-frontend` as well — otherwise the claim is missing and the backend throws `AuthenticatedUsuarioRequiredException`.
+
+This is the most common "teammate's backend works for me, fails for them" symptom. Verify with:
+
+```bash
+# 1. Get a token for the SPA client (public — no secret needed)
+TOKEN=$(curl -s -X POST http://localhost:8180/realms/crm2-local/protocol/openid-connect/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=password" \
+  -d "client_id=crm2-frontend" \
+  -d "username=user" \
+  -d "password=user" | jq -r .access_token)
+
+# 2. Decode and assert the custom claims are present
+echo "$TOKEN" | cut -d. -f2 | base64 -d 2>/dev/null | jq '{usuario_id, super_usuario_id, aud, preferred_username}'
+```
+
+Expected:
+```json
+{
+  "usuario_id": "550e8400-e29b-41d4-a716-446655440002",
+  "super_usuario_id": null,
+  "aud": ["crm2-api"],
+  "preferred_username": "user"
+}
+```
+
+If `usuario_id` is `null` / missing, the most likely cause is a **stale Keycloak volume** — run the *Fresh Start* commands above so the updated `realm-export.json` is re-imported. Protocol mappers are *per-client*; the existing `crm2-api` mappers do **not** automatically apply to `crm2-frontend` tokens.
 
 ## Smoke Test: Call CRM2 API
 
