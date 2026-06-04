@@ -6,6 +6,7 @@ Local Keycloak 25.x instance for CRM2 development, with a dedicated PostgreSQL 1
 
 - Docker & Docker Compose
 - CRM2 running on `http://localhost:8080`
+- (Frontend) running on `http://localhost:5173` if you use the `crm2-frontend` SPA client
 
 ## Startup
 
@@ -24,6 +25,26 @@ Wait for Keycloak to be ready (health check may take ~30 seconds):
 ```bash
 docker compose ps
 ```
+
+## Fresh Start for a New Teammate
+
+The Keycloak container stores realm state in the named volume `crm2-keycloak-data`. If that volume already exists from a previous run, `--import-realm` is **ignored** on subsequent startups — Keycloak uses whatever is in the database. To get a clean state that matches `realm-export.json` exactly, wipe the volume first:
+
+```bash
+docker compose down                  # stop containers (keep volumes)
+docker volume rm crm2_crm2-keycloak-data crm2_crm2-keycloak-pgdata
+docker compose up -d keycloak keycloak-db
+```
+
+Then verify the realm is present:
+
+```bash
+curl -s http://localhost:8180/realms/crm2-local/.well-known/openid-configuration \
+  | jq -r .issuer
+# expected: http://localhost:8180/realms/crm2-local
+```
+
+You should also see the **CRM2** branded login page (Spanish copy: *"Ingresa tus credenciales para entrar a CRM2"*) at `http://localhost:8180/realms/crm2-local/protocol/openid-connect/auth?client_id=crm2-frontend&response_type=code&redirect_uri=http://localhost:5173/`.
 
 ## Import Realm
 
@@ -46,6 +67,66 @@ curl -X POST http://localhost:8180/admin/realms \
     -d "username=admin&password=admin&grant_type=password&client_id=admin-cli" | jq -r .access_token)" \
   -d @realm-export.json
 ```
+
+## CRM2 Login Theme
+
+The realm uses a custom `crm2` theme for the **login** and **email** screens. Theme files live in `Keycloak/themes/crm2/` and are mounted into the Keycloak container at `/opt/keycloak/themes` (read-only) by `docker-compose.yml`. This means:
+
+- The theme is version-controlled and reproducible from a fresh clone.
+- The container image can be the standard `quay.io/keycloak/keycloak:25.0.6` — no custom build is required.
+- The theme overrides whatever is baked into the image, so re-tagging the image is safe.
+
+Files:
+
+- `Keycloak/themes/crm2/login/` — Freemarker templates (`login.ftl`, `template.ftl`, `error.ftl`, etc.) + `theme.properties` + `resources/css/styles.css` + `resources/img/logo.svg`.
+- `Keycloak/themes/crm2/email/` — Freemarker templates for verification / password-reset emails + `messages_es.properties` (Spanish copy).
+
+To preview without breaking the running container, change the realm's `loginTheme` to `crm2` via the admin console and reload the login page.
+
+## Frontend Integration & CORS
+
+The realm ships with a pre-configured SPA client called `crm2-frontend` that the React/Vite frontend on `http://localhost:5173` should use:
+
+| Setting | Value |
+|---------|-------|
+| `clientId` | `crm2-frontend` |
+| `publicClient` | `true` |
+| `standardFlowEnabled` | `true` (Authorization Code) |
+| `directAccessGrantsEnabled` | `true` (Resource Owner Password — handy for `curl`/Postman) |
+| `pkce.code.challenge.method` | `S256` |
+| `redirectUris` | `http://localhost:5173/*` |
+| `webOrigins` | `http://localhost:5173` |
+| `rootUrl` / `baseUrl` / `adminUrl` | `http://localhost:5173` |
+| Default client scopes | `web-origins`, `acr`, `profile`, `roles`, `email` |
+| Protocol mappers | `crm2-api-audience-mapper` (so the SPA can call the backend with a single audience) |
+
+In the frontend (e.g. `keycloak-js`), point at:
+
+```ts
+{
+  url: 'http://localhost:8180',
+  realm: 'crm2-local',
+  clientId: 'crm2-frontend',
+}
+```
+
+**CORS smoke test** — once the realm is imported, the preflight for the Account API should be allowed:
+
+```bash
+curl -sS -i -X OPTIONS http://localhost:8180/realms/crm2-local/account \
+  -H "Origin: http://localhost:5173" \
+  -H "Access-Control-Request-Method: GET" \
+  -H "Access-Control-Request-Headers: authorization" \
+  | grep -i 'access-control'
+# expected: Access-Control-Allow-Origin: http://localhost:5173
+#           Access-Control-Allow-Credentials: true
+```
+
+If you see a CORS error in the browser console after login (typically on `GET /realms/crm2-local/account` or `GET /realms/crm2-local/account/profile`), it almost always means one of three things:
+
+1. The teammate is hitting a **stale Keycloak volume** — run the *Fresh Start* commands above so `--import-realm` actually re-runs.
+2. The frontend is sending `Origin` from a host other than `http://localhost:5173` (e.g. `127.0.0.1` vs `localhost`) — add the exact value to `crm2-frontend.webOrigins` or use `+` for permissive dev mode.
+3. The bearer token in the request does not carry the `allowed-origins` claim because `web-origins` was removed from `crm2-frontend.defaultClientScopes` — re-import the realm.
 
 ## Test Users
 

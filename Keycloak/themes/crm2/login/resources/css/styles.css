@@ -1,0 +1,216 @@
+/* ===========================================================
+   CRM2 Keycloak Login Theme — Minimal SaaS Card Design
+   =========================================================== */
+
+/* ── CSS Variables ─────────────────────────────────────── */
+:root {
+  --crm2-bg:            #f8fafc;
+  --crm2-surface:       #ffffff;
+  --crm2-border:         #d9e2ec;
+  --crm2-text:           #1e293b;
+  --crm2-text-muted:     #64748b;
+  --crm2-navy:           #1e293b;
+  --crm2-navy-dark:      #0f172a;
+  --crm2-radius:         11px;
+  --crm2-shadow:         0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --crm2-font:           'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ── Reset y base ──────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: var(--crm2-font);
+  background: var(--crm2-bg);
+  color: var(--crm2-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+/* ── Tarjeta de login (minimal card) ───────────────────── */
+.crm2-login-card {
+  background: var(--crm2-surface);
+  border: 1px solid var(--crm2-border);
+  border-radius: var(--crm2-radius);
+  box-shadow: var(--crm2-shadow);
+  width: 100%;
+  max-width: 350px;
+  padding: 40px 36px;
+}
+
+/* ── Título y subtítulo ────────────────────────────────── */
+.crm2-welcome {
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.crm2-welcome h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--crm2-text);
+  margin-bottom: 8px;
+  letter-spacing: -0.3px;
+}
+
+.crm2-subtitle {
+  font-size: 14px;
+  color: var(--crm2-text-muted);
+  line-height: 1.5;
+}
+
+/* ── Realm badge ───────────────────────────────────────── */
+.crm2-realm-badge {
+  display: none; /* ocultamos badge para mantener minimalismo */
+}
+
+/* ── Formularios ───────────────────────────────────────── */
+.crm2-form-group {
+  margin-bottom: 18px;
+}
+
+.crm2-form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--crm2-text);
+  margin-bottom: 6px;
+}
+
+.crm2-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--crm2-border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: var(--crm2-font);
+  color: var(--crm2-text);
+  background: var(--crm2-surface);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+
+.crm2-input:focus {
+  border-color: #94a3b8;
+  box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.1);
+}
+
+.crm2-input::placeholder {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+/* ── Botón primario (navy oscuro) ──────────────────────── */
+.crm2-btn-primary {
+  width: 100%;
+  padding: 12px 20px;
+  background: var(--crm2-navy);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--crm2-font);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  letter-spacing: 0.2px;
+  margin-top: 4px;
+}
+
+.crm2-btn-primary:hover {
+  background: var(--crm2-navy-dark);
+}
+
+.crm2-btn-primary:active {
+  transform: scale(0.99);
+}
+
+/* ── Opciones del formulario (recordarme / olvidé) ─────── */
+.crm2-form-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  font-size: 13px;
+}
+
+.crm2-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--crm2-text-muted);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.crm2-checkbox input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--crm2-navy);
+  cursor: pointer;
+}
+
+.crm2-forgot-link,
+.crm2-back-link {
+  color: var(--crm2-text-muted);
+  text-decoration: none;
+  font-size: 13px;
+  transition: color 0.2s;
+}
+
+.crm2-forgot-link:hover,
+.crm2-back-link:hover {
+  color: var(--crm2-text);
+  text-decoration: underline;
+}
+
+/* ── Links de acción ───────────────────────────────────── */
+.crm2-form-options a {
+  color: var(--crm2-text-muted);
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.crm2-form-options a:hover {
+  color: var(--crm2-text);
+  text-decoration: underline;
+}
+
+/* ── Alertas y mensajes de error ───────────────────────── */
+.crm2-alert-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-top: 16px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.crm2-alert-error a {
+  color: #b91c1c;
+  text-decoration: underline;
+}
+
+/* ── Links de pie (volver al inicio) ───────────────────── */
+.crm2-back-link-wrapper {
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--crm2-border);
+}
+
+/* ── Responsive ────────────────────────────────────────── */
+@media (max-width: 400px) {
+  .crm2-login-card {
+    padding: 32px 24px;
+  }
+}

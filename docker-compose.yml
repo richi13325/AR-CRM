@@ -31,7 +31,7 @@ services:
         condition: service_healthy
 
   keycloak:
-    image: crm2-keycloak:1.0.2
+    image: quay.io/keycloak/keycloak:25.0.6
     container_name: crm2-keycloak
     environment:
       KEYCLOAK_ADMIN: admin
@@ -47,6 +47,7 @@ services:
     volumes:
       - crm2-keycloak-data:/opt/keycloak/data
       - ./Keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - ./Keycloak/themes:/opt/keycloak/themes:ro
     depends_on:
       keycloak-db:
         condition: service_healthy
