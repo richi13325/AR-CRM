@@ -6,6 +6,7 @@ import com.ar.crm2.adapter.in.rest.dto.request.CreateTableroRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.EditTableroRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.ReordenarColumnasRequest;
 import com.ar.crm2.adapter.out.persistence.repository.ColumnaRepository;
+import com.ar.crm2.application.security.ActorContext;
 import com.ar.crm2.application.tablero.command.AgregarColumnaTableroCommand;
 import com.ar.crm2.application.tablero.command.AsignarColumnaTableroCommand;
 import com.ar.crm2.application.tablero.command.CreateTableroCommand;
@@ -30,10 +31,13 @@ import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTrato;
 import com.ar.crm2.model.enums.TipoTablero;
 import com.ar.crm2.model.vo.ColumnaId;
 import com.ar.crm2.model.vo.TableroId;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ar.crm2.security.KeycloakJwtActorContextMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -41,6 +45,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
@@ -59,15 +65,23 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *
  * Use cases are mocked with @MockitoBean because they belong to the
  * application layer, not the web layer.
+ *
+ * {@link KeycloakJwtActorContextMapper} is mocked with @MockitoBean because
+ * {@link com.ar.crm2.security.ActorContextRequestAttributeFilter} (a
+ * {@code @Component}) constructor-injects it — without this override the MVC
+ * slice fails to bootstrap with NoSuchBeanDefinitionException.
+ *
+ * {@code @WithMockUser} permits requests to reach the controller through
+ * Spring Security. The {@code @BeforeEach} stub returns a non-null
+ * {@link ActorContext} for any Authentication, so the request attribute
+ * expected by {@code TableroController.create} is always populated.
  */
 @WebMvcTest(controllers = {TableroController.class, GlobalExceptionHandler.class})
+@WithMockUser
 class TableroControllerIT {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @MockitoBean
     private CreateTableroUseCase createUseCase;
@@ -98,6 +112,31 @@ class TableroControllerIT {
 
     @MockitoBean
     private ColumnaRepository columnaRepository;
+
+    @MockitoBean
+    private KeycloakJwtActorContextMapper actorContextMapper;
+
+    // ── Setup ───────────────────────────────────────────────────────
+
+    @BeforeEach
+    void stubActorContextMapper() {
+        // ActorContextRequestAttributeFilter calls this on every authenticated
+        // request. The mapper's real implementation throws IllegalArgumentException
+        // for non-Jwt principals (which is what @WithMockUser provides), so the
+        // stub is required to keep the request flowing.
+        // TableroController.create derives the actor id from superUsuarioId() or
+        // usuarioId() — we set superUsuarioId to a random UUID so the request
+        // does not fail with AuthenticatedUsuarioRequiredException.
+        ActorContext actorContext = new ActorContext(
+                "test-subject",
+                "test-user",
+                "test@example.com",
+                Optional.empty(),
+                Optional.of(UUID.randomUUID()),
+                Set.of("USER")
+        );
+        lenient().when(actorContextMapper.map(any(Authentication.class))).thenReturn(actorContext);
+    }
 
     // ── Helpers ─────────────────────────────────────────────────────
 
@@ -246,7 +285,7 @@ class TableroControllerIT {
                   "tipoColumna": "PERSONALIZADA",
                   "limiteWip": 5,
                   "nota": "A note",
-                  "estadoTarea": "ABIERTA",
+                  "estadoTarea": "PENDIENTE",
                   "estadoTrato": null,
                   "totalValorEstimado": 1000,
                   "existeOtraColumnaConMismoNombre": false
@@ -270,8 +309,8 @@ class TableroControllerIT {
         UUID tableroId = UUID.randomUUID();
         UUID columnaId = UUID.randomUUID();
 
-        doNothing().when(eliminarColumnaUseCase)
-                .eliminarColumna(any(EliminarColumnaDelTableroCommand.class));
+        when(eliminarColumnaUseCase.eliminarColumna(any(EliminarColumnaDelTableroCommand.class)))
+                .thenReturn(buildTablero(tableroId, "Board"));
 
         mockMvc.perform(delete("/api/tableros/eliminar-columna")
                         .param("id", tableroId.toString())
@@ -297,7 +336,7 @@ class TableroControllerIT {
                 {
                   "limiteWip": 3,
                   "nota": "Assignment note",
-                  "estadoTarea": "ABIERTA",
+                  "estadoTarea": "PENDIENTE",
                   "estadoTrato": null,
                   "totalValorEstimado": 500
                 }
@@ -326,7 +365,7 @@ class TableroControllerIT {
                   "limiteWip": 2,
                   "nota": "Test note",
                   "estadoTarea": null,
-                  "estadoTrato": "ACTIVO",
+                  "estadoTrato": "ABIERTO",
                   "totalValorEstimado": 200
                 }
                 """;
@@ -360,7 +399,10 @@ class TableroControllerIT {
 
         String body = """
                 {
-                  "nuevoOrden": ["%s", "%s"]
+                  "nuevoOrden": [
+                    {"value": "%s"},
+                    {"value": "%s"}
+                  ]
                 }
                 """.formatted(col1, col2);
 

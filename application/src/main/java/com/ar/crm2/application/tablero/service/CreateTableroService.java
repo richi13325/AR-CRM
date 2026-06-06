@@ -1,5 +1,6 @@
 package com.ar.crm2.application.tablero.service;
 
+import com.ar.crm2.application.columna.port.out.SaveColumnaPort;
 import com.ar.crm2.application.tablero.command.CreateTableroCommand;
 import com.ar.crm2.application.tablero.port.out.SaveTableroPort;
 import com.ar.crm2.application.tablero.port.in.CreateTableroUseCase;
@@ -26,9 +27,15 @@ import java.util.List;
 public class CreateTableroService implements CreateTableroUseCase {
 
     private final SaveTableroPort savePort;
+    private final SaveColumnaPort saveColumnaPort;
 
     @Override
     public Tablero create(CreateTableroCommand command) {
+        // Catalog Columna rows must be persisted BEFORE saving the Tablero.
+        // ColumnaTablero holds a ColumnaId reference; the read path in
+        // TableroMapper.toColumnaTableroDomain() re-hydrates the catalog Columna
+        // for each child. Saving the Tablero first would create dangling
+        // columna_id references in columnas_tablero and crash on read.
         List<ColumnaTablero> columnasPredeterminadas = buildDefaultColumns(command.tipoTablero());
 
         Tablero tablero = Tablero.create(
@@ -103,8 +110,13 @@ public class CreateTableroService implements CreateTableroUseCase {
             false
         );
 
+        // Persist the catalog Columna first so columnas_tablero.columna_id
+        // references a row that already exists. TableroMapper re-hydrates
+        // the catalog on read and would throw IllegalStateException otherwise.
+        Columna persisted = saveColumnaPort.save(columna);
+
         return ColumnaTablero.create(
-            columna.getId(),
+            persisted.getId(),
             TipoTablero.TAREAS,
             limiteWip,
             null,
@@ -130,8 +142,13 @@ public class CreateTableroService implements CreateTableroUseCase {
             false
         );
 
+        // Persist the catalog Columna first so columnas_tablero.columna_id
+        // references a row that already exists. TableroMapper re-hydrates
+        // the catalog on read and would throw IllegalStateException otherwise.
+        Columna persisted = saveColumnaPort.save(columna);
+
         return ColumnaTablero.create(
-            columna.getId(),
+            persisted.getId(),
             TipoTablero.TRATOS,
             limiteWip,
             null,

@@ -68,8 +68,10 @@ public class TableroController {
 
     /**
      * Creates a new Tablero with 4 default columns.
-     * The superUsuarioId is derived from the authenticated actor context (JWT),
+     * The actor id is derived from the authenticated actor context (JWT),
      * not from the request body — eliminating the spoofable field for this endpoint.
+     * Any authenticated actor (superusuario or normal usuario) may create a Tablero;
+     * the mapper prefers {@code superUsuarioId} and falls back to {@code usuarioId}.
      */
     @PostMapping("/create")
     public ResponseEntity<TableroResponse> create(

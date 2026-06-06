@@ -9,6 +9,7 @@ import com.ar.crm2.adapter.in.rest.dto.response.TableroResponse;
 import com.ar.crm2.adapter.in.rest.mapper.TableroCommandMapper;
 import com.ar.crm2.adapter.out.persistence.repository.ColumnaRepository;
 import com.ar.crm2.application.security.ActorContext;
+import com.ar.crm2.application.security.exception.AuthenticatedUsuarioRequiredException;
 import com.ar.crm2.application.tablero.command.AgregarColumnaTableroCommand;
 import com.ar.crm2.application.tablero.command.AsignarColumnaTableroCommand;
 import com.ar.crm2.application.tablero.command.CreateTableroCommand;
@@ -149,27 +150,79 @@ class TableroControllerTest {
     }
 
     @Test
-    void create_shouldFailWhenActorContextMissingSuperUsuarioIdClaim() {
+    void create_shouldSucceedWhenActorContextHasUsuarioIdButNoSuperUsuarioIdClaim() {
+        UUID id = UUID.randomUUID();
+        UUID actorUsuarioId = UUID.randomUUID();
+        Tablero tablero = createDomainTablero(id, "User Board");
+
+        when(createUseCase.create(any(CreateTableroCommand.class))).thenReturn(tablero);
+
+        CreateTableroRequest request = new CreateTableroRequest(
+                "User Board", "Desc", TipoTablero.TAREAS,
+                UUID.randomUUID(), // spoofable field — ignored
+                true
+        );
+
+        // Normal usuario: ActorContext present with usuarioId but WITHOUT superUsuarioId claim
+        ActorContext plainUsuario = new ActorContext(
+                "auth-subject",
+                "testuser",
+                "test@example.com",
+                Optional.of(actorUsuarioId),
+                Optional.empty(), // superUsuarioId claim missing — must still work
+                Set.of("USER")
+        );
+
+        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        when(mockRequest.getAttribute(ActorContextRequestAttributeFilter.ACTOR_CONTEXT_ATTRIBUTE))
+                .thenReturn(plainUsuario);
+
+        ResponseEntity<TableroResponse> response = controller.create(mockRequest, request);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        verify(createUseCase).create(any(CreateTableroCommand.class));
+
+        // Verify the command receives the actor's usuarioId (fallback path)
+        ArgumentCaptor<CreateTableroCommand> cmdCaptor = ArgumentCaptor.forClass(CreateTableroCommand.class);
+        verify(createUseCase).create(cmdCaptor.capture());
+        assertEquals(actorUsuarioId, cmdCaptor.getValue().superUsuarioId());
+    }
+
+    @Test
+    void create_shouldFailWhenActorContextHasNeitherSuperUsuarioIdNorUsuarioIdClaim() {
         CreateTableroRequest request = new CreateTableroRequest(
                 "Board", "Desc", TipoTablero.TAREAS, UUID.randomUUID(), true
         );
 
-        // ActorContext present but WITHOUT superUsuarioId claim
-        ActorContext actorWithoutClaim = new ActorContext(
+        // ActorContext present but with BOTH id claims absent
+        ActorContext actorWithoutClaims = new ActorContext(
                 "auth-subject",
                 "testuser",
                 "test@example.com",
-                Optional.of(UUID.randomUUID()),
+                Optional.empty(), // usuarioId claim missing
                 Optional.empty(), // superUsuarioId claim missing
                 Set.of("USER")
         );
 
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         when(mockRequest.getAttribute(ActorContextRequestAttributeFilter.ACTOR_CONTEXT_ATTRIBUTE))
-                .thenReturn(actorWithoutClaim);
+                .thenReturn(actorWithoutClaims);
 
-        // Mapper throws IllegalStateException when superUsuarioId is absent from token
-        assertThrows(IllegalStateException.class,
+        assertThrows(AuthenticatedUsuarioRequiredException.class,
+                () -> controller.create(mockRequest, request));
+    }
+
+    @Test
+    void create_shouldFailWhenActorContextIsNull() {
+        CreateTableroRequest request = new CreateTableroRequest(
+                "Board", "Desc", TipoTablero.TAREAS, UUID.randomUUID(), true
+        );
+
+        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        when(mockRequest.getAttribute(ActorContextRequestAttributeFilter.ACTOR_CONTEXT_ATTRIBUTE))
+                .thenReturn(null); // filter did not set the attribute (e.g. unauthenticated edge)
+
+        assertThrows(AuthenticatedUsuarioRequiredException.class,
                 () -> controller.create(mockRequest, request));
     }
 
