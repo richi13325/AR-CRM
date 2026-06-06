@@ -129,4 +129,34 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!--
+                maven-failsafe-plugin is bound to the integration-test and verify phases so
+                that TableroControllerIT runs in `mvn verify` (the project's verification
+                convention per openspec/config.yaml). The <includes> is intentionally
+                restricted to TableroControllerIT only — ColumnaControllerIT,
+                TableroRepositoryIT, and ColumnaRepositoryIT are out of scope for this
+                change and must NOT be pulled into this slice.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <includes>
+                        <include>**/TableroControllerIT.java</include>
+                    </includes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

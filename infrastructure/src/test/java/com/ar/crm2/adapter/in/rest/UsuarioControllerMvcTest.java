@@ -7,8 +7,10 @@ import com.ar.crm2.application.usuario.command.EditUsuarioCommand;
 import com.ar.crm2.application.usuario.port.in.CreateUsuarioUseCase;
 import com.ar.crm2.application.usuario.port.in.DeleteUsuarioUseCase;
 import com.ar.crm2.application.usuario.port.in.EditUsuarioUseCase;
+import com.ar.crm2.application.usuario.port.in.ForgotPasswordUseCase;
 import com.ar.crm2.application.usuario.port.in.GetAllUsuariosUseCase;
 import com.ar.crm2.application.usuario.port.in.GetUsuarioByIdUseCase;
+import com.ar.crm2.application.usuario.port.in.RequestPasswordChangeUseCase;
 import com.ar.crm2.model.entity.Usuario;
 import com.ar.crm2.model.vo.RolId;
 import com.ar.crm2.model.vo.UsuarioId;
@@ -63,6 +65,12 @@ class UsuarioControllerMvcTest {
 
     @MockitoBean
     private DeleteUsuarioUseCase deleteUseCase;
+
+    @MockitoBean
+    private RequestPasswordChangeUseCase requestPasswordChangeUseCase;
+
+    @MockitoBean
+    private ForgotPasswordUseCase forgotPasswordUseCase;
 
     @MockitoBean
     private KeycloakJwtActorContextMapper actorContextMapper;

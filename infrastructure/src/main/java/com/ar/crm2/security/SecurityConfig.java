@@ -8,11 +8,12 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 /**
  * Spring Security configuration for CRM2 REST API.
@@ -32,6 +33,14 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private static final RequestMatcher SWAGGER_UI = PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/swagger-ui/**");
+    private static final RequestMatcher OPEN_API_DOCS = PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/v3/api-docs/**");
+    private static final RequestMatcher ACTUATOR_HEALTH = PathPatternRequestMatcher.pathPattern("/actuator/health");
+    private static final RequestMatcher FORGOT_PASSWORD = PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/usuarios/forgot-password");
+    private static final RequestMatcher CORS_PREFLIGHT = PathPatternRequestMatcher.pathPattern(HttpMethod.OPTIONS, "/**");
+    private static final RequestMatcher SUPERUSUARIO_CREATE = PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/superusuarios/create");
+    private static final RequestMatcher API_ENDPOINTS = PathPatternRequestMatcher.pathPattern("/api/**");
+
     @Bean
     @Order(0)
     public SecurityFilterChain apiSecurityFilterChain(
@@ -42,19 +51,19 @@ public class SecurityConfig {
             // Route authorization
             .authorizeHttpRequests(authorize -> authorize
                 // Public OpenAPI / actuator health
-                .requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/v3/api-docs/**").permitAll()
-                .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers(SWAGGER_UI).permitAll()
+                .requestMatchers(OPEN_API_DOCS).permitAll()
+                .requestMatchers(ACTUATOR_HEALTH).permitAll()
                 // Forgot password - public endpoint, no email enumeration
-                .requestMatchers(HttpMethod.POST, "/api/usuarios/forgot-password").permitAll()
+                .requestMatchers(FORGOT_PASSWORD).permitAll()
                 // Preflight CORS
-                .requestMatchers(HttpMethod.OPTIONS).permitAll()
+                .requestMatchers(CORS_PREFLIGHT).permitAll()
                 // SuperUsuario bootstrap: requires authenticated + SUPER_USUARIO technical role.
                 // This is a technical guard only — CRM2 business authorization is separate.
-                .requestMatchers(HttpMethod.POST, "/api/superusuarios/create")
+                .requestMatchers(SUPERUSUARIO_CREATE)
                     .hasRole("SUPER_USUARIO")
                 // All other API endpoints require authentication (no role restriction here)
-                .requestMatchers("/api/**").authenticated()
+                .requestMatchers(API_ENDPOINTS).authenticated()
                 // Deny everything else
                 .anyRequest().denyAll()
             )
@@ -63,10 +72,7 @@ public class SecurityConfig {
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             // Disable CSRF — not needed for stateless Bearer-token APIs
-            .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/api/**")
-                .disable()
-            )
+            .csrf(csrf -> csrf.disable())
 // CORS is handled by CorsConfig WebMvcConfigurer
             .cors(cors -> {})
             // JWT Resource Server — validates Bearer tokens via configured issuer-uri

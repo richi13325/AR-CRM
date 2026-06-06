@@ -22,6 +22,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -74,10 +75,25 @@ class SecurityConfigTest {
     static class TestSecurityConfig {
         // Dummy controller to provide /api/** endpoints for test slice.
         // Mirrors the real adapter contract: /api/tableros, /api/columnas, etc.
+        // Exact mappings for /api/tableros/get-all and /api/roles/get-all are
+        // included so security regression tests target the real adapter paths
+        // instead of relying on the /api/** fallback. This is required by the
+        // fix-tableros-get-all-403 change to prove the path-accurate security
+        // contract end-to-end through the real filter chain.
         @RestController
         static class DummyApiController {
             @GetMapping("/api/tableros")
             HttpStatus getAll() { return HttpStatus.OK; }
+
+            @GetMapping("/api/tableros/get-all")
+            ResponseEntity<Void> getTablerosAll() {
+                return ResponseEntity.ok().build();
+            }
+
+            @GetMapping("/api/roles/get-all")
+            ResponseEntity<Void> getRolesAll() {
+                return ResponseEntity.ok().build();
+            }
 
             @GetMapping("/api/tableros/{id}")
             HttpStatus getById() { return HttpStatus.OK; }
@@ -146,6 +162,49 @@ class SecurityConfigTest {
         void getApiOther_noToken_returns401(@Autowired MockMvc mvc) throws Exception {
             mvc.perform(get("/api/something/else"))
                     .andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        @DisplayName("GET /api/tableros/get-all — no token — returns 401 Unauthorized (path-accurate regression)")
+        void getApiTablerosGetAll_noToken_returns401(@Autowired MockMvc mvc) throws Exception {
+            mvc.perform(get("/api/tableros/get-all"))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        @DisplayName("GET /api/roles/get-all — no token — returns 401 Unauthorized (parity regression)")
+        void getApiRolesGetAll_noToken_returns401(@Autowired MockMvc mvc) throws Exception {
+            mvc.perform(get("/api/roles/get-all"))
+                    .andExpect(status().isUnauthorized());
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Route matrix: authenticated requests (path-accurate)
+    // Verifies the real security filter chain authorizes real adapter paths
+    // for any valid JWT (no role/scope/ownership restriction).
+    // Roles endpoint is parity/control coverage only; production roles
+    // behavior is not changed by this change.
+    // ------------------------------------------------------------------
+
+    @Nested
+    @DisplayName("Authenticated requests — path-accurate regression coverage")
+    class AuthenticatedRequests {
+
+        @Test
+        @DisplayName("GET /api/tableros/get-all — valid JWT — returns 200 OK (path-accurate regression)")
+        void getApiTablerosGetAll_authenticated_returns200(@Autowired MockMvc mvc) throws Exception {
+            mvc.perform(get("/api/tableros/get-all")
+                            .header("Authorization", "Bearer valid-token"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("GET /api/roles/get-all — valid JWT — returns 200 OK (parity regression)")
+        void getApiRolesGetAll_authenticated_returns200(@Autowired MockMvc mvc) throws Exception {
+            mvc.perform(get("/api/roles/get-all")
+                            .header("Authorization", "Bearer valid-token"))
+                    .andExpect(status().isOk());
         }
     }
 
