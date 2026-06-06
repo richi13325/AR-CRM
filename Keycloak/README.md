@@ -140,12 +140,13 @@ If you see a CORS error in the browser console after login (typically on `GET /r
 
 ## Obtain Access Token
 
+Use the public `crm2-frontend` client for local manual tests. It is the same client used by the browser app, it does not require a client secret, and its tokens include the `crm2-api` audience required by the backend.
+
 ```bash
 curl -X POST http://localhost:8180/realms/crm2-local/protocol/openid-connect/token \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "grant_type=password" \
-  -d "client_id=crm2-api" \
-  -d "client_secret=crm2-api-secret-local" \
+  -d "client_id=crm2-frontend" \
   -d "username=admin" \
   -d "password=admin"
 ```
@@ -171,8 +172,7 @@ The token should contain the standard JWT `aud` claim with `crm2-api`. Verify wi
 TOKEN=$(curl -s -X POST http://localhost:8180/realms/crm2-local/protocol/openid-connect/token \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "grant_type=password" \
-  -d "client_id=crm2-api" \
-  -d "client_secret=crm2-api-secret-local" \
+  -d "client_id=crm2-frontend" \
   -d "username=admin" \
   -d "password=admin" | jq -r .access_token)
 
@@ -223,6 +223,8 @@ Expected:
 ```
 
 If `usuario_id` is `null` / missing, the most likely cause is a **stale Keycloak volume** — run the *Fresh Start* commands above so the updated `realm-export.json` is re-imported. Protocol mappers are *per-client*; the existing `crm2-api` mappers do **not** automatically apply to `crm2-frontend` tokens.
+
+If the documented `user` / `user` credentials fail with `invalid_grant`, the running Keycloak database has drifted from `realm-export.json`. Either run the *Fresh Start* commands above or reset the local user's password in the admin console.
 
 ## Smoke Test: Call CRM2 API
 

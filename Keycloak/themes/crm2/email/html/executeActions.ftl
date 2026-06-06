@@ -46,7 +46,11 @@
                       <table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:20px;">
                         <tr>
                           <td style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;">
-                            <p style="font-size:14px;font-weight:600;color:#1e293b;margin:0;">${requiredActions}</p>
+                            <p style="font-size:14px;font-weight:600;color:#1e293b;margin:0;">
+                              <#list requiredActions as reqAction>
+                                <#if reqAction == "UPDATE_PASSWORD">actualizar tu contraseña<#elseif reqAction == "VERIFY_EMAIL">verificar tu correo electrónico<#elseif reqAction == "CONFIGURE_TOTP">configurar tu autenticador<#else>completar la acción: ${reqAction}</#if><#sep>, </#sep>
+                              </#list>
+                            </p>
                           </td>
                         </tr>
                       </table>
