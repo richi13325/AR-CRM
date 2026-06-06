@@ -19,7 +19,13 @@ import java.util.Map;
 
 import reactor.core.publisher.Mono;
 
-public class KeycloakUserProvisioningAdapter implements com.ar.crm2.application.identity.port.out.IdentityProviderUserPort {
+public class KeycloakUserProvisioningAdapter
+        implements
+            com.ar.crm2.application.identity.port.out.ProvisionIdentityPort,
+            com.ar.crm2.application.identity.port.out.SyncIdentityEmailPort,
+            com.ar.crm2.application.identity.port.out.SetIdentityEnabledPort,
+            com.ar.crm2.application.identity.port.out.DeleteIdentityPort,
+            com.ar.crm2.application.identity.port.out.SendIdentityUpdatePasswordEmailPort {
 
     private final KeycloakAdminProperties props;
     private final WebClient webClient;

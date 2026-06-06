@@ -2,7 +2,8 @@ package com.ar.crm2.application.usuario.service;
 
 import com.ar.crm2.application.identity.model.IdentityProvisioningException;
 import com.ar.crm2.application.identity.model.ProvisionedIdentity;
-import com.ar.crm2.application.identity.port.out.IdentityProviderUserPort;
+import com.ar.crm2.application.identity.port.out.DeleteIdentityPort;
+import com.ar.crm2.application.identity.port.out.ProvisionIdentityPort;
 import com.ar.crm2.application.usuario.command.CreateUsuarioCommand;
 import com.ar.crm2.application.usuario.port.out.SaveUsuarioPort;
 import com.ar.crm2.model.entity.Usuario;
@@ -40,7 +41,10 @@ class CreateUsuarioServiceKeycloakTest {
     private SaveUsuarioPort savePort;
 
     @Mock
-    private IdentityProviderUserPort identityPort;
+    private ProvisionIdentityPort provisionPort;
+
+    @Mock
+    private DeleteIdentityPort deleteIdentityPort;
 
     @InjectMocks
     private CreateUsuarioService service;
@@ -55,7 +59,7 @@ class CreateUsuarioServiceKeycloakTest {
         @DisplayName("creates user in Keycloak first, saves CRM with keycloakId")
         void create_exitoso_guardaConKeycloakId() {
             // Given
-            when(identityPort.provision(CORREO, PASSWORD, true))
+            when(provisionPort.provision(CORREO, PASSWORD, true))
                 .thenReturn(new ProvisionedIdentity(KEYCLOAK_ID, CORREO));
             when(savePort.save(any(Usuario.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
@@ -71,14 +75,14 @@ class CreateUsuarioServiceKeycloakTest {
             assertEquals(KEYCLOAK_ID, result.getKeycloakId());
             assertEquals(CORREO, result.getCorreo());
             assertEquals(NOMBRE, result.getNombre());
-            verify(identityPort).provision(CORREO, PASSWORD, true);
+            verify(provisionPort).provision(CORREO, PASSWORD, true);
             verify(savePort).save(any(Usuario.class));
         }
 
         @Test
         @DisplayName("sets VERIFY_EMAIL required action on Keycloak provision")
         void create_exitoso_enviaVERIFY_EMAIL() {
-            when(identityPort.provision(CORREO, PASSWORD, true))
+            when(provisionPort.provision(CORREO, PASSWORD, true))
                 .thenReturn(new ProvisionedIdentity(KEYCLOAK_ID, CORREO));
             when(savePort.save(any(Usuario.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
@@ -89,7 +93,7 @@ class CreateUsuarioServiceKeycloakTest {
             service.create(cmd);
 
             // Verify provision was called with enabled=true (VERIFY_EMAIL triggers email)
-            verify(identityPort).provision(CORREO, PASSWORD, true);
+            verify(provisionPort).provision(CORREO, PASSWORD, true);
         }
     }
 
@@ -103,7 +107,7 @@ class CreateUsuarioServiceKeycloakTest {
         @DisplayName("deletes Keycloak user when local save throws")
         void create_saveFalla_compensaEliminaKeycloak() {
             // Given
-            when(identityPort.provision(CORREO, PASSWORD, true))
+            when(provisionPort.provision(CORREO, PASSWORD, true))
                 .thenReturn(new ProvisionedIdentity(KEYCLOAK_ID, CORREO));
             when(savePort.save(any(Usuario.class)))
                 .thenThrow(new RuntimeException("DB constraint violation"));
@@ -114,19 +118,19 @@ class CreateUsuarioServiceKeycloakTest {
 
             // When / Then
             assertThrows(RuntimeException.class, () -> service.create(cmd));
-            verify(identityPort).delete(KEYCLOAK_ID);
+            verify(deleteIdentityPort).delete(KEYCLOAK_ID);
         }
 
         @Test
         @DisplayName("rethrows original save exception even if compensation delete fails")
         void create_compensacionFalla_rethrowsOriginal() {
             // Given
-            when(identityPort.provision(CORREO, PASSWORD, true))
+            when(provisionPort.provision(CORREO, PASSWORD, true))
                 .thenReturn(new ProvisionedIdentity(KEYCLOAK_ID, CORREO));
             when(savePort.save(any(Usuario.class)))
                 .thenThrow(new RuntimeException("DB error"));
             doThrow(new RuntimeException("Keycloak unreachable"))
-                .when(identityPort).delete(KEYCLOAK_ID);
+                .when(deleteIdentityPort).delete(KEYCLOAK_ID);
 
             CreateUsuarioCommand cmd = new CreateUsuarioCommand(
                 NOMBRE, CORREO, ROL_ID, null, PASSWORD
@@ -149,7 +153,7 @@ class CreateUsuarioServiceKeycloakTest {
         @DisplayName("fails fast when Keycloak is unreachable — no local save attempted")
         void create_keycloakFalla_noGuardaLocal() {
             // Given
-            when(identityPort.provision(CORREO, PASSWORD, true))
+            when(provisionPort.provision(CORREO, PASSWORD, true))
                 .thenThrow(new IdentityProvisioningException(
                     "Connection refused",
                     IdentityProvisioningException.Reason.CONNECTION_FAILURE

@@ -1,6 +1,6 @@
 package com.ar.crm2.application.superusuario.service;
 
-import com.ar.crm2.application.identity.port.out.IdentityProviderUserPort;
+import com.ar.crm2.application.identity.port.out.SetIdentityEnabledPort;
 import com.ar.crm2.application.superusuario.command.DeleteSuperUsuarioCommand;
 import com.ar.crm2.application.superusuario.exception.SuperUsuarioNotFoundException;
 import com.ar.crm2.application.superusuario.port.out.DeleteSuperUsuarioByIdPort;
@@ -41,7 +41,7 @@ class DeleteSuperUsuarioServiceKeycloakTest {
     private DeleteSuperUsuarioByIdPort deletePort;
 
     @Mock
-    private IdentityProviderUserPort identityPort;
+    private SetIdentityEnabledPort setEnabledPort;
 
     @InjectMocks
     private DeleteSuperUsuarioService service;
@@ -70,7 +70,7 @@ class DeleteSuperUsuarioServiceKeycloakTest {
             service.delete(cmd);
 
             // Then — disable called first, then local delete
-            verify(identityPort).setEnabled(KEYCLOAK_ID, false);
+            verify(setEnabledPort).setEnabled(KEYCLOAK_ID, false);
             verify(deletePort).deleteById(suId);
         }
 
@@ -92,7 +92,7 @@ class DeleteSuperUsuarioServiceKeycloakTest {
             service.delete(cmd);
 
             // Then — no Keycloak call, only local delete
-            verify(identityPort, never()).setEnabled(any(), anyBoolean());
+            verify(setEnabledPort, never()).setEnabled(any(), anyBoolean());
             verify(deletePort).deleteById(suId);
         }
     }
@@ -115,7 +115,7 @@ class DeleteSuperUsuarioServiceKeycloakTest {
             );
             when(findPort.findById(suId)).thenReturn(Optional.of(existing));
             doThrow(new RuntimeException("Keycloak unreachable"))
-                .when(identityPort).setEnabled(KEYCLOAK_ID, false);
+                .when(setEnabledPort).setEnabled(KEYCLOAK_ID, false);
 
             DeleteSuperUsuarioCommand cmd = new DeleteSuperUsuarioCommand(id);
 
@@ -145,7 +145,7 @@ class DeleteSuperUsuarioServiceKeycloakTest {
             // When / Then
             assertThrows(SuperUsuarioNotFoundException.class, () -> service.delete(cmd));
             verify(deletePort, never()).deleteById(any());
-            verify(identityPort, never()).setEnabled(any(), anyBoolean());
+            verify(setEnabledPort, never()).setEnabled(any(), anyBoolean());
         }
     }
 }

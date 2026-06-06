@@ -1,6 +1,6 @@
 package com.ar.crm2.application.usuario.service;
 
-import com.ar.crm2.application.identity.port.out.IdentityProviderUserPort;
+import com.ar.crm2.application.identity.port.out.SendIdentityUpdatePasswordEmailPort;
 import com.ar.crm2.application.usuario.command.ForgotPasswordCommand;
 import com.ar.crm2.application.usuario.port.in.ForgotPasswordUseCase;
 import com.ar.crm2.application.usuario.port.out.FindUsuarioByCorreoPort;
@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 public class ForgotPasswordService implements ForgotPasswordUseCase {
 
     private final FindUsuarioByCorreoPort findByCorreoPort;
-    private final IdentityProviderUserPort identityPort;
+    private final SendIdentityUpdatePasswordEmailPort sendUpdatePasswordEmailPort;
 
     @Override
     public void requestReset(ForgotPasswordCommand command) {
@@ -18,7 +18,7 @@ public class ForgotPasswordService implements ForgotPasswordUseCase {
                 .filter(u -> u.getKeycloakId() != null)
                 .ifPresent(usuario -> {
                     try {
-                        identityPort.sendUpdatePasswordEmail(usuario.getKeycloakId());
+                        sendUpdatePasswordEmailPort.sendUpdatePasswordEmail(usuario.getKeycloakId());
                     } catch (RuntimeException ignored) {
                         // Keep forgot-password response generic to avoid account enumeration.
                     }

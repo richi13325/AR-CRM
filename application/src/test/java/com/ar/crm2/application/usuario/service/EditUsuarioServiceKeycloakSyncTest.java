@@ -1,7 +1,8 @@
 package com.ar.crm2.application.usuario.service;
 
 import com.ar.crm2.application.identity.model.IdentityProvisioningException;
-import com.ar.crm2.application.identity.port.out.IdentityProviderUserPort;
+import com.ar.crm2.application.identity.port.out.SetIdentityEnabledPort;
+import com.ar.crm2.application.identity.port.out.SyncIdentityEmailPort;
 import com.ar.crm2.application.usuario.command.EditUsuarioCommand;
 import com.ar.crm2.application.usuario.exception.UsuarioNotFoundException;
 import com.ar.crm2.application.usuario.port.out.FindUsuarioByIdPort;
@@ -47,7 +48,10 @@ class EditUsuarioServiceKeycloakSyncTest {
     private SaveUsuarioPort savePort;
 
     @Mock
-    private IdentityProviderUserPort identityPort;
+    private SyncIdentityEmailPort syncEmailPort;
+
+    @Mock
+    private SetIdentityEnabledPort setEnabledPort;
 
     @InjectMocks
     private EditUsuarioService service;
@@ -79,7 +83,7 @@ class EditUsuarioServiceKeycloakSyncTest {
             Usuario result = service.edit(cmd);
 
             // Then — email synced first
-            verify(identityPort).syncEmail(KEYCLOAK_ID, CORREO_NEW);
+            verify(syncEmailPort).syncEmail(KEYCLOAK_ID, CORREO_NEW);
             ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
             verify(savePort).save(captor.capture());
             assertEquals(CORREO_NEW, captor.getValue().getCorreo());
@@ -106,7 +110,7 @@ class EditUsuarioServiceKeycloakSyncTest {
             service.edit(cmd);
 
             // Then
-            verify(identityPort, never()).syncEmail(any(), any());
+            verify(syncEmailPort, never()).syncEmail(any(), any());
         }
 
         @Test
@@ -123,7 +127,7 @@ class EditUsuarioServiceKeycloakSyncTest {
             doThrow(new IdentityProvisioningException(
                 "Keycloak error",
                 IdentityProvisioningException.Reason.SERVER_ERROR
-            )).when(identityPort).syncEmail(KEYCLOAK_ID, CORREO_NEW);
+            )).when(syncEmailPort).syncEmail(KEYCLOAK_ID, CORREO_NEW);
 
             EditUsuarioCommand cmd = new EditUsuarioCommand(
                 id, NOMBRE, CORREO_NEW, ROL_ID, KEYCLOAK_ID
@@ -162,7 +166,7 @@ class EditUsuarioServiceKeycloakSyncTest {
             service.edit(cmd);
 
             // Then
-            verify(identityPort).setEnabled(KEYCLOAK_ID, true);
+            verify(setEnabledPort).setEnabled(KEYCLOAK_ID, true);
         }
 
         @Test
@@ -186,7 +190,7 @@ class EditUsuarioServiceKeycloakSyncTest {
             service.edit(cmd);
 
             // Then
-            verify(identityPort).setEnabled(KEYCLOAK_ID, false);
+            verify(setEnabledPort).setEnabled(KEYCLOAK_ID, false);
         }
 
         @Test
@@ -210,8 +214,8 @@ class EditUsuarioServiceKeycloakSyncTest {
             service.edit(cmd);
 
             // Then
-            verify(identityPort, never()).syncEmail(any(), any());
-            verify(identityPort, never()).setEnabled(any(), anyBoolean());
+            verify(syncEmailPort, never()).syncEmail(any(), any());
+            verify(setEnabledPort, never()).setEnabled(any(), anyBoolean());
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.ar.crm2.application.usuario.service;
 
-import com.ar.crm2.application.identity.port.out.IdentityProviderUserPort;
+import com.ar.crm2.application.identity.port.out.DeleteIdentityPort;
+import com.ar.crm2.application.identity.port.out.ProvisionIdentityPort;
 import com.ar.crm2.application.usuario.command.CreateUsuarioCommand;
 import com.ar.crm2.application.usuario.port.in.CreateUsuarioUseCase;
 import com.ar.crm2.application.usuario.port.out.SaveUsuarioPort;
@@ -18,12 +19,13 @@ import lombok.RequiredArgsConstructor;
 public class CreateUsuarioService implements CreateUsuarioUseCase {
 
     private final SaveUsuarioPort savePort;
-    private final IdentityProviderUserPort identityPort;
+    private final ProvisionIdentityPort provisionPort;
+    private final DeleteIdentityPort deleteIdentityPort;
 
     @Override
     public Usuario create(CreateUsuarioCommand command) {
         // Provision Keycloak user first
-        var provisioned = identityPort.provision(
+        var provisioned = provisionPort.provision(
             command.correo(),
             command.initialPassword(),
             true // enabled
@@ -42,7 +44,7 @@ public class CreateUsuarioService implements CreateUsuarioUseCase {
         } catch (RuntimeException saveFailure) {
             // Compensate: delete the Keycloak user if local save fails
             try {
-                identityPort.delete(provisioned.keycloakId());
+                deleteIdentityPort.delete(provisioned.keycloakId());
             } catch (RuntimeException compensationFailure) {
                 // Log but don't mask the original save failure
                 // The Keycloak user may remain orphaned — operator must review

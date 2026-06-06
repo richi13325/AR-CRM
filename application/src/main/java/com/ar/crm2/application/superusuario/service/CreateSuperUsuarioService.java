@@ -1,6 +1,7 @@
 package com.ar.crm2.application.superusuario.service;
 
-import com.ar.crm2.application.identity.port.out.IdentityProviderUserPort;
+import com.ar.crm2.application.identity.port.out.DeleteIdentityPort;
+import com.ar.crm2.application.identity.port.out.ProvisionIdentityPort;
 import com.ar.crm2.application.superusuario.command.CreateSuperUsuarioCommand;
 import com.ar.crm2.application.superusuario.port.in.CreateSuperUsuarioUseCase;
 import com.ar.crm2.application.superusuario.port.out.SaveSuperUsuarioPort;
@@ -17,12 +18,13 @@ import lombok.RequiredArgsConstructor;
 public class CreateSuperUsuarioService implements CreateSuperUsuarioUseCase {
 
     private final SaveSuperUsuarioPort savePort;
-    private final IdentityProviderUserPort identityPort;
+    private final ProvisionIdentityPort provisionPort;
+    private final DeleteIdentityPort deleteIdentityPort;
 
     @Override
     public SuperUsuario create(CreateSuperUsuarioCommand command) {
         // Provision Keycloak user first
-        var provisioned = identityPort.provision(
+        var provisioned = provisionPort.provision(
             command.correo(),
             command.initialPassword(),
             true // enabled
@@ -39,7 +41,7 @@ public class CreateSuperUsuarioService implements CreateSuperUsuarioUseCase {
         } catch (RuntimeException saveFailure) {
             // Compensate: delete the Keycloak user if local save fails
             try {
-                identityPort.delete(provisioned.keycloakId());
+                deleteIdentityPort.delete(provisioned.keycloakId());
             } catch (RuntimeException compensationFailure) {
                 // Log but don't mask the original save failure
                 // The Keycloak user may remain orphaned — operator must review

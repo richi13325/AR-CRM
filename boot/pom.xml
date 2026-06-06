@@ -46,6 +46,15 @@
             <artifactId>infrastructure</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <!-- Spring Mail for SMTP email notifications.
+             Declared here (boot) because WiringConfig directly references JavaMailSender
+             as a @Bean parameter. Do NOT rely on infrastructure's transitive propagation:
+             the boot module's runtime classpath must include this starter explicitly. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

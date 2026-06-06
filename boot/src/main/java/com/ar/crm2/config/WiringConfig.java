@@ -26,7 +26,6 @@ import com.ar.crm2.adapter.out.persistence.UsuarioRepositoryAdapter;
 import com.ar.crm2.adapter.out.persistence.mapper.TableroMapper;
 import com.ar.crm2.adapter.out.keycloak.KeycloakUserProvisioningAdapter;
 import com.ar.crm2.config.KeycloakAdminProperties;
-import com.ar.crm2.application.identity.port.out.IdentityProviderUserPort;
 import com.ar.crm2.application.columna.port.in.CreateColumnaUseCase;
 import com.ar.crm2.application.columna.port.in.DeleteColumnaUseCase;
 import com.ar.crm2.application.columna.port.in.EditColumnaUseCase;
@@ -42,6 +41,11 @@ import com.ar.crm2.application.columna.service.DeleteColumnaService;
 import com.ar.crm2.application.columna.service.EditColumnaService;
 import com.ar.crm2.application.columna.service.GetAllColumnasService;
 import com.ar.crm2.application.columna.service.GetColumnaByIdService;
+import com.ar.crm2.application.identity.port.out.DeleteIdentityPort;
+import com.ar.crm2.application.identity.port.out.ProvisionIdentityPort;
+import com.ar.crm2.application.identity.port.out.SetIdentityEnabledPort;
+import com.ar.crm2.application.identity.port.out.SendIdentityUpdatePasswordEmailPort;
+import com.ar.crm2.application.identity.port.out.SyncIdentityEmailPort;
 import com.ar.crm2.application.superusuario.port.in.CreateSuperUsuarioUseCase;
 import com.ar.crm2.application.superusuario.port.in.DeleteSuperUsuarioUseCase;
 import com.ar.crm2.application.superusuario.port.in.EditSuperUsuarioUseCase;
@@ -399,8 +403,11 @@ public class WiringConfig {
     // ── Tablero UseCase Beans ──
 
     @Bean
-    public CreateTableroUseCase createTableroUseCase(TableroRepositoryAdapter adapter) {
-        return new CreateTableroService(adapter);
+    public CreateTableroUseCase createTableroUseCase(
+            TableroRepositoryAdapter adapter,
+            SaveColumnaPort saveColumnaPort
+    ) {
+        return new CreateTableroService(adapter, saveColumnaPort);
     }
 
     @Bean
@@ -645,8 +652,12 @@ public class WiringConfig {
     // ── Usuario UseCase Beans ──
 
     @Bean
-    public CreateUsuarioUseCase createUsuarioUseCase(UsuarioRepositoryAdapter adapter, KeycloakUserProvisioningAdapter identityAdapter) {
-        return new CreateUsuarioService(adapter, identityAdapter);
+    public CreateUsuarioUseCase createUsuarioUseCase(
+            UsuarioRepositoryAdapter adapter,
+            ProvisionIdentityPort provisionPort,
+            DeleteIdentityPort deleteIdentityPort
+    ) {
+        return new CreateUsuarioService(adapter, provisionPort, deleteIdentityPort);
     }
 
     @Bean
@@ -660,8 +671,13 @@ public class WiringConfig {
     }
 
     @Bean
-    public EditUsuarioUseCase editUsuarioUseCase(UsuarioRepositoryAdapter findPort, UsuarioRepositoryAdapter savePort, KeycloakUserProvisioningAdapter identityAdapter) {
-        return new EditUsuarioService(findPort, savePort, identityAdapter);
+    public EditUsuarioUseCase editUsuarioUseCase(
+            UsuarioRepositoryAdapter findPort,
+            UsuarioRepositoryAdapter savePort,
+            SyncIdentityEmailPort syncEmailPort,
+            SetIdentityEnabledPort setEnabledPort
+    ) {
+        return new EditUsuarioService(findPort, savePort, syncEmailPort, setEnabledPort);
     }
 
     @Bean
@@ -676,17 +692,17 @@ public class WiringConfig {
     @Bean
     public RequestPasswordChangeUseCase requestPasswordChangeUseCase(
             UsuarioRepositoryAdapter findPort,
-            KeycloakUserProvisioningAdapter identityAdapter
+            SendIdentityUpdatePasswordEmailPort sendIdentityUpdatePasswordEmailPort
     ) {
-        return new RequestPasswordChangeService(findPort, identityAdapter);
+        return new RequestPasswordChangeService(findPort, sendIdentityUpdatePasswordEmailPort);
     }
 
     @Bean
     public ForgotPasswordUseCase forgotPasswordUseCase(
             UsuarioRepositoryAdapter findByCorreoPort,
-            KeycloakUserProvisioningAdapter identityAdapter
+            SendIdentityUpdatePasswordEmailPort sendIdentityUpdatePasswordEmailPort
     ) {
-        return new ForgotPasswordService(findByCorreoPort, identityAdapter);
+        return new ForgotPasswordService(findByCorreoPort, sendIdentityUpdatePasswordEmailPort);
     }
 
 
@@ -727,8 +743,12 @@ public class WiringConfig {
     // ── SuperUsuario UseCase Beans ──
 
     @Bean
-    public CreateSuperUsuarioUseCase createSuperUsuarioUseCase(SuperUsuarioRepositoryAdapter adapter, KeycloakUserProvisioningAdapter identityAdapter) {
-        return new CreateSuperUsuarioService(adapter, identityAdapter);
+    public CreateSuperUsuarioUseCase createSuperUsuarioUseCase(
+            SuperUsuarioRepositoryAdapter adapter,
+            ProvisionIdentityPort provisionPort,
+            DeleteIdentityPort deleteIdentityPort
+    ) {
+        return new CreateSuperUsuarioService(adapter, provisionPort, deleteIdentityPort);
     }
 
     @Bean
@@ -742,8 +762,13 @@ public class WiringConfig {
     }
 
     @Bean
-    public EditSuperUsuarioUseCase editSuperUsuarioUseCase(SuperUsuarioRepositoryAdapter findPort, SuperUsuarioRepositoryAdapter savePort, KeycloakUserProvisioningAdapter identityAdapter) {
-        return new EditSuperUsuarioService(findPort, savePort, identityAdapter);
+    public EditSuperUsuarioUseCase editSuperUsuarioUseCase(
+            SuperUsuarioRepositoryAdapter findPort,
+            SuperUsuarioRepositoryAdapter savePort,
+            SyncIdentityEmailPort syncEmailPort,
+            SetIdentityEnabledPort setEnabledPort
+    ) {
+        return new EditSuperUsuarioService(findPort, savePort, syncEmailPort, setEnabledPort);
     }
 
     @Bean

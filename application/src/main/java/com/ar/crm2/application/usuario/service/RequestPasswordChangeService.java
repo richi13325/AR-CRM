@@ -1,6 +1,6 @@
 package com.ar.crm2.application.usuario.service;
 
-import com.ar.crm2.application.identity.port.out.IdentityProviderUserPort;
+import com.ar.crm2.application.identity.port.out.SendIdentityUpdatePasswordEmailPort;
 import com.ar.crm2.application.usuario.command.RequestPasswordChangeCommand;
 import com.ar.crm2.application.usuario.exception.UsuarioNotFoundException;
 import com.ar.crm2.application.usuario.port.in.RequestPasswordChangeUseCase;
@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 public class RequestPasswordChangeService implements RequestPasswordChangeUseCase {
 
     private final FindUsuarioByIdPort findPort;
-    private final IdentityProviderUserPort identityPort;
+    private final SendIdentityUpdatePasswordEmailPort sendUpdatePasswordEmailPort;
 
     @Override
     public void requestChange(RequestPasswordChangeCommand command) {
@@ -22,7 +22,7 @@ public class RequestPasswordChangeService implements RequestPasswordChangeUseCas
                 .orElseThrow(() -> UsuarioNotFoundException.forId(command.usuarioId()));
 
         if (usuario.getKeycloakId() != null) {
-            identityPort.sendUpdatePasswordEmail(usuario.getKeycloakId());
+            sendUpdatePasswordEmailPort.sendUpdatePasswordEmail(usuario.getKeycloakId());
         }
     }
 }

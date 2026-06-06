@@ -1,6 +1,6 @@
 package com.ar.crm2.application.usuario.service;
 
-import com.ar.crm2.application.identity.port.out.IdentityProviderUserPort;
+import com.ar.crm2.application.identity.port.out.SetIdentityEnabledPort;
 import com.ar.crm2.application.usuario.command.DeleteUsuarioCommand;
 import com.ar.crm2.application.usuario.exception.UsuarioNotFoundException;
 import com.ar.crm2.application.usuario.port.out.DeleteUsuarioByIdPort;
@@ -42,7 +42,7 @@ class DeleteUsuarioServiceKeycloakTest {
     private DeleteUsuarioByIdPort deletePort;
 
     @Mock
-    private IdentityProviderUserPort identityPort;
+    private SetIdentityEnabledPort setEnabledPort;
 
     @InjectMocks
     private DeleteUsuarioService service;
@@ -71,7 +71,7 @@ class DeleteUsuarioServiceKeycloakTest {
             service.delete(cmd);
 
             // Then — disable called first, then local delete
-            verify(identityPort).setEnabled(KEYCLOAK_ID, false);
+            verify(setEnabledPort).setEnabled(KEYCLOAK_ID, false);
             verify(deletePort).deleteById(usuarioId);
         }
 
@@ -93,7 +93,7 @@ class DeleteUsuarioServiceKeycloakTest {
             service.delete(cmd);
 
             // Then — no Keycloak call, only local delete
-            verify(identityPort, never()).setEnabled(any(), anyBoolean());
+            verify(setEnabledPort, never()).setEnabled(any(), anyBoolean());
             verify(deletePort).deleteById(usuarioId);
         }
     }
@@ -116,7 +116,7 @@ class DeleteUsuarioServiceKeycloakTest {
             );
             when(findPort.findById(usuarioId)).thenReturn(Optional.of(existing));
             doThrow(new RuntimeException("Keycloak unreachable"))
-                .when(identityPort).setEnabled(KEYCLOAK_ID, false);
+                .when(setEnabledPort).setEnabled(KEYCLOAK_ID, false);
 
             DeleteUsuarioCommand cmd = new DeleteUsuarioCommand(id);
 
@@ -147,7 +147,7 @@ class DeleteUsuarioServiceKeycloakTest {
             // When / Then
             assertThrows(UsuarioNotFoundException.class, () -> service.delete(cmd));
             verify(deletePort, never()).deleteById(any());
-            verify(identityPort, never()).setEnabled(any(), anyBoolean());
+            verify(setEnabledPort, never()).setEnabled(any(), anyBoolean());
         }
     }
 }

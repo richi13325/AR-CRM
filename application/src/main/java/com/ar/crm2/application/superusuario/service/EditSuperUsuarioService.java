@@ -1,6 +1,7 @@
 package com.ar.crm2.application.superusuario.service;
 
-import com.ar.crm2.application.identity.port.out.IdentityProviderUserPort;
+import com.ar.crm2.application.identity.port.out.SetIdentityEnabledPort;
+import com.ar.crm2.application.identity.port.out.SyncIdentityEmailPort;
 import com.ar.crm2.application.superusuario.command.EditSuperUsuarioCommand;
 import com.ar.crm2.application.superusuario.exception.SuperUsuarioNotFoundException;
 import com.ar.crm2.application.superusuario.port.in.EditSuperUsuarioUseCase;
@@ -22,7 +23,8 @@ public class EditSuperUsuarioService implements EditSuperUsuarioUseCase {
 
     private final FindSuperUsuarioByIdPort findPort;
     private final SaveSuperUsuarioPort savePort;
-    private final IdentityProviderUserPort identityPort;
+    private final SyncIdentityEmailPort syncEmailPort;
+    private final SetIdentityEnabledPort setEnabledPort;
 
     @Override
     public SuperUsuario edit(EditSuperUsuarioCommand command) {
@@ -37,12 +39,12 @@ public class EditSuperUsuarioService implements EditSuperUsuarioUseCase {
 
         // Sync email to Keycloak first — if this fails, do not update local
         if (!command.correo().equals(existing.getCorreo()) && keycloakId != null) {
-            identityPort.syncEmail(keycloakId, command.correo());
+            syncEmailPort.syncEmail(keycloakId, command.correo());
         }
 
         // Sync enabled flag to Keycloak
         if (keycloakId != null) {
-            identityPort.setEnabled(keycloakId, existing.isActivo());
+            setEnabledPort.setEnabled(keycloakId, existing.isActivo());
         }
 
         SuperUsuario updated = SuperUsuario.reconstitute(

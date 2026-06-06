@@ -1,7 +1,8 @@
 package com.ar.crm2.application.superusuario.service;
 
 import com.ar.crm2.application.identity.model.IdentityProvisioningException;
-import com.ar.crm2.application.identity.port.out.IdentityProviderUserPort;
+import com.ar.crm2.application.identity.port.out.SetIdentityEnabledPort;
+import com.ar.crm2.application.identity.port.out.SyncIdentityEmailPort;
 import com.ar.crm2.application.superusuario.command.EditSuperUsuarioCommand;
 import com.ar.crm2.application.superusuario.exception.SuperUsuarioNotFoundException;
 import com.ar.crm2.application.superusuario.port.in.EditSuperUsuarioUseCase;
@@ -44,7 +45,10 @@ class EditSuperUsuarioServiceKeycloakTest {
     private SaveSuperUsuarioPort savePort;
 
     @Mock
-    private IdentityProviderUserPort identityPort;
+    private SyncIdentityEmailPort syncEmailPort;
+
+    @Mock
+    private SetIdentityEnabledPort setEnabledPort;
 
     @InjectMocks
     private EditSuperUsuarioService service;
@@ -186,7 +190,7 @@ class EditSuperUsuarioServiceKeycloakTest {
             doThrow(new IdentityProvisioningException(
                 "Keycloak error",
                 IdentityProvisioningException.Reason.SERVER_ERROR
-            )).when(identityPort).syncEmail(KEYCLOAK_ID_EXISTING, CORREO + ".ar");
+            )).when(syncEmailPort).syncEmail(KEYCLOAK_ID_EXISTING, CORREO + ".ar");
 
             EditSuperUsuarioCommand cmd = new EditSuperUsuarioCommand(id, CORREO + ".ar", KEYCLOAK_ID_EXISTING);
 
@@ -218,7 +222,7 @@ class EditSuperUsuarioServiceKeycloakTest {
 
             service.edit(cmd);
 
-            verify(identityPort).setEnabled(KEYCLOAK_ID_EXISTING, true);
+            verify(setEnabledPort).setEnabled(KEYCLOAK_ID_EXISTING, true);
         }
 
         @Test
@@ -237,7 +241,7 @@ class EditSuperUsuarioServiceKeycloakTest {
 
             service.edit(cmd);
 
-            verify(identityPort).setEnabled(KEYCLOAK_ID_EXISTING, false);
+            verify(setEnabledPort).setEnabled(KEYCLOAK_ID_EXISTING, false);
         }
 
         @Test
@@ -256,8 +260,8 @@ class EditSuperUsuarioServiceKeycloakTest {
 
             service.edit(cmd);
 
-            verify(identityPort, never()).syncEmail(any(), any());
-            verify(identityPort, never()).setEnabled(any(), anyBoolean());
+            verify(syncEmailPort, never()).syncEmail(any(), any());
+            verify(setEnabledPort, never()).setEnabled(any(), anyBoolean());
         }
     }
 }

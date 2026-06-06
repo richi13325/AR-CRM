@@ -1,6 +1,6 @@
 package com.ar.crm2.application.superusuario.service;
 
-import com.ar.crm2.application.identity.port.out.IdentityProviderUserPort;
+import com.ar.crm2.application.identity.port.out.SetIdentityEnabledPort;
 import com.ar.crm2.application.superusuario.command.DeleteSuperUsuarioCommand;
 import com.ar.crm2.application.superusuario.exception.SuperUsuarioNotFoundException;
 import com.ar.crm2.application.superusuario.port.in.DeleteSuperUsuarioUseCase;
@@ -19,7 +19,7 @@ public class DeleteSuperUsuarioService implements DeleteSuperUsuarioUseCase {
 
     private final FindSuperUsuarioByIdPort findPort;
     private final DeleteSuperUsuarioByIdPort deletePort;
-    private final IdentityProviderUserPort identityPort;
+    private final SetIdentityEnabledPort setEnabledPort;
 
     @Override
     public void delete(DeleteSuperUsuarioCommand command) {
@@ -31,7 +31,7 @@ public class DeleteSuperUsuarioService implements DeleteSuperUsuarioUseCase {
 
         // Disable in Keycloak before local delete
         if (existing.getKeycloakId() != null) {
-            identityPort.setEnabled(existing.getKeycloakId(), false);
+            setEnabledPort.setEnabled(existing.getKeycloakId(), false);
         }
 
         deletePort.deleteById(superUsuarioId);

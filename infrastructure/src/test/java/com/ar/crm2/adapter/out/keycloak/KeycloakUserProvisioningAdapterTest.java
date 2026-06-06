@@ -243,19 +243,28 @@ class KeycloakUserProvisioningAdapterTest {
         @Test
         @DisplayName("KeycloakUserProvisioningAdapter uses /reset-password not /credentials")
         void adapterUsesResetPasswordEndpoint() throws Exception {
-            KeycloakAdminProperties props = new KeycloakAdminProperties();
-            KeycloakUserProvisioningAdapter adapter =
-                new KeycloakUserProvisioningAdapter(props);
-
-            java.lang.reflect.Method setPasswordMethod = null;
+            // Contract after the password refactor: the adapter exposes a dedicated
+            // sendUpdatePasswordEmail(String) method that triggers the Keycloak
+            // /execute-actions-email flow, replacing any inline call to the
+            // deprecated /credentials endpoint. Initial passwords are set inside
+            // provision() via /reset-password.
+            java.lang.reflect.Method sendUpdatePasswordEmailMethod = null;
             for (var m : KeycloakUserProvisioningAdapter.class.getDeclaredMethods()) {
-                if (m.getName().contains("password") || m.getName().contains("Password")) {
-                    setPasswordMethod = m;
+                if (m.isSynthetic() || m.isBridge()) {
+                    continue;
+                }
+                String methodName = m.getName().toLowerCase();
+                if (methodName.equals("sendupdatepasswordemail")) {
+                    sendUpdatePasswordEmailMethod = m;
                     break;
                 }
             }
-            // Verify no method references /credentials path
-            assertNull(setPasswordMethod, "No method should reference /credentials endpoint");
+            assertNotNull(sendUpdatePasswordEmailMethod,
+                "Adapter must expose sendUpdatePasswordEmail(String) — the dedicated password-email method "
+                    + "replaces any inline /credentials call");
+            // Must accept the keycloakId argument
+            assertEquals(1, sendUpdatePasswordEmailMethod.getParameterCount(),
+                "sendUpdatePasswordEmail must take exactly the keycloakId argument");
         }
     }
 

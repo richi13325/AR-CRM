@@ -1,6 +1,6 @@
 package com.ar.crm2.application.usuario.service;
 
-import com.ar.crm2.application.identity.port.out.IdentityProviderUserPort;
+import com.ar.crm2.application.identity.port.out.SetIdentityEnabledPort;
 import com.ar.crm2.application.usuario.command.DeleteUsuarioCommand;
 import com.ar.crm2.application.usuario.exception.UsuarioNotFoundException;
 import com.ar.crm2.application.usuario.port.in.DeleteUsuarioUseCase;
@@ -19,7 +19,7 @@ public class DeleteUsuarioService implements DeleteUsuarioUseCase {
 
     private final FindUsuarioByIdPort findPort;
     private final DeleteUsuarioByIdPort deletePort;
-    private final IdentityProviderUserPort identityPort;
+    private final SetIdentityEnabledPort setEnabledPort;
 
     @Override
     public void delete(DeleteUsuarioCommand command) {
@@ -31,7 +31,7 @@ public class DeleteUsuarioService implements DeleteUsuarioUseCase {
 
         // Disable in Keycloak before local delete
         if (existing.getKeycloakId() != null) {
-            identityPort.setEnabled(existing.getKeycloakId(), false);
+            setEnabledPort.setEnabled(existing.getKeycloakId(), false);
         }
 
         deletePort.deleteById(usuarioId);
