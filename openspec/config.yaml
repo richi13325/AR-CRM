@@ -1,0 +1,74 @@
+schema: spec-driven
+
+context: |
+  Stack: Java 21, Spring Boot 4.0.6, Maven multi-module, Lombok 1.18.36.
+  Architecture: Hexagonal / Clean — boot -> infrastructure -> application -> domain.
+  Domain: rich entities, VOs, enums, exceptions (no Spring, no JPA).
+  Application: use cases, ports in/out, services, commands, security/identity context.
+  Infrastructure: REST controllers, JPA repositories + entities + mappers, Keycloak WebClient, Spring Security OAuth2 Resource Server (JWT, audiences=crm2-api), Spring Mail, Springdoc OpenAPI 2.8.4.
+  Boot: Spring Boot entry, WiringConfig composition root, application.yml.
+  Persistence: PostgreSQL 42.7.4 + Spring Data JPA; H2 in tests.
+  Conventions: see MASTER_RULES.md and per-layer *_RULES.md.
+
+testing:
+  strict_tdd: true
+  detected: "2026-06-08"
+  runner: "maven-surefire-plugin + maven-failsafe-plugin (TableroControllerIT only in infrastructure)"
+  framework: "JUnit Jupiter 5.11.x"
+  test_command: "mvn verify"
+  module_test_command: "mvn -pl <module> -am test"
+  coverage:
+    tool: "jacoco-maven-plugin 0.8.13"
+    available: true
+    command: "mvn verify"
+  layers:
+    unit:
+      available: true
+      command: "mvn -pl domain,application -am test"
+      tools: [junit-jupiter, assertj-core, mockito-junit-jupiter]
+    integration:
+      available: true
+      command: "mvn -pl infrastructure -am verify"
+      tools: [spring-boot-starter-test, spring-boot-data-jpa-test, spring-boot-starter-webmvc-test, h2, spring-security-test]
+    e2e:
+      available: false
+  quality:
+    linter:
+      available: false
+    type_checker:
+      available: true
+      tool: "javac (built-in, release=21)"
+    formatter:
+      available: false
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Tag every proposal with the affected hexagonal layer(s): domain | application | infrastructure | boot
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Cross-layer changes MUST emit a separate delta spec per domain folder (e.g. specs/tablero/spec.md)
+  design:
+    - Include sequence diagrams for flows that cross 2+ layers
+    - Document architecture decisions with rationale
+    - Reuse existing ports under com.ar.crm2.application.* instead of adding new ones
+    - Respect dependency direction: boot -> infrastructure -> application -> domain
+  tasks:
+    - Group tasks by layer in this order: domain -> application -> infrastructure -> boot
+    - Keep tasks completable in one session
+    - Test tasks MUST precede implementation tasks in the same layer (RED first)
+  apply:
+    - Follow existing code patterns: ports in/out, service classes, explicit mappers between layers
+    - Domain MUST NOT import Spring, JPA, or framework classes
+    - Infrastructure MUST NOT contain business rules
+    - Boot only composes; no @Service / @Repository outside the composition root
+    tdd: true
+    test_command: "mvn -pl <module> -am test"
+  verify:
+    test_command: "mvn verify"
+    build_command: "mvn -DskipTests package"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
+    - Verify delta specs map cleanly to existing main specs under openspec/specs/
