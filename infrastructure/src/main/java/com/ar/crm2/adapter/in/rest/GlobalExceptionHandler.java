@@ -7,6 +7,8 @@ import com.ar.crm2.application.contacto.exception.ContactoHasAssociatedTratosExc
 import com.ar.crm2.application.contacto.exception.ContactoNotFoundException;
 import com.ar.crm2.application.empresa.exception.EmpresaHasAssociatedTratosException;
 import com.ar.crm2.application.empresa.exception.EmpresaNotFoundException;
+import com.ar.crm2.application.etiqueta.exception.EtiquetaNotFoundException;
+import com.ar.crm2.application.etiqueta.exception.EtiquetaRequiresConfirmationException;
 import com.ar.crm2.application.ficha.exception.FichaNotFoundException;
 import com.ar.crm2.application.identity.model.IdentityProvisioningException;
 import com.ar.crm2.application.rol.exception.RolHasAssociatedUsuariosException;
@@ -123,6 +125,28 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(FichaNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleFichaNotFoundException(FichaNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * Handles EtiquetaNotFoundException as 404 Not Found.
+     * When the exception aggregates missing ids (resolver path), the
+     * response still uses 404 since the request asked for an entity the
+     * catalog could not resolve.
+     */
+    @ExceptionHandler(EtiquetaNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleEtiquetaNotFoundException(EtiquetaNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * Handles EtiquetaRequiresConfirmationException as 409 Conflict.
+     * Caller must re-issue the delete with confirm=true to cascade.
+     */
+    @ExceptionHandler(EtiquetaRequiresConfirmationException.class)
+    public ResponseEntity<Map<String, String>> handleEtiquetaRequiresConfirmationException(EtiquetaRequiresConfirmationException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(Map.of("error", ex.getMessage()));
     }
 

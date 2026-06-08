@@ -22,18 +22,27 @@ public final class FichaCommandMapper {
     /**
      * Maps a REST create request with actor context to an application command.
      * Note: responsableId/creadoPor now belong to Tarea/Trato, not Ficha.
+     *
+     * <p>The {@code etiquetaIds} list flows through unchanged. The application
+     * service resolves the ids against the global Etiqueta catalog, validates
+     * the tipo match against the Ficha's tipoFicha, and constructs the
+     * FichaEtiqueta relations owned by the aggregate.
      */
     public static CreateFichaCommand toCommand(CreateFichaRequest request, ActorContext actorContext) {
         return new CreateFichaCommand(
             request.columnaId(),
             request.tipoFicha(),
             request.tratoId(),
-            request.tareaId()
+            request.tareaId(),
+            request.etiquetaIds()
         );
     }
 
     /**
      * Maps an edit request with a query-parameter id to an application command.
+     *
+     * <p>The {@code etiquetaIds} list, when non-null, replaces the existing
+     * etiqueta relations in full. A null value leaves the existing tags untouched.
      */
     public static EditFichaCommand toCommand(UUID id, EditFichaRequest request) {
         return new EditFichaCommand(
@@ -41,7 +50,8 @@ public final class FichaCommandMapper {
             request.columnaId(),
             request.tipoFicha(),
             request.tratoId(),
-            request.tareaId()
+            request.tareaId(),
+            request.etiquetaIds()
         );
     }
 

@@ -2,6 +2,8 @@ package com.ar.crm2.adapter.in.rest;
 
 import com.ar.crm2.application.columna.exception.ColumnaHasAssociatedFichasException;
 import com.ar.crm2.application.columna.exception.ColumnaNotFoundException;
+import com.ar.crm2.application.etiqueta.exception.EtiquetaNotFoundException;
+import com.ar.crm2.application.etiqueta.exception.EtiquetaRequiresConfirmationException;
 import com.ar.crm2.application.identity.model.IdentityProvisioningException;
 import com.ar.crm2.application.tablero.exception.TableroNotFoundException;
 import com.ar.crm2.exception.ColumnaConFichasNoPuedeEliminarseException;
@@ -48,6 +50,29 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().get("error").contains(id.toString()));
+    }
+
+    @Test
+    void handleEtiquetaNotFoundException_shouldReturn404() {
+        UUID id = UUID.randomUUID();
+        EtiquetaNotFoundException ex = EtiquetaNotFoundException.forId(id);
+
+        ResponseEntity<Map<String, String>> response = handler.handleEtiquetaNotFoundException(ex);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().get("error").contains(id.toString()));
+    }
+
+    @Test
+    void handleEtiquetaRequiresConfirmationException_shouldReturn409() {
+        EtiquetaRequiresConfirmationException ex = new EtiquetaRequiresConfirmationException();
+
+        ResponseEntity<Map<String, String>> response = handler.handleEtiquetaRequiresConfirmationException(ex);
+
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertNotNull(response.getBody().get("error"));
     }
 
     // ── 409 Conflict ───────────────────────────────────────────────
