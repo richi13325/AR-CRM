@@ -1,7 +1,5 @@
 package com.ar.crm2.model.entity;
 
-import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTarea;
-import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTrato;
 import com.ar.crm2.model.enums.TipoTablero;
 import com.ar.crm2.model.vo.ColumnaId;
 import com.ar.crm2.shared.DomainAssert;
@@ -19,10 +17,11 @@ import java.util.List;
  *
  * <p>Owned by {@link Tablero}. Holds the board-specific WIP limit that cannot exist
  * in the column catalog because it is a property of how the column is used on a board,
- * not a property of the column itself. Also carries semantic state and optional note.
+ * not a property of the column itself. Also carries an optional note and the
+ * persisted total estimated value.
  *
  * <p>Identity: ColumnaId (the assigned catalog column's id).
- * Equality: by all fields (columnaId + limiteWip + nota + estadoTarea + estadoTrato).
+ * Equality: by all fields (columnaId + tipoTablero + limiteWip + nota + totalValorEstimado).
  *
  * <p>This is NOT a separate entity with its own ID — it is a value-object-like
  * contextual wrapper whose lifecycle is bound to the owning Tablero aggregate.
@@ -39,8 +38,6 @@ public final class ColumnaTablero {
     private final TipoTablero tipoTablero; // stored for validation, not delegated from columna
     private final Integer limiteWip;
     private final String nota;
-    private final TipoEstadoColumnaTableroTarea estadoTarea;
-    private final TipoEstadoColumnaTableroTrato estadoTrato;
     private final BigDecimal totalValorEstimado;
 
     // ── Factory ──────────────────────────────────────────────────
@@ -49,15 +46,13 @@ public final class ColumnaTablero {
      * Creates a new ColumnaTablero for assigning a catalog column to a board.
      *
      * @param columnaId            the catalog ColumnaId to assign (mandatory)
-     * @param tipoTablero          the type of board (TAREAS or TRATOS); used to validate states
+     * @param tipoTablero          the type of board (TAREAS or TRATOS); used for validation
      * @param limiteWip            mandatory WIP limit for this column in this board context; must be > 0
      * @param nota                 optional contextual note; null if blank; if present, max 500 chars
-     * @param estadoTarea           semantic state for task boards; null for deal boards
-     * @param estadoTrato          semantic state for deal boards; null for task boards
      * @param totalValorEstimado   the persisted total estimated value for this column; non-null, non-negative,
      *                             ZERO for TAREAS columns, any non-negative value for TRATOS columns
      * @throws InvariantViolationException if columnaId or tipoTablero is null,
-     *         if limiteWip <= 0, if semantic states are mixed (both non-null) or both missing for non-trivial columns,
+     *         if limiteWip <= 0,
      *         if totalValorEstimado is null, negative, or non-ZERO for TAREAS columns
      */
     public static ColumnaTablero create(
@@ -65,8 +60,6 @@ public final class ColumnaTablero {
         TipoTablero tipoTablero,
         Integer limiteWip,
         String nota,
-        TipoEstadoColumnaTableroTarea estadoTarea,
-        TipoEstadoColumnaTableroTrato estadoTrato,
         BigDecimal totalValorEstimado
     ) {
         DomainAssert.notNull(columnaId, "columnaId");
@@ -78,25 +71,22 @@ public final class ColumnaTablero {
             ? null
             : DomainAssert.lengthBetween(nota, "nota", 1, 500);
         validarLimiteWip(limiteWip);
-        validarEstadosExclusivos(tipoTablero, estadoTarea, estadoTrato);
         validarTotalValorEstimado(totalValorEstimado, tipoTablero);
 
-        return new ColumnaTablero(columnaId, tipoTablero, limiteWip, normalizedNota, estadoTarea, estadoTrato, totalValorEstimado);
+        return new ColumnaTablero(columnaId, tipoTablero, limiteWip, normalizedNota, totalValorEstimado);
     }
 
     /**
      * Reconstitutes an existing ColumnaTablero from persistence.
      *
      * @param columnaId           the persisted catalog ColumnaId
-     * @param tipoTablero          the board type (TAREAS or TRATOS); used to validate states
+     * @param tipoTablero          the board type (TAREAS or TRATOS); used for validation
      * @param limiteWip            the persisted WIP limit; must be > 0
      * @param nota                 the persisted contextual note (may be null)
-     * @param estadoTarea          persisted task semantic state (may be null)
-     * @param estadoTrato          persisted deal semantic state (may be null)
      * @param totalValorEstimado  the persisted total estimated value; non-null, non-negative,
      *                            ZERO for TAREAS columns, any non-negative value for TRATOS columns
      * @throws InvariantViolationException if columnaId or tipoTablero is null,
-     *         if limiteWip <= 0, if semantic states violate board-type exclusivity,
+     *         if limiteWip <= 0,
      *         if totalValorEstimado is null, negative, or non-ZERO for TAREAS columns
      */
     public static ColumnaTablero reconstitute(
@@ -104,8 +94,6 @@ public final class ColumnaTablero {
         TipoTablero tipoTablero,
         Integer limiteWip,
         String nota,
-        TipoEstadoColumnaTableroTarea estadoTarea,
-        TipoEstadoColumnaTableroTrato estadoTrato,
         BigDecimal totalValorEstimado
     ) {
         DomainAssert.notNull(columnaId, "columnaId");
@@ -117,45 +105,12 @@ public final class ColumnaTablero {
             ? null
             : DomainAssert.lengthBetween(nota, "nota", 1, 500);
         validarLimiteWip(limiteWip);
-        validarEstadosExclusivos(tipoTablero, estadoTarea, estadoTrato);
         validarTotalValorEstimado(totalValorEstimado, tipoTablero);
 
-        return new ColumnaTablero(columnaId, tipoTablero, limiteWip, normalizedNota, estadoTarea, estadoTrato, totalValorEstimado);
+        return new ColumnaTablero(columnaId, tipoTablero, limiteWip, normalizedNota, totalValorEstimado);
     }
 
     // ── Semantic validation ──────────────────────────────────────
-
-    private static void validarEstadosExclusivos(
-        TipoTablero tipoTablero,
-        TipoEstadoColumnaTableroTarea estadoTarea,
-        TipoEstadoColumnaTableroTrato estadoTrato
-    ) {
-        boolean tieneEstadoTarea = estadoTarea != null;
-        boolean tieneEstadoTrato = estadoTrato != null;
-
-        if (tieneEstadoTarea && tieneEstadoTrato) {
-            throw new com.ar.crm2.exception.InvariantViolationException(
-                "Una columna no puede tener estados de tarea y trato simultáneamente."
-            );
-        }
-
-        switch (tipoTablero) {
-            case TAREAS -> {
-                if (!tieneEstadoTarea) {
-                    throw new com.ar.crm2.exception.InvariantViolationException(
-                        "Las columnas de tableros de tareas requieren estado de tarea."
-                    );
-                }
-            }
-            case TRATOS -> {
-                if (!tieneEstadoTrato) {
-                    throw new com.ar.crm2.exception.InvariantViolationException(
-                        "Las columnas de tableros de tratos requieren estado de trato."
-                    );
-                }
-            }
-        }
-    }
 
     private static void validarLimiteWip(Integer limiteWip) {
         if (limiteWip <= 0) {
@@ -221,7 +176,7 @@ public final class ColumnaTablero {
         validarValorEstimado(valor);
         BigDecimal nuevoTotal = totalValorEstimado.add(valor);
         return new ColumnaTablero(
-            columnaId, tipoTablero, limiteWip, nota, estadoTarea, estadoTrato, nuevoTotal
+            columnaId, tipoTablero, limiteWip, nota, nuevoTotal
         );
     }
 
@@ -242,7 +197,7 @@ public final class ColumnaTablero {
             );
         }
         return new ColumnaTablero(
-            columnaId, tipoTablero, limiteWip, nota, estadoTarea, estadoTrato, nuevoTotal
+            columnaId, tipoTablero, limiteWip, nota, nuevoTotal
         );
     }
 
@@ -258,7 +213,7 @@ public final class ColumnaTablero {
     public ColumnaTablero recalcularTotalValorEstimado(List<BigDecimal> valoresEstimados) {
         BigDecimal nuevoTotal = calcularTotal(valoresEstimados);
         return new ColumnaTablero(
-            columnaId, tipoTablero, limiteWip, nota, estadoTarea, estadoTrato, nuevoTotal
+            columnaId, tipoTablero, limiteWip, nota, nuevoTotal
         );
     }
 

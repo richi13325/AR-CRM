@@ -60,8 +60,6 @@ public class AsignarColumnaTableroService implements AsignarColumnaTableroUseCas
                 columna.getTipoTablero(),
                 command.limiteWip(),
                 command.nota(),
-                command.estadoTarea(),
-                command.estadoTrato(),
                 command.totalValorEstimado()
         );
 

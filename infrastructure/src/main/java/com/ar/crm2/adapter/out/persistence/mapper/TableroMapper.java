@@ -24,6 +24,16 @@ import java.util.UUID;
  *
  * <p>On write (Domain → Entity): persists only the {@code columnaId} reference, not
  * catalog fields. The catalog remains the single source of truth for column definition.
+ *
+ * <p><b>Child row id strategy</b>: each {@code ColumnaTableroEntity} row
+ * generated here owns its own fresh UUID technical id. The catalog
+ * {@code columnaId} is stored in its own {@code columna_id} column so the
+ * row can still reference the Columna catalog. The row id MUST NOT be a
+ * copy of the catalog id — it is a technical id, not a domain identity.
+ * This contract is enforced by
+ * {@code TableroMapperTest#toEntity_childRowId_isGeneratedUuidNotEqualToColumnaId}
+ * and is the same strategy used by {@code FichaMapper#toEntity} for
+ * {@code FichaEtiquetaEntity}.
  */
 public final class TableroMapper {
 
@@ -64,18 +74,23 @@ public final class TableroMapper {
      * Maps a domain ColumnaTablero to a persistence ColumnaTableroEntity.
      * Used for save operations within a Tablero aggregate.
      *
+     * <p>Identity strategy: the row owns its own generated UUID as its
+     * technical id. The catalog {@code columnaId} is stored in its own
+     * {@code columna_id} column so the row can still reference the
+     * Columna catalog. The row id MUST NOT be a copy of the catalog id
+     * (it is a technical id, not a domain identity) — this matches the
+     * {@code FichaMapper#toEntity} contract for {@code FichaEtiquetaEntity}.
+     *
      * @param orden the position of this column in the parent's column list (used for @OrderColumn)
      */
     private ColumnaTableroEntity toColumnaTableroEntity(ColumnaTablero ct, TableroEntity parent, int orden) {
         return ColumnaTableroEntity.builder()
-            .id(ct.getColumnaId().value().toString())
+            .id(UUID.randomUUID().toString())
             .tablero(parent)
             .columnaId(ct.getColumnaId().value().toString())
             .tipoTablero(ct.getTipoTablero())
             .limiteWip(ct.getLimiteWip())
             .nota(ct.getNota())
-            .estadoTarea(ct.getEstadoTarea())
-            .estadoTrato(ct.getEstadoTrato())
             .totalValorEstimado(ct.getTotalValorEstimado())
             .orden(orden)
             .build();
@@ -128,8 +143,6 @@ public final class TableroMapper {
             entity.getTipoTablero(),
             entity.getLimiteWip(),
             entity.getNota(),
-            entity.getEstadoTarea(),
-            entity.getEstadoTrato(),
             entity.getTotalValorEstimado()
         );
     }

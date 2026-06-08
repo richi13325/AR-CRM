@@ -100,7 +100,7 @@ public final class TableroCommandMapper {
      *
      * <p>This command does NOT carry column definition fields (nombre, color,
      * tipoColumna). Those belong to the Columna catalog. This overload only
-     * carries board-specific context (WIP, note, state).
+     * carries board-specific context (WIP, note, total).
      */
     public static AsignarColumnaTableroCommand toAsignarCommand(
             UUID tableroId,
@@ -112,8 +112,6 @@ public final class TableroCommandMapper {
             columnaId,
             request.limiteWip(),
             request.nota(),
-            request.estadoTarea(),
-            request.estadoTrato(),
             request.totalValorEstimado()
         );
     }

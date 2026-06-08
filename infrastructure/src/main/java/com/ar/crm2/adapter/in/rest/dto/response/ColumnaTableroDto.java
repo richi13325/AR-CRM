@@ -15,8 +15,6 @@ public record ColumnaTableroDto(
     String color,
     Integer limiteWip,
     String nota,
-    String estadoTarea,
-    String estadoTrato,
     BigDecimal totalValorEstimado
 ) {
     /**
@@ -37,8 +35,6 @@ public record ColumnaTableroDto(
             columna != null ? columna.getColor() : null,
             ct.getLimiteWip(),
             ct.getNota(),
-            ct.getEstadoTarea() != null ? ct.getEstadoTarea().name() : null,
-            ct.getEstadoTrato() != null ? ct.getEstadoTrato().name() : null,
             ct.getTotalValorEstimado()
         );
     }

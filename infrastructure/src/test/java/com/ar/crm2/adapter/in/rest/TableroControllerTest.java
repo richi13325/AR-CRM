@@ -25,8 +25,6 @@ import com.ar.crm2.application.tablero.port.in.GetAllTablerosUseCase;
 import com.ar.crm2.application.tablero.port.in.GetTableroByIdUseCase;
 import com.ar.crm2.application.tablero.port.in.ReordenarColumnasUseCase;
 import com.ar.crm2.model.entity.Tablero;
-import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTarea;
-import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTrato;
 import com.ar.crm2.model.enums.TipoTablero;
 import com.ar.crm2.model.vo.TableroId;
 import com.ar.crm2.security.ActorContextRequestAttributeFilter;
@@ -341,8 +339,6 @@ class TableroControllerTest {
         AsignarColumnaRequest request = new AsignarColumnaRequest(
                 3,
                 "Assignment note",
-                TipoEstadoColumnaTableroTarea.PENDIENTE,
-                null,
                 new BigDecimal("500")
         );
 
@@ -365,8 +361,6 @@ class TableroControllerTest {
         AsignarColumnaRequest request = new AsignarColumnaRequest(
                 2,
                 "Test note",
-                null,
-                TipoEstadoColumnaTableroTrato.ABIERTO,
                 new BigDecimal("200")
         );
 

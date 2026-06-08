@@ -1,8 +1,6 @@
 package com.ar.crm2.model.entity;
 
 import com.ar.crm2.exception.InvariantViolationException;
-import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTarea;
-import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTrato;
 import com.ar.crm2.model.enums.TipoTablero;
 import com.ar.crm2.model.vo.ColumnaId;
 import org.junit.jupiter.api.DisplayName;
@@ -31,8 +29,6 @@ class ColumnaTableroTest {
             TIPO_TAREAS,
             limiteWip,
             null,
-            TipoEstadoColumnaTableroTarea.PENDIENTE,
-            null,
             BigDecimal.ZERO
         );
     }
@@ -43,8 +39,6 @@ class ColumnaTableroTest {
             TIPO_TRATOS,
             limiteWip,
             null,
-            null,
-            TipoEstadoColumnaTableroTrato.ABIERTO,
             BigDecimal.ZERO
         );
     }
@@ -59,7 +53,7 @@ class ColumnaTableroTest {
         @DisplayName("throw when columnaId is null")
         void nullColumnaId_throws() {
             assertThatThrownBy(() ->
-                ColumnaTablero.create(null, TIPO_TAREAS, 5, null, TipoEstadoColumnaTableroTarea.PENDIENTE, null, BigDecimal.ZERO)
+                ColumnaTablero.create(null, TIPO_TAREAS, 5, null, BigDecimal.ZERO)
             ).isInstanceOf(InvariantViolationException.class);
         }
 
@@ -68,7 +62,7 @@ class ColumnaTableroTest {
         void nullTipoTablero_throws() {
             ColumnaId id = ColumnaId.create();
             assertThatThrownBy(() ->
-                ColumnaTablero.create(id, null, 5, null, TipoEstadoColumnaTableroTarea.PENDIENTE, null, BigDecimal.ZERO)
+                ColumnaTablero.create(id, null, 5, null, BigDecimal.ZERO)
             ).isInstanceOf(InvariantViolationException.class);
         }
 
@@ -78,7 +72,7 @@ class ColumnaTableroTest {
             ColumnaId id = ColumnaId.create();
 
             assertThatThrownBy(() ->
-                ColumnaTablero.create(id, TIPO_TAREAS, null, null, TipoEstadoColumnaTableroTarea.PENDIENTE, null, BigDecimal.ZERO)
+                ColumnaTablero.create(id, TIPO_TAREAS, null, null, BigDecimal.ZERO)
             ).isInstanceOf(InvariantViolationException.class);
         }
 
@@ -88,12 +82,12 @@ class ColumnaTableroTest {
             ColumnaId id = ColumnaId.create();
 
             assertThatThrownBy(() ->
-                ColumnaTablero.create(id, TIPO_TAREAS, 0, null, TipoEstadoColumnaTableroTarea.PENDIENTE, null, BigDecimal.ZERO)
+                ColumnaTablero.create(id, TIPO_TAREAS, 0, null, BigDecimal.ZERO)
             ).isInstanceOf(InvariantViolationException.class)
              .hasMessageContaining("limiteWip");
 
             assertThatThrownBy(() ->
-                ColumnaTablero.create(id, TIPO_TAREAS, -1, null, TipoEstadoColumnaTableroTarea.PENDIENTE, null, BigDecimal.ZERO)
+                ColumnaTablero.create(id, TIPO_TAREAS, -1, null, BigDecimal.ZERO)
             ).isInstanceOf(InvariantViolationException.class)
              .hasMessageContaining("limiteWip");
         }
@@ -104,7 +98,7 @@ class ColumnaTableroTest {
             ColumnaId id = ColumnaId.create();
 
             assertThatThrownBy(() ->
-                ColumnaTablero.create(id, TIPO_TRATOS, 5, null, null, TipoEstadoColumnaTableroTrato.ABIERTO, null)
+                ColumnaTablero.create(id, TIPO_TRATOS, 5, null, null)
             ).isInstanceOf(InvariantViolationException.class)
              .hasMessageContaining("totalValorEstimado");
         }
@@ -115,7 +109,7 @@ class ColumnaTableroTest {
             ColumnaId id = ColumnaId.create();
 
             assertThatThrownBy(() ->
-                ColumnaTablero.create(id, TIPO_TRATOS, 5, null, null, TipoEstadoColumnaTableroTrato.ABIERTO, new BigDecimal("-100.00"))
+                ColumnaTablero.create(id, TIPO_TRATOS, 5, null, new BigDecimal("-100.00"))
             ).isInstanceOf(InvariantViolationException.class)
              .hasMessageContaining("negativo");
         }
@@ -126,45 +120,41 @@ class ColumnaTableroTest {
             ColumnaId id = ColumnaId.create();
 
             assertThatThrownBy(() ->
-                ColumnaTablero.create(id, TIPO_TAREAS, 3, null, TipoEstadoColumnaTableroTarea.EN_CURSO, null, new BigDecimal("100.00"))
+                ColumnaTablero.create(id, TIPO_TAREAS, 3, null, new BigDecimal("100.00"))
             ).isInstanceOf(InvariantViolationException.class)
              .hasMessageContaining("TAREAS")
              .hasMessageContaining("cero");
         }
 
         @Test
-        @DisplayName("valid TAREAS column with estadoTarea and ZERO total returns ColumnaTablero")
+        @DisplayName("valid TAREAS column with ZERO total returns ColumnaTablero")
         void validTareas_returnsColumnaTablero() {
             ColumnaId id = ColumnaId.create();
 
             ColumnaTablero result = ColumnaTablero.create(
                 id, TIPO_TAREAS, 3, null,
-                TipoEstadoColumnaTableroTarea.EN_CURSO, null,
                 BigDecimal.ZERO
             );
 
             assertThat(result.getColumnaId()).isEqualTo(id);
+            assertThat(result.getTipoTablero()).isEqualTo(TIPO_TAREAS);
             assertThat(result.getLimiteWip()).isEqualTo(3);
-            assertThat(result.getEstadoTarea()).isEqualTo(TipoEstadoColumnaTableroTarea.EN_CURSO);
-            assertThat(result.getEstadoTrato()).isNull();
             assertThat(result.getTotalValorEstimado()).isEqualByComparingTo(BigDecimal.ZERO);
         }
 
         @Test
-        @DisplayName("valid TRATOS column with estadoTrato returns ColumnaTablero")
+        @DisplayName("valid TRATOS column returns ColumnaTablero")
         void validTratos_returnsColumnaTablero() {
             ColumnaId id = ColumnaId.create();
 
             ColumnaTablero result = ColumnaTablero.create(
                 id, TIPO_TRATOS, 5, null,
-                null, TipoEstadoColumnaTableroTrato.ABIERTO,
                 new BigDecimal("1500.00")
             );
 
             assertThat(result.getColumnaId()).isEqualTo(id);
+            assertThat(result.getTipoTablero()).isEqualTo(TIPO_TRATOS);
             assertThat(result.getLimiteWip()).isEqualTo(5);
-            assertThat(result.getEstadoTrato()).isEqualTo(TipoEstadoColumnaTableroTrato.ABIERTO);
-            assertThat(result.getEstadoTarea()).isNull();
             assertThat(result.getTotalValorEstimado()).isEqualByComparingTo(new BigDecimal("1500.00"));
         }
     }
@@ -179,7 +169,7 @@ class ColumnaTableroTest {
         @DisplayName("throw when columnaId is null")
         void nullColumnaId_throws() {
             assertThatThrownBy(() ->
-                ColumnaTablero.reconstitute(null, TIPO_TAREAS, 5, null, null, null, BigDecimal.ZERO)
+                ColumnaTablero.reconstitute(null, TIPO_TAREAS, 5, null, BigDecimal.ZERO)
             ).isInstanceOf(InvariantViolationException.class);
         }
 
@@ -188,7 +178,7 @@ class ColumnaTableroTest {
         void nullTipoTablero_throws() {
             ColumnaId id = ColumnaId.create();
             assertThatThrownBy(() ->
-                ColumnaTablero.reconstitute(id, null, 5, null, null, null, BigDecimal.ZERO)
+                ColumnaTablero.reconstitute(id, null, 5, null, BigDecimal.ZERO)
             ).isInstanceOf(InvariantViolationException.class);
         }
 
@@ -198,7 +188,7 @@ class ColumnaTableroTest {
             ColumnaId id = ColumnaId.create();
 
             assertThatThrownBy(() ->
-                ColumnaTablero.reconstitute(id, TIPO_TAREAS, null, null, TipoEstadoColumnaTableroTarea.PENDIENTE, null, BigDecimal.ZERO)
+                ColumnaTablero.reconstitute(id, TIPO_TAREAS, null, null, BigDecimal.ZERO)
             ).isInstanceOf(InvariantViolationException.class);
         }
 
@@ -208,7 +198,7 @@ class ColumnaTableroTest {
             ColumnaId id = ColumnaId.create();
 
             assertThatThrownBy(() ->
-                ColumnaTablero.reconstitute(id, TIPO_TAREAS, 0, null, TipoEstadoColumnaTableroTarea.FINALIZADA, null, BigDecimal.ZERO)
+                ColumnaTablero.reconstitute(id, TIPO_TAREAS, 0, null, BigDecimal.ZERO)
             ).isInstanceOf(InvariantViolationException.class)
              .hasMessageContaining("limiteWip");
         }
@@ -219,7 +209,7 @@ class ColumnaTableroTest {
             ColumnaId id = ColumnaId.create();
 
             assertThatThrownBy(() ->
-                ColumnaTablero.reconstitute(id, TIPO_TRATOS, 5, null, null, TipoEstadoColumnaTableroTrato.ABIERTO, null)
+                ColumnaTablero.reconstitute(id, TIPO_TRATOS, 5, null, null)
             ).isInstanceOf(InvariantViolationException.class)
              .hasMessageContaining("totalValorEstimado");
         }
@@ -230,7 +220,7 @@ class ColumnaTableroTest {
             ColumnaId id = ColumnaId.create();
 
             assertThatThrownBy(() ->
-                ColumnaTablero.reconstitute(id, TIPO_TAREAS, 10, null, TipoEstadoColumnaTableroTarea.FINALIZADA, null, new BigDecimal("100.00"))
+                ColumnaTablero.reconstitute(id, TIPO_TAREAS, 10, null, new BigDecimal("100.00"))
             ).isInstanceOf(InvariantViolationException.class)
              .hasMessageContaining("TAREAS");
         }
@@ -242,75 +232,12 @@ class ColumnaTableroTest {
 
             ColumnaTablero result = ColumnaTablero.reconstitute(
                 id, TIPO_TAREAS, 10, null,
-                TipoEstadoColumnaTableroTarea.FINALIZADA, null,
                 BigDecimal.ZERO
             );
 
             assertThat(result.getColumnaId()).isEqualTo(id);
             assertThat(result.getLimiteWip()).isEqualTo(10);
-            assertThat(result.getEstadoTarea()).isEqualTo(TipoEstadoColumnaTableroTarea.FINALIZADA);
             assertThat(result.getTotalValorEstimado()).isEqualByComparingTo(BigDecimal.ZERO);
-        }
-    }
-
-    // ── Semantic validation ────────────────────────────────────
-
-    @Nested
-    @DisplayName("semantic state validation")
-    class SemanticValidation {
-
-        @Test
-        @DisplayName("TAREAS column rejects missing estadoTarea")
-        void tareasSinEstado_throws() {
-            ColumnaId id = ColumnaId.create();
-
-            assertThatThrownBy(() ->
-                ColumnaTablero.create(id, TIPO_TAREAS, 3, null, null, null, BigDecimal.ZERO)
-            ).isInstanceOf(InvariantViolationException.class)
-             .hasMessageContaining("estado de tarea");
-        }
-
-        @Test
-        @DisplayName("TRATOS column rejects missing estadoTrato")
-        void tratosSinEstado_throws() {
-            ColumnaId id = ColumnaId.create();
-
-            assertThatThrownBy(() ->
-                ColumnaTablero.create(id, TIPO_TRATOS, 5, null, null, null, BigDecimal.ZERO)
-            ).isInstanceOf(InvariantViolationException.class)
-             .hasMessageContaining("estado de trato");
-        }
-
-        @Test
-        @DisplayName("TAREAS column rejects both estadoTarea and estadoTrato provided")
-        void tareasConEstadoTrato_throws() {
-            ColumnaId id = ColumnaId.create();
-
-            assertThatThrownBy(() ->
-                ColumnaTablero.create(
-                    id, TIPO_TAREAS, 3, null,
-                    TipoEstadoColumnaTableroTarea.PENDIENTE,
-                    TipoEstadoColumnaTableroTrato.ABIERTO,
-                    BigDecimal.ZERO
-                )
-            ).isInstanceOf(InvariantViolationException.class)
-             .hasMessageContaining("no puede tener estados de tarea y trato simultáneamente");
-        }
-
-        @Test
-        @DisplayName("TRATOS column rejects both estadoTarea and estadoTrato provided")
-        void tratosConEstadoTarea_throws() {
-            ColumnaId id = ColumnaId.create();
-
-            assertThatThrownBy(() ->
-                ColumnaTablero.create(
-                    id, TIPO_TRATOS, 5, null,
-                    TipoEstadoColumnaTableroTarea.EN_CURSO,
-                    TipoEstadoColumnaTableroTrato.GANADO,
-                    BigDecimal.ZERO
-                )
-            ).isInstanceOf(InvariantViolationException.class)
-             .hasMessageContaining("no puede tener estados de tarea y trato simultáneamente");
         }
     }
 
@@ -327,7 +254,6 @@ class ColumnaTableroTest {
 
             ColumnaTablero result = ColumnaTablero.create(
                 id, TIPO_TAREAS, 3, null,
-                TipoEstadoColumnaTableroTarea.PENDIENTE, null,
                 BigDecimal.ZERO
             );
 
@@ -341,7 +267,6 @@ class ColumnaTableroTest {
 
             ColumnaTablero result = ColumnaTablero.create(
                 id, TIPO_TAREAS, 3, "   ",
-                TipoEstadoColumnaTableroTarea.PENDIENTE, null,
                 BigDecimal.ZERO
             );
 
@@ -355,7 +280,6 @@ class ColumnaTableroTest {
 
             ColumnaTablero result = ColumnaTablero.create(
                 id, TIPO_TAREAS, 3, "  nota de prueba  ",
-                TipoEstadoColumnaTableroTarea.EN_CURSO, null,
                 BigDecimal.ZERO
             );
 
@@ -370,7 +294,6 @@ class ColumnaTableroTest {
 
             assertThatThrownBy(() -> ColumnaTablero.create(
                     id, TIPO_TAREAS, 3, longNota,
-                    TipoEstadoColumnaTableroTarea.PENDIENTE, null,
                     BigDecimal.ZERO
                 ))
                 .isInstanceOf(InvariantViolationException.class)
@@ -385,7 +308,6 @@ class ColumnaTableroTest {
 
             ColumnaTablero result = ColumnaTablero.create(
                 id, TIPO_TAREAS, 3, nota500,
-                TipoEstadoColumnaTableroTarea.PENDIENTE, null,
                 BigDecimal.ZERO
             );
 
@@ -403,7 +325,6 @@ class ColumnaTableroTest {
             ColumnaId id = ColumnaId.create();
             return ColumnaTablero.create(
                 id, TIPO_TRATOS, 5, null,
-                null, TipoEstadoColumnaTableroTrato.ABIERTO,
                 BigDecimal.ZERO
             );
         }
@@ -517,7 +438,6 @@ class ColumnaTableroTest {
             ColumnaId id = ColumnaId.create();
             return ColumnaTablero.create(
                 id, TIPO_TRATOS, 5, null,
-                null, TipoEstadoColumnaTableroTrato.ABIERTO,
                 new BigDecimal("100.00")
             );
         }
@@ -565,7 +485,6 @@ class ColumnaTableroTest {
             ColumnaId id = ColumnaId.create();
             return ColumnaTablero.create(
                 id, TIPO_TRATOS, 5, null,
-                null, TipoEstadoColumnaTableroTrato.ABIERTO,
                 new BigDecimal("100.00")
             );
         }
@@ -611,7 +530,6 @@ class ColumnaTableroTest {
             ColumnaId id = ColumnaId.create();
             return ColumnaTablero.create(
                 id, TIPO_TAREAS, 3, null,
-                TipoEstadoColumnaTableroTarea.EN_CURSO, null,
                 BigDecimal.ZERO
             );
         }
@@ -651,7 +569,6 @@ class ColumnaTableroTest {
             ColumnaId id = ColumnaId.create();
             return ColumnaTablero.create(
                 id, TIPO_TAREAS, 5, null,
-                TipoEstadoColumnaTableroTarea.PENDIENTE, null,
                 BigDecimal.ZERO
             );
         }
@@ -707,7 +624,6 @@ class ColumnaTableroTest {
 
             ColumnaTablero ct = ColumnaTablero.create(
                 id, TIPO_TAREAS, 5, null,
-                TipoEstadoColumnaTableroTarea.PENDIENTE, null,
                 BigDecimal.ZERO
             );
 

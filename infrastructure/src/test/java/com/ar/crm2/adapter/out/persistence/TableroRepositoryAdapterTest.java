@@ -10,7 +10,6 @@ import com.ar.crm2.model.entity.Columna;
 import com.ar.crm2.model.entity.ColumnaTablero;
 import com.ar.crm2.model.entity.Tablero;
 import com.ar.crm2.model.enums.TipoColumna;
-import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTarea;
 import com.ar.crm2.model.enums.TipoTablero;
 import com.ar.crm2.model.vo.ColumnaId;
 import com.ar.crm2.model.vo.TableroId;

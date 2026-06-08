@@ -22,7 +22,6 @@ import com.ar.crm2.application.tablero.port.in.GetAllTablerosUseCase;
 import com.ar.crm2.application.tablero.port.in.GetTableroByIdUseCase;
 import com.ar.crm2.application.tablero.port.in.ReordenarColumnasUseCase;
 import com.ar.crm2.model.entity.Tablero;
-import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTrato;
 import com.ar.crm2.model.enums.TipoTablero;
 import com.ar.crm2.model.vo.ColumnaId;
 import com.ar.crm2.model.vo.TableroId;
@@ -270,8 +269,6 @@ class TableroControllerIT {
                   "tipoColumna": "PERSONALIZADA",
                   "limiteWip": 5,
                   "nota": "A note",
-                  "estadoTarea": "PENDIENTE",
-                  "estadoTrato": null,
                   "totalValorEstimado": 1000,
                   "existeOtraColumnaConMismoNombre": false
                 }
@@ -318,8 +315,6 @@ class TableroControllerIT {
                 {
                   "limiteWip": 3,
                   "nota": "Assignment note",
-                  "estadoTarea": "PENDIENTE",
-                  "estadoTrato": null,
                   "totalValorEstimado": 500
                 }
                 """;
@@ -346,8 +341,6 @@ class TableroControllerIT {
                 {
                   "limiteWip": 2,
                   "nota": "Test note",
-                  "estadoTarea": null,
-                  "estadoTrato": "ABIERTO",
                   "totalValorEstimado": 200
                 }
                 """;

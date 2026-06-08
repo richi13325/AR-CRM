@@ -1,7 +1,5 @@
 package com.ar.crm2.adapter.out.persistence.entity;
 
-import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTarea;
-import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTrato;
 import com.ar.crm2.model.enums.TipoTablero;
 import jakarta.persistence.*;
 import lombok.*;
@@ -11,12 +9,21 @@ import java.math.BigDecimal;
 /**
  * JPA entity representing a column assignment within a Tablero aggregate.
  *
- * <p>Stores only the contextual data (limiteWip, nota, estado, order) and a
+ * <p>Stores only the contextual data (limiteWip, nota, order) and a
  * reference to the catalog Columna via {@code columnaId}. The catalog data
  * (nombre, color, tipoColumna) is resolved by the mapper on read.
  *
  * <p>This entity is a child of TableroEntity and must not exist independently.
  * Lifecycle is bound to the owning Tablero aggregate via cascade=ALL.
+ *
+ * <p><b>Identity strategy</b>: the row owns its own generated UUID as its
+ * technical id. The catalog {@code columnaId} is stored in its own
+ * {@code columna_id} column so the row can still reference the Columna
+ * catalog. The row id MUST NOT be a copy of the catalog id — it is a
+ * technical id, not a domain identity. This contract is enforced by
+ * {@code TableroMapperTest#toEntity_childRowId_isGeneratedUuidNotEqualToColumnaId}
+ * and is the same strategy used by
+ * {@code FichaMapper#toEntity} for {@link FichaEtiquetaEntity}.
  */
 @Entity
 @Table(name = "columnas_tablero", uniqueConstraints = {
@@ -57,14 +64,6 @@ public class ColumnaTableroEntity {
 
     @Column(name = "nota", length = 500)
     private String nota;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "estado_tarea")
-    private TipoEstadoColumnaTableroTarea estadoTarea;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "estado_trato")
-    private TipoEstadoColumnaTableroTrato estadoTrato;
 
     @Column(name = "total_valor_estimado", nullable = false, precision = 19, scale = 2)
     private BigDecimal totalValorEstimado;

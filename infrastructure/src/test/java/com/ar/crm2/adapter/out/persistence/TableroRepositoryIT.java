@@ -3,7 +3,6 @@ package com.ar.crm2.adapter.out.persistence;
 import com.ar.crm2.adapter.out.persistence.entity.ColumnaTableroEntity;
 import com.ar.crm2.adapter.out.persistence.entity.TableroEntity;
 import com.ar.crm2.adapter.out.persistence.repository.TableroRepository;
-import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTarea;
 import com.ar.crm2.model.enums.TipoTablero;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,7 +67,6 @@ class TableroRepositoryIT {
             .tipoTablero(TipoTablero.TAREAS)
             .limiteWip(limiteWip)
             .nota("Note")
-            .estadoTarea(TipoEstadoColumnaTableroTarea.PENDIENTE)
             .totalValorEstimado(BigDecimal.ZERO)
             .orden(orden)
             .build();

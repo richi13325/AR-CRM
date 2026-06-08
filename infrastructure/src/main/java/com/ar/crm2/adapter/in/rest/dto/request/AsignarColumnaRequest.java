@@ -1,7 +1,5 @@
 package com.ar.crm2.adapter.in.rest.dto.request;
 
-import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTarea;
-import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTrato;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -11,7 +9,7 @@ import java.math.BigDecimal;
 /**
  * REST request DTO for assigning an existing catalog Columna to a Tablero.
  *
- * <p>Context-only fields: WIP limit, note, and semantic state.
+ * <p>Context-only fields: WIP limit, note, and total estimated value.
  * Catalog data (nombre, color, tipoColumna) is NOT carried here —
  * it belongs to the Columna catalog entity.
  *
@@ -25,10 +23,6 @@ public record AsignarColumnaRequest(
 
     @Size(max = 500, message = "nota must be at most 500 characters")
     String nota,
-
-    TipoEstadoColumnaTableroTarea estadoTarea,
-
-    TipoEstadoColumnaTableroTrato estadoTrato,
 
     @NotNull(message = "totalValorEstimado is required")
     BigDecimal totalValorEstimado

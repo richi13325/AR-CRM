@@ -11,8 +11,6 @@ import com.ar.crm2.model.entity.Columna;
 import com.ar.crm2.model.entity.ColumnaTablero;
 import com.ar.crm2.model.entity.Tablero;
 import com.ar.crm2.model.enums.TipoColumna;
-import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTarea;
-import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTrato;
 import com.ar.crm2.model.enums.TipoTablero;
 import com.ar.crm2.model.vo.SuperUsuarioId;
 import lombok.RequiredArgsConstructor;
@@ -61,8 +59,8 @@ public class CreateTableroService implements CreateTableroUseCase {
      *
      * <p>Default columns:
      * <ul>
-     *   <li>TAREAS: PENDIENTE, EN_CURSO, FINALIZADA, CANCELADA</li>
-     *   <li>TRATOS: ABIERTO, GANADO, PERDIDO, ARCHIVED</li>
+     *   <li>TAREAS: Pendiente, En Curso, Finalizada, Cancelada</li>
+     *   <li>TRATOS: Abierto, Ganado, Perdido, Archived</li>
      * </ul>
      *
      * @param command the board creation command
@@ -75,24 +73,16 @@ public class CreateTableroService implements CreateTableroUseCase {
 
         switch (tipoTablero) {
             case TAREAS -> {
-                columnas.add(makeColumnaTablero(existingColumnas, command,
-                    "Pendiente", TipoEstadoColumnaTableroTarea.PENDIENTE, null, 5));
-                columnas.add(makeColumnaTablero(existingColumnas, command,
-                    "En Curso", TipoEstadoColumnaTableroTarea.EN_CURSO, null, 3));
-                columnas.add(makeColumnaTablero(existingColumnas, command,
-                    "Finalizada", TipoEstadoColumnaTableroTarea.FINALIZADA, null, 5));
-                columnas.add(makeColumnaTablero(existingColumnas, command,
-                    "Cancelada", TipoEstadoColumnaTableroTarea.PENDIENTE, null, 5));
+                columnas.add(makeColumnaTablero(existingColumnas, command, "Pendiente", 5));
+                columnas.add(makeColumnaTablero(existingColumnas, command, "En Curso", 3));
+                columnas.add(makeColumnaTablero(existingColumnas, command, "Finalizada", 5));
+                columnas.add(makeColumnaTablero(existingColumnas, command, "Cancelada", 5));
             }
             case TRATOS -> {
-                columnas.add(makeColumnaTableroTrato(existingColumnas, command,
-                    "Abierto", TipoEstadoColumnaTableroTrato.ABIERTO, BigDecimal.ZERO, 10));
-                columnas.add(makeColumnaTableroTrato(existingColumnas, command,
-                    "Ganado", TipoEstadoColumnaTableroTrato.GANADO, BigDecimal.ZERO, 10));
-                columnas.add(makeColumnaTableroTrato(existingColumnas, command,
-                    "Perdido", TipoEstadoColumnaTableroTrato.PERDIDO, BigDecimal.ZERO, 10));
-                columnas.add(makeColumnaTableroTrato(existingColumnas, command,
-                    "Archived", TipoEstadoColumnaTableroTrato.PERDIDO, BigDecimal.ZERO, 10));
+                columnas.add(makeColumnaTablero(existingColumnas, command, "Abierto", 10));
+                columnas.add(makeColumnaTablero(existingColumnas, command, "Ganado", 10));
+                columnas.add(makeColumnaTablero(existingColumnas, command, "Perdido", 10));
+                columnas.add(makeColumnaTablero(existingColumnas, command, "Archived", 10));
             }
         }
 
@@ -103,41 +93,17 @@ public class CreateTableroService implements CreateTableroUseCase {
         List<Columna> existingColumnas,
         CreateTableroCommand command,
         String nombre,
-        TipoEstadoColumnaTableroTarea estadoTarea,
-        TipoEstadoColumnaTableroTrato estadoTrato,
         int limiteWip
     ) {
-        Columna persisted = resolveDefaultCatalogColumn(existingColumnas, command, nombre, TipoTablero.TAREAS);
+        TipoTablero tipoTablero = command.tipoTablero();
+        Columna persisted = resolveDefaultCatalogColumn(existingColumnas, command, nombre, tipoTablero);
 
         return ColumnaTablero.create(
             persisted.getId(),
-            TipoTablero.TAREAS,
+            tipoTablero,
             limiteWip,
-            null,
-            estadoTarea,
             null,
             BigDecimal.ZERO
-        );
-    }
-
-    private ColumnaTablero makeColumnaTableroTrato(
-        List<Columna> existingColumnas,
-        CreateTableroCommand command,
-        String nombre,
-        TipoEstadoColumnaTableroTrato estadoTrato,
-        BigDecimal totalValorEstimado,
-        int limiteWip
-    ) {
-        Columna persisted = resolveDefaultCatalogColumn(existingColumnas, command, nombre, TipoTablero.TRATOS);
-
-        return ColumnaTablero.create(
-            persisted.getId(),
-            TipoTablero.TRATOS,
-            limiteWip,
-            null,
-            null,
-            estadoTrato,
-            totalValorEstimado
         );
     }
 

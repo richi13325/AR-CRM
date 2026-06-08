@@ -8,8 +8,6 @@ import com.ar.crm2.model.entity.Columna;
 import com.ar.crm2.model.entity.ColumnaTablero;
 import com.ar.crm2.model.entity.Tablero;
 import com.ar.crm2.model.enums.TipoColumna;
-import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTarea;
-import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTrato;
 import com.ar.crm2.model.enums.TipoTablero;
 import com.ar.crm2.model.vo.ColumnaId;
 import com.ar.crm2.model.vo.TableroId;
@@ -66,23 +64,20 @@ class TableroMapperTest {
             .build();
     }
 
-private ColumnaTableroEntity createColumnaTableroEntity(
+    private ColumnaTableroEntity createColumnaTableroEntity(
         String id,
         String columnaId,
         TipoTablero tipoTablero,
         int limiteWip,
         int orden
     ) {
-        // Build state respecting ColumnaTablero invariants: TAREAS→estadoTarea, TRATOS→estadoTrato
         return ColumnaTableroEntity.builder()
             .id(id)
             .columnaId(columnaId)
             .tipoTablero(tipoTablero)
             .limiteWip(limiteWip)
             .nota("Test note")
-            .estadoTarea(tipoTablero == TipoTablero.TAREAS ? TipoEstadoColumnaTableroTarea.PENDIENTE : null)
-            .estadoTrato(tipoTablero == TipoTablero.TRATOS ? TipoEstadoColumnaTableroTrato.ABIERTO : null)
-            .totalValorEstimado(tipoTablero == TipoTablero.TAREAS ? BigDecimal.ZERO : BigDecimal.ZERO)
+            .totalValorEstimado(BigDecimal.ZERO)
             .orden(orden)
             .build();
     }
@@ -156,8 +151,6 @@ private ColumnaTableroEntity createColumnaTableroEntity(
             TipoTablero.TAREAS,
             5,
             null,
-            TipoEstadoColumnaTableroTarea.PENDIENTE,
-            null,
             BigDecimal.ZERO
         );
         ColumnaTablero ct2 = ColumnaTablero.reconstitute(
@@ -165,8 +158,6 @@ private ColumnaTableroEntity createColumnaTableroEntity(
             TipoTablero.TAREAS,
             3,
             "A note",
-            TipoEstadoColumnaTableroTarea.FINALIZADA,
-            null,
             BigDecimal.ZERO
         );
 
@@ -305,8 +296,6 @@ private ColumnaTableroEntity createColumnaTableroEntity(
         assertEquals(TipoTablero.TRATOS, domain.getTipoTablero());
         assertEquals(1, domain.getColumnasTablero().size());
         assertEquals(ColumnaId.from(columnaId), domain.getColumnasTablero().get(0).getColumnaId());
-        // ColumnaTablero in TRATOS context must have estadoTrato set, not estadoTarea
-        assertNotNull(domain.getColumnasTablero().get(0).getEstadoTrato());
     }
 
     // ── Integration-like: full round-trip mapping ─────────────────
@@ -321,8 +310,6 @@ private ColumnaTableroEntity createColumnaTableroEntity(
             TipoTablero.TAREAS,
             5,
             "Note",
-            TipoEstadoColumnaTableroTarea.PENDIENTE,
-            null,
             BigDecimal.ZERO
         );
 
@@ -348,9 +335,9 @@ private ColumnaTableroEntity createColumnaTableroEntity(
         UUID columna3Id = UUID.randomUUID();
 
         List<ColumnaTablero> columnas = List.of(
-            ColumnaTablero.reconstitute(ColumnaId.from(columna1Id), TipoTablero.TAREAS, 5, null, TipoEstadoColumnaTableroTarea.PENDIENTE, null, BigDecimal.ZERO),
-            ColumnaTablero.reconstitute(ColumnaId.from(columna2Id), TipoTablero.TAREAS, 3, null, TipoEstadoColumnaTableroTarea.PENDIENTE, null, BigDecimal.ZERO),
-            ColumnaTablero.reconstitute(ColumnaId.from(columna3Id), TipoTablero.TAREAS, 7, null, TipoEstadoColumnaTableroTarea.PENDIENTE, null, BigDecimal.ZERO)
+            ColumnaTablero.reconstitute(ColumnaId.from(columna1Id), TipoTablero.TAREAS, 5, null, BigDecimal.ZERO),
+            ColumnaTablero.reconstitute(ColumnaId.from(columna2Id), TipoTablero.TAREAS, 3, null, BigDecimal.ZERO),
+            ColumnaTablero.reconstitute(ColumnaId.from(columna3Id), TipoTablero.TAREAS, 7, null, BigDecimal.ZERO)
         );
 
         Tablero domain = Tablero.reconstitute(
@@ -368,5 +355,116 @@ private ColumnaTableroEntity createColumnaTableroEntity(
         assertEquals(0, entity.getColumnasTablero().get(0).getOrden());
         assertEquals(1, entity.getColumnasTablero().get(1).getOrden());
         assertEquals(2, entity.getColumnasTablero().get(2).getOrden());
+    }
+
+    // ── Slice-4 corrective: child row id ownership ────────────────
+    //
+    // The ColumnaTableroEntity row MUST own its own generated UUID as
+    // its `id`, and MUST NOT reuse/copy the catalog columnaId into the
+    // row id. This mirrors the FichaMapper contract for FichaEtiquetaEntity
+    // and is the explicit, consistent strategy required for both owned
+    // relation rows.
+
+    @Test
+    void toEntity_childRowId_isGeneratedUuidNotEqualToColumnaId() {
+        UUID tableroId = UUID.randomUUID();
+        UUID columnaId = UUID.randomUUID();
+
+        ColumnaTablero ct = ColumnaTablero.reconstitute(
+            ColumnaId.from(columnaId), TipoTablero.TAREAS, 5, null, BigDecimal.ZERO
+        );
+        Tablero domain = Tablero.reconstitute(
+            TableroId.from(tableroId), "Board", "Desc",
+            List.of(ct), TipoTablero.TAREAS, LocalDateTime.now()
+        );
+
+        TableroEntity entity = mapper.toEntity(domain);
+
+        ColumnaTableroEntity child = entity.getColumnasTablero().get(0);
+        assertNotNull(child.getId(),
+            "child row id must not be null — it must be a generated UUID");
+        assertNotEquals(columnaId.toString(), child.getId(),
+            "child row id MUST NOT be a copy of the catalog columnaId");
+    }
+
+    @Test
+    void toEntity_eachChildRow_getsDistinctUuid() {
+        UUID tableroId = UUID.randomUUID();
+        UUID c1 = UUID.randomUUID();
+        UUID c2 = UUID.randomUUID();
+        UUID c3 = UUID.randomUUID();
+
+        Tablero domain = Tablero.reconstitute(
+            TableroId.from(tableroId), "Board", "Desc",
+            List.of(
+                ColumnaTablero.reconstitute(ColumnaId.from(c1), TipoTablero.TAREAS, 5, null, BigDecimal.ZERO),
+                ColumnaTablero.reconstitute(ColumnaId.from(c2), TipoTablero.TAREAS, 3, null, BigDecimal.ZERO),
+                ColumnaTablero.reconstitute(ColumnaId.from(c3), TipoTablero.TAREAS, 7, null, BigDecimal.ZERO)
+            ),
+            TipoTablero.TAREAS,
+            LocalDateTime.now()
+        );
+
+        TableroEntity entity = mapper.toEntity(domain);
+
+        List<String> childIds = entity.getColumnasTablero().stream()
+            .map(ColumnaTableroEntity::getId)
+            .toList();
+        assertEquals(3, childIds.size());
+        // All distinct
+        assertEquals(3, childIds.stream().distinct().count(),
+            "each child row must own a distinct UUID; no id is reused across siblings");
+        // None of them matches a catalog id
+        for (String id : childIds) {
+            assertNotEquals(c1.toString(), id);
+            assertNotEquals(c2.toString(), id);
+            assertNotEquals(c3.toString(), id);
+        }
+    }
+
+    @Test
+    void toEntity_childRowId_isValidUuid() {
+        UUID tableroId = UUID.randomUUID();
+        UUID columnaId = UUID.randomUUID();
+
+        Tablero domain = Tablero.reconstitute(
+            TableroId.from(tableroId), "Board", "Desc",
+            List.of(ColumnaTablero.reconstitute(
+                ColumnaId.from(columnaId), TipoTablero.TAREAS, 5, null, BigDecimal.ZERO)),
+            TipoTablero.TAREAS,
+            LocalDateTime.now()
+        );
+
+        TableroEntity entity = mapper.toEntity(domain);
+
+        String childId = entity.getColumnasTablero().get(0).getId();
+        assertNotNull(childId);
+        // Throws IllegalArgumentException if not a valid UUID
+        UUID.fromString(childId);
+    }
+
+    @Test
+    void toEntity_preservesColumnaIdAsSeparateField() {
+        // The catalog linkage (columnaId) is preserved as a SEPARATE column
+        // from the row id. Together with the assertion above, this proves
+        // the row has its own technical id AND still references the catalog
+        // Columna by its own id.
+        UUID tableroId = UUID.randomUUID();
+        UUID columnaId = UUID.randomUUID();
+
+        Tablero domain = Tablero.reconstitute(
+            TableroId.from(tableroId), "Board", "Desc",
+            List.of(ColumnaTablero.reconstitute(
+                ColumnaId.from(columnaId), TipoTablero.TAREAS, 5, null, BigDecimal.ZERO)),
+            TipoTablero.TAREAS,
+            LocalDateTime.now()
+        );
+
+        TableroEntity entity = mapper.toEntity(domain);
+
+        ColumnaTableroEntity child = entity.getColumnasTablero().get(0);
+        assertEquals(columnaId.toString(), child.getColumnaId());
+        assertNotEquals(child.getId(), child.getColumnaId(),
+            "row id and columnaId must be independent fields");
     }
 }

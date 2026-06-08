@@ -5,7 +5,6 @@ import com.ar.crm2.exception.ColumnaNoPerteneceAlTableroException;
 import com.ar.crm2.exception.ColumnaYaExisteEnTableroException;
 import com.ar.crm2.exception.InvariantViolationException;
 import com.ar.crm2.model.enums.TipoColumna;
-import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTarea;
 import com.ar.crm2.model.enums.TipoTablero;
 import com.ar.crm2.model.vo.ColumnaId;
 import com.ar.crm2.model.vo.SuperUsuarioId;
@@ -49,8 +48,6 @@ class TableroTest {
             TIPO,
             limiteWip,
             null,
-            TipoEstadoColumnaTableroTarea.PENDIENTE,
-            null,
             BigDecimal.ZERO
         );
     }
@@ -60,8 +57,6 @@ class TableroTest {
             id,
             TIPO,
             limiteWip,
-            null,
-            TipoEstadoColumnaTableroTarea.PENDIENTE,
             null,
             BigDecimal.ZERO
         );
@@ -348,8 +343,6 @@ class TableroTest {
                 TIPO,
                 3,
                 null,
-                TipoEstadoColumnaTableroTarea.PENDIENTE,
-                null,
                 BigDecimal.ZERO
             );
 
@@ -386,8 +379,6 @@ class TableroTest {
                 TIPO,
                 5,
                 null,
-                TipoEstadoColumnaTableroTarea.PENDIENTE,
-                null,
                 BigDecimal.ZERO
             );
 
@@ -412,8 +403,6 @@ class TableroTest {
                 id2,
                 TIPO,
                 3,
-                null,
-                TipoEstadoColumnaTableroTarea.PENDIENTE,
                 null,
                 BigDecimal.ZERO
             );
