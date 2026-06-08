@@ -382,8 +382,8 @@ class TableroControllerIT {
         String body = """
                 {
                   "nuevoOrden": [
-                    {"value": "%s"},
-                    {"value": "%s"}
+                    "%s",
+                    "%s"
                   ]
                 }
                 """.formatted(col1, col2);

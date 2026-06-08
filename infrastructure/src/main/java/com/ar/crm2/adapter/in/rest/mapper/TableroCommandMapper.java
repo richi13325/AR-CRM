@@ -13,6 +13,7 @@ import com.ar.crm2.application.tablero.command.EditTableroCommand;
 import com.ar.crm2.application.tablero.command.EliminarColumnaDelTableroCommand;
 import com.ar.crm2.application.tablero.command.GetTableroByIdCommand;
 import com.ar.crm2.application.tablero.command.ReordenarColumnasCommand;
+import com.ar.crm2.model.vo.ColumnaId;
 
 import java.util.UUID;
 
@@ -86,7 +87,12 @@ public final class TableroCommandMapper {
      * Maps a REST reorder request to an application command.
      */
     public static ReordenarColumnasCommand toCommand(UUID tableroId, ReordenarColumnasRequest request) {
-        return new ReordenarColumnasCommand(tableroId, request.nuevoOrden());
+        return new ReordenarColumnasCommand(
+                tableroId,
+                request.nuevoOrden().stream()
+                        .map(ColumnaId::from)
+                        .toList()
+        );
     }
 
     /**

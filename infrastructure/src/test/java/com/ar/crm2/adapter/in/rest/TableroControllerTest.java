@@ -28,7 +28,6 @@ import com.ar.crm2.model.entity.Tablero;
 import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTarea;
 import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTrato;
 import com.ar.crm2.model.enums.TipoTablero;
-import com.ar.crm2.model.vo.ColumnaId;
 import com.ar.crm2.model.vo.TableroId;
 import com.ar.crm2.security.ActorContextRequestAttributeFilter;
 import jakarta.servlet.http.HttpServletRequest;
@@ -394,10 +393,7 @@ class TableroControllerTest {
         when(reordenarColumnasUseCase.reordenar(any(ReordenarColumnasCommand.class)))
                 .thenReturn(tablero);
 
-        List<ColumnaId> nuevoOrden = List.of(
-                ColumnaId.from(UUID.randomUUID()),
-                ColumnaId.from(UUID.randomUUID())
-        );
+        List<UUID> nuevoOrden = List.of(UUID.randomUUID(), UUID.randomUUID());
 
         ReordenarColumnasRequest request = new ReordenarColumnasRequest(nuevoOrden);
 
@@ -406,6 +402,15 @@ class TableroControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        verify(reordenarColumnasUseCase).reordenar(any(ReordenarColumnasCommand.class));
+
+        ArgumentCaptor<ReordenarColumnasCommand> captor =
+                ArgumentCaptor.forClass(ReordenarColumnasCommand.class);
+        verify(reordenarColumnasUseCase).reordenar(captor.capture());
+
+        ReordenarColumnasCommand command = captor.getValue();
+        assertEquals(tableroId, command.tableroId());
+        assertEquals(nuevoOrden.size(), command.nuevoOrden().size());
+        assertEquals(nuevoOrden.get(0), command.nuevoOrden().get(0).value());
+        assertEquals(nuevoOrden.get(1), command.nuevoOrden().get(1).value());
     }
 }
