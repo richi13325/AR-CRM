@@ -2,20 +2,23 @@ package com.ar.crm2.application.ficha.command;
 
 import com.ar.crm2.model.enums.TipoFicha;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
  * Command to edit an existing Ficha.
- * Validates id, columnaId, tipoFicha at construction time.
- * Domain enforces TipoFicha invariants: TAREA requires tareaId and null tratoId,
- * TRATO requires tratoId and null tareaId.
+ *
+ * <p>Same invariants as {@link CreateFichaCommand}; in addition, the
+ * {@code etiquetaIds} list, when present, replaces the existing etiqueta
+ * relations in full.
  */
 public record EditFichaCommand(
     UUID id,
     UUID columnaId,
     TipoFicha tipoFicha,
     UUID tratoId,
-    UUID tareaId
+    UUID tareaId,
+    List<UUID> etiquetaIds
 ) {
 
     public EditFichaCommand {

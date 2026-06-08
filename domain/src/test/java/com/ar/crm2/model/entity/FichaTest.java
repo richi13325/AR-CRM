@@ -1,8 +1,11 @@
 package com.ar.crm2.model.entity;
 
+import com.ar.crm2.exception.EtiquetaTypeMismatchException;
 import com.ar.crm2.exception.InvariantViolationException;
+import com.ar.crm2.model.enums.TipoEtiqueta;
 import com.ar.crm2.model.enums.TipoFicha;
 import com.ar.crm2.model.vo.ColumnaId;
+import com.ar.crm2.model.vo.EtiquetaId;
 import com.ar.crm2.model.vo.FichaId;
 import com.ar.crm2.model.vo.TareaId;
 import com.ar.crm2.model.vo.TratoId;
@@ -11,6 +14,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -338,6 +342,164 @@ class FichaTest {
             assertThat(resultado.getTareaId()).isNull();
             assertThat(resultado.getActualizadoEn()).isAfterOrEqualTo(antes);
             assertThat(resultado.getActualizadoEn()).isBeforeOrEqualTo(despues);
+        }
+    }
+
+    @Nested
+    @DisplayName("withEtiquetas() for TAREA")
+    class WithEtiquetasTarea {
+
+        @Test
+        @DisplayName("succeeds with empty list of etiquetas")
+        void withEtiquetas_listaVacia_exitoso() {
+            TareaId tareaId = TareaId.create();
+            Ficha ficha = Ficha.create(COLUMNA_ID, TipoFicha.TAREA, null, tareaId);
+
+            Ficha updated = ficha.withEtiquetas(List.of());
+
+            assertThat(updated.getEtiquetas()).isEmpty();
+            assertThat(updated.getId()).isEqualTo(ficha.getId());
+            assertThat(updated.getTipoFicha()).isEqualTo(TipoFicha.TAREA);
+        }
+
+        @Test
+        @DisplayName("succeeds with a single TAREA etiqueta")
+        void withEtiquetas_unEtiquetaTarea_exitoso() {
+            TareaId tareaId = TareaId.create();
+            Ficha ficha = Ficha.create(COLUMNA_ID, TipoFicha.TAREA, null, tareaId);
+            FichaEtiqueta fe = FichaEtiqueta.create(EtiquetaId.create(), TipoEtiqueta.TAREA);
+
+            Ficha updated = ficha.withEtiquetas(List.of(fe));
+
+            assertThat(updated.getEtiquetas()).hasSize(1);
+            assertThat(updated.getEtiquetas().get(0)).isEqualTo(fe);
+        }
+
+        @Test
+        @DisplayName("succeeds with multiple TAREA etiquetas")
+        void withEtiquetas_multiplesEtiquetasTarea_exitoso() {
+            TareaId tareaId = TareaId.create();
+            Ficha ficha = Ficha.create(COLUMNA_ID, TipoFicha.TAREA, null, tareaId);
+            FichaEtiqueta fe1 = FichaEtiqueta.create(EtiquetaId.create(), TipoEtiqueta.TAREA);
+            FichaEtiqueta fe2 = FichaEtiqueta.create(EtiquetaId.create(), TipoEtiqueta.TAREA);
+
+            Ficha updated = ficha.withEtiquetas(List.of(fe1, fe2));
+
+            assertThat(updated.getEtiquetas()).hasSize(2);
+        }
+
+        @Test
+        @DisplayName("rejects duplicate EtiquetaId in the list")
+        void withEtiquetas_etiquetasDuplicadas_lanzaExcepcion() {
+            TareaId tareaId = TareaId.create();
+            Ficha ficha = Ficha.create(COLUMNA_ID, TipoFicha.TAREA, null, tareaId);
+            EtiquetaId dupId = EtiquetaId.create();
+            FichaEtiqueta fe1 = FichaEtiqueta.create(dupId, TipoEtiqueta.TAREA);
+            FichaEtiqueta fe2 = FichaEtiqueta.create(dupId, TipoEtiqueta.TAREA);
+
+            assertThatThrownBy(() -> ficha.withEtiquetas(List.of(fe1, fe2)))
+                .isInstanceOf(InvariantViolationException.class)
+                .hasMessageContaining("duplicad");
+        }
+
+        @Test
+        @DisplayName("rejects TRATO etiqueta on a TAREA Ficha")
+        void withEtiquetas_tipoIncorrecto_lanzaExcepcion() {
+            TareaId tareaId = TareaId.create();
+            Ficha ficha = Ficha.create(COLUMNA_ID, TipoFicha.TAREA, null, tareaId);
+            FichaEtiqueta fe = FichaEtiqueta.create(EtiquetaId.create(), TipoEtiqueta.TRATO);
+
+            assertThatThrownBy(() -> ficha.withEtiquetas(List.of(fe)))
+                .isInstanceOf(EtiquetaTypeMismatchException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("withEtiquetas() for TRATO")
+    class WithEtiquetasTrato {
+
+        @Test
+        @DisplayName("succeeds with a TRATO etiqueta")
+        void withEtiquetas_etiquetaTrato_exitoso() {
+            TratoId tratoId = TratoId.create();
+            Ficha ficha = Ficha.create(COLUMNA_ID, TipoFicha.TRATO, tratoId, null);
+            FichaEtiqueta fe = FichaEtiqueta.create(EtiquetaId.create(), TipoEtiqueta.TRATO);
+
+            Ficha updated = ficha.withEtiquetas(List.of(fe));
+
+            assertThat(updated.getEtiquetas()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("rejects TAREA etiqueta on a TRATO Ficha")
+        void withEtiquetas_tipoIncorrecto_lanzaExcepcion() {
+            TratoId tratoId = TratoId.create();
+            Ficha ficha = Ficha.create(COLUMNA_ID, TipoFicha.TRATO, tratoId, null);
+            FichaEtiqueta fe = FichaEtiqueta.create(EtiquetaId.create(), TipoEtiqueta.TAREA);
+
+            assertThatThrownBy(() -> ficha.withEtiquetas(List.of(fe)))
+                .isInstanceOf(EtiquetaTypeMismatchException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("reconstitute() preserves etiquetas list")
+    class ReconstituirPreservaEtiquetas {
+
+        @Test
+        @DisplayName("reconstitute preserves an empty etiquetas list")
+        void reconstituir_etiquetasVacias_exitoso() {
+            TareaId tareaId = TareaId.create();
+            FichaId id = FichaId.create();
+
+            Ficha ficha = Ficha.reconstitute(
+                id, COLUMNA_ID, TipoFicha.TAREA, null, tareaId, AHORA, List.of()
+            );
+
+            assertThat(ficha.getEtiquetas()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("reconstitute preserves a non-empty etiquetas list")
+        void reconstituir_etiquetasNoVacias_exitoso() {
+            TareaId tareaId = TareaId.create();
+            FichaId id = FichaId.create();
+            FichaEtiqueta fe = FichaEtiqueta.create(EtiquetaId.create(), TipoEtiqueta.TAREA);
+
+            Ficha ficha = Ficha.reconstitute(
+                id, COLUMNA_ID, TipoFicha.TAREA, null, tareaId, AHORA, List.of(fe)
+            );
+
+            assertThat(ficha.getEtiquetas()).hasSize(1);
+            assertThat(ficha.getEtiquetas().get(0)).isEqualTo(fe);
+        }
+
+        @Test
+        @DisplayName("reconstitute rejects mismatched type in etiquetas list")
+        void reconstituir_tipoIncorrecto_lanzaExcepcion() {
+            TareaId tareaId = TareaId.create();
+            FichaId id = FichaId.create();
+            FichaEtiqueta fe = FichaEtiqueta.create(EtiquetaId.create(), TipoEtiqueta.TRATO);
+
+            assertThatThrownBy(() -> Ficha.reconstitute(
+                id, COLUMNA_ID, TipoFicha.TAREA, null, tareaId, AHORA, List.of(fe)))
+                .isInstanceOf(EtiquetaTypeMismatchException.class);
+        }
+
+        @Test
+        @DisplayName("reconstitute rejects duplicate EtiquetaId in etiquetas list")
+        void reconstituir_duplicado_lanzaExcepcion() {
+            TareaId tareaId = TareaId.create();
+            FichaId id = FichaId.create();
+            EtiquetaId dupId = EtiquetaId.create();
+
+            assertThatThrownBy(() -> Ficha.reconstitute(
+                id, COLUMNA_ID, TipoFicha.TAREA, null, tareaId, AHORA,
+                List.of(
+                    FichaEtiqueta.create(dupId, TipoEtiqueta.TAREA),
+                    FichaEtiqueta.create(dupId, TipoEtiqueta.TAREA)
+                )))
+                .isInstanceOf(InvariantViolationException.class);
         }
     }
 }

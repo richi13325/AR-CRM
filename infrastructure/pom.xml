@@ -134,11 +134,12 @@
         <plugins>
             <!--
                 maven-failsafe-plugin is bound to the integration-test and verify phases so
-                that TableroControllerIT runs in `mvn verify` (the project's verification
+                that the listed *IT classes run in `mvn verify` (the project's verification
                 convention per openspec/config.yaml). The <includes> is intentionally
-                restricted to TableroControllerIT only — ColumnaControllerIT,
-                TableroRepositoryIT, and ColumnaRepositoryIT are out of scope for this
-                change and must NOT be pulled into this slice.
+                restricted — ColumnaControllerIT, TableroRepositoryIT, and ColumnaRepositoryIT
+                are out of scope for the current slices. The new etiqueta ITs are pulled in
+                here because they validate the JPA slice of the add-ficha-etiquetas change
+                and must run under the same verify gate.
             -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -154,6 +155,10 @@
                 <configuration>
                     <includes>
                         <include>**/TableroControllerIT.java</include>
+                        <include>**/EtiquetaControllerIT.java</include>
+                        <include>**/EtiquetaEntityMappingIT.java</include>
+                        <include>**/FichaEtiquetaEntityCascadeIT.java</include>
+                        <include>**/EtiquetaRepositoryAdapterIT.java</include>
                     </includes>
                 </configuration>
             </plugin>

@@ -19,3 +19,41 @@ ALTER TABLE IF EXISTS agendas ADD COLUMN IF NOT EXISTS minutos_antes INTEGER;
 ALTER TABLE IF EXISTS agendas ADD COLUMN IF NOT EXISTS recordatorio_estado VARCHAR(20);
 ALTER TABLE IF EXISTS agendas ADD COLUMN IF NOT EXISTS recordatorio_enviado_en TIMESTAMP;
 ALTER TABLE IF EXISTS agendas ADD COLUMN IF NOT EXISTS ultimo_intento_en TIMESTAMP;
+
+-- ColumnaTablero: drop the obsolete contextual semantic state columns. The
+-- column-board relation no longer carries estadoTarea/estadoTrato; only the
+-- catalog Columna holds semantic state.
+ALTER TABLE IF EXISTS columnas_tablero DROP COLUMN IF EXISTS estado_tarea;
+ALTER TABLE IF EXISTS columnas_tablero DROP COLUMN IF EXISTS estado_trato;
+
+-- Etiqueta catalog (add-ficha-etiquetas slice 2)
+-- Idempotent: safe on fresh databases and repeated startups.
+-- Hibernate ddl-auto=update creates the table but not the index
+-- on fichas_etiquetas.etiqueta_id, which is needed for the
+-- cascade-delete "delete all relations referencing this etiqueta"
+-- path. We add it explicitly here.
+CREATE TABLE IF NOT EXISTS etiquetas (
+    id              VARCHAR(36)  NOT NULL,
+    nombre          VARCHAR(50)  NOT NULL,
+    tipo_etiqueta   VARCHAR(20)  NOT NULL,
+    color           VARCHAR(7)   NOT NULL,
+    creado_en       TIMESTAMP    NOT NULL,
+    CONSTRAINT pk_etiquetas PRIMARY KEY (id),
+    CONSTRAINT uk_etiquetas_nombre_tipo UNIQUE (nombre, tipo_etiqueta)
+);
+
+CREATE TABLE IF NOT EXISTS fichas_etiquetas (
+    id              VARCHAR(36)  NOT NULL,
+    ficha_id        VARCHAR(36)  NOT NULL,
+    etiqueta_id     VARCHAR(36)  NOT NULL,
+    tipo_etiqueta   VARCHAR(20)  NOT NULL,
+    CONSTRAINT pk_fichas_etiquetas PRIMARY KEY (id),
+    CONSTRAINT uk_fichas_etiquetas_ficha_etiqueta UNIQUE (ficha_id, etiqueta_id),
+    CONSTRAINT fk_fichas_etiquetas_ficha
+        FOREIGN KEY (ficha_id) REFERENCES fichas (id) ON DELETE CASCADE,
+    CONSTRAINT fk_fichas_etiquetas_etiqueta
+        FOREIGN KEY (etiqueta_id) REFERENCES etiquetas (id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_fichas_etiquetas_etiqueta
+    ON fichas_etiquetas (etiqueta_id);

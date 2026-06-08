@@ -169,6 +169,16 @@ import com.ar.crm2.application.agenda.service.GetAgendaByIdService;
 import com.ar.crm2.application.agenda.service.GetAgendasByUserService;
 import com.ar.crm2.adapter.out.persistence.AgendaRepositoryAdapter;
 import com.ar.crm2.adapter.out.persistence.repository.AgendaRepository;
+import com.ar.crm2.application.etiqueta.port.in.CreateEtiquetaUseCase;
+import com.ar.crm2.application.etiqueta.port.in.DeleteEtiquetaUseCase;
+import com.ar.crm2.application.etiqueta.port.in.EditEtiquetaUseCase;
+import com.ar.crm2.application.etiqueta.port.in.GetAllEtiquetasUseCase;
+import com.ar.crm2.application.etiqueta.port.in.GetEtiquetaByIdUseCase;
+import com.ar.crm2.application.etiqueta.service.CreateEtiquetaService;
+import com.ar.crm2.application.etiqueta.service.DeleteEtiquetaService;
+import com.ar.crm2.application.etiqueta.service.EditEtiquetaService;
+import com.ar.crm2.application.etiqueta.service.GetAllEtiquetasService;
+import com.ar.crm2.application.etiqueta.service.GetEtiquetaByIdService;
 import com.ar.crm2.application.ficha.port.in.CreateFichaUseCase;
 import com.ar.crm2.application.ficha.port.in.DeleteFichaUseCase;
 import com.ar.crm2.application.ficha.port.in.EditFichaUseCase;
@@ -601,10 +611,18 @@ public class WiringConfig {
 
 
     // ── Ficha UseCase Beans ──
+    // NOTE: CreateFichaService and EditFichaService (slice 1 of add-ficha-etiquetas)
+    // require a FindEtiquetasByIdsPort in addition to SaveFichaPort / FindFichaByIdPort.
+    // The EtiquetaRepositoryAdapter bean defined below in the Etiqueta section is the
+    // project-wide implementation of that port and is reused here, matching the
+    // single-adapter-per-port convention used for FichaRepositoryAdapter.
 
     @Bean
-    public CreateFichaUseCase createFichaUseCase(FichaRepositoryAdapter adapter) {
-        return new CreateFichaService(adapter);
+    public CreateFichaUseCase createFichaUseCase(
+            FichaRepositoryAdapter savePort,
+            com.ar.crm2.adapter.out.persistence.EtiquetaRepositoryAdapter findEtiquetasPort
+    ) {
+        return new CreateFichaService(savePort, findEtiquetasPort);
     }
 
     @Bean
@@ -618,8 +636,12 @@ public class WiringConfig {
     }
 
     @Bean
-    public EditFichaUseCase editFichaUseCase(FichaRepositoryAdapter findPort, FichaRepositoryAdapter savePort) {
-        return new EditFichaService(findPort, savePort);
+    public EditFichaUseCase editFichaUseCase(
+            FichaRepositoryAdapter findPort,
+            FichaRepositoryAdapter savePort,
+            com.ar.crm2.adapter.out.persistence.EtiquetaRepositoryAdapter findEtiquetasPort
+    ) {
+        return new EditFichaService(findPort, savePort, findEtiquetasPort);
     }
 
     @Bean
@@ -810,6 +832,63 @@ public class WiringConfig {
             ColumnaRepositoryAdapter deletePort
     ) {
         return new DeleteColumnaService(findPort, existsColumnaAsignadaPort, columnaExistsFichasByColumnaIdPort, deletePort);
+    }
+
+
+    // ── Etiqueta UseCase Beans (add-ficha-etiquetas slice 3) ──────
+
+    /**
+     * Single {@code EtiquetaRepositoryAdapter} bean implements every
+     * Etiqueta outbound port (Save / Find / FindAll / Exists / Delete /
+     * Count / FindByIds). It is wired explicitly here, consistent with
+     * the project convention for every other outbound adapter
+     * ({@code FichaRepositoryAdapter}, {@code TableroRepositoryAdapter},
+     * etc.). The adapter class is not annotated with {@code @Component};
+     * this {@code @Bean} is the only definition in the application
+     * context.
+     */
+    @Bean
+    public com.ar.crm2.adapter.out.persistence.EtiquetaRepositoryAdapter etiquetaRepositoryAdapter(
+            com.ar.crm2.adapter.out.persistence.repository.EtiquetaRepository etiquetaRepository,
+            com.ar.crm2.adapter.out.persistence.repository.FichaEtiquetaRepository fichaEtiquetaRepository
+    ) {
+        return new com.ar.crm2.adapter.out.persistence.EtiquetaRepositoryAdapter(
+            etiquetaRepository, fichaEtiquetaRepository);
+    }
+
+    @Bean
+    public CreateEtiquetaUseCase createEtiquetaUseCase(
+            com.ar.crm2.adapter.out.persistence.EtiquetaRepositoryAdapter adapter
+    ) {
+        return new CreateEtiquetaService(adapter, adapter);
+    }
+
+    @Bean
+    public GetAllEtiquetasUseCase getAllEtiquetasUseCase(
+            com.ar.crm2.adapter.out.persistence.EtiquetaRepositoryAdapter adapter
+    ) {
+        return new GetAllEtiquetasService(adapter);
+    }
+
+    @Bean
+    public GetEtiquetaByIdUseCase getEtiquetaByIdUseCase(
+            com.ar.crm2.adapter.out.persistence.EtiquetaRepositoryAdapter adapter
+    ) {
+        return new GetEtiquetaByIdService(adapter);
+    }
+
+    @Bean
+    public EditEtiquetaUseCase editEtiquetaUseCase(
+            com.ar.crm2.adapter.out.persistence.EtiquetaRepositoryAdapter adapter
+    ) {
+        return new EditEtiquetaService(adapter, adapter, adapter);
+    }
+
+    @Bean
+    public DeleteEtiquetaUseCase deleteEtiquetaUseCase(
+            com.ar.crm2.adapter.out.persistence.EtiquetaRepositoryAdapter adapter
+    ) {
+        return new DeleteEtiquetaService(adapter, adapter, adapter, adapter);
     }
 
 }
