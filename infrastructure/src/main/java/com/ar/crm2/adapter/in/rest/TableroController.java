@@ -1,6 +1,5 @@
 package com.ar.crm2.adapter.in.rest;
 
-import com.ar.crm2.adapter.in.rest.dto.request.AgregarColumnaRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.AsignarColumnaRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.CreateTableroRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.EditTableroRequest;
@@ -8,14 +7,12 @@ import com.ar.crm2.adapter.in.rest.dto.request.ReordenarColumnasRequest;
 import com.ar.crm2.adapter.in.rest.dto.response.TableroResponse;
 import com.ar.crm2.adapter.in.rest.mapper.TableroCommandMapper;
 import com.ar.crm2.adapter.out.persistence.repository.ColumnaRepository;
-import com.ar.crm2.application.tablero.command.AgregarColumnaTableroCommand;
 import com.ar.crm2.application.tablero.command.CreateTableroCommand;
 import com.ar.crm2.application.tablero.command.DeleteTableroCommand;
 import com.ar.crm2.application.tablero.command.EditTableroCommand;
 import com.ar.crm2.application.tablero.command.EliminarColumnaDelTableroCommand;
 import com.ar.crm2.application.tablero.command.GetTableroByIdCommand;
 import com.ar.crm2.application.tablero.command.ReordenarColumnasCommand;
-import com.ar.crm2.application.tablero.port.in.AgregarColumnaTableroUseCase;
 import com.ar.crm2.application.tablero.port.in.AsignarColumnaTableroUseCase;
 import com.ar.crm2.application.tablero.port.in.CreateTableroUseCase;
 import com.ar.crm2.application.tablero.port.in.DeleteTableroUseCase;
@@ -58,7 +55,6 @@ public class TableroController {
     private final GetTableroByIdUseCase getByIdUseCase;
     private final EditTableroUseCase editUseCase;
     private final DeleteTableroUseCase deleteUseCase;
-    private final AgregarColumnaTableroUseCase agregarColumnaUseCase;
     private final AsignarColumnaTableroUseCase asignarColumnaUseCase;
     private final EliminarColumnaDelTableroUseCase eliminarColumnaUseCase;
     private final ReordenarColumnasUseCase reordenarColumnasUseCase;
@@ -128,19 +124,6 @@ public class TableroController {
     }
 
     // ── Column Operations ───────────────────────────────────────────
-
-    /**
-     * Adds a new column to an existing Tablero.
-     */
-    @PostMapping("/agregar-columna")
-    public ResponseEntity<TableroResponse> agregarColumna(
-            @RequestParam UUID id,
-            @Valid @RequestBody AgregarColumnaRequest request
-    ) {
-        AgregarColumnaTableroCommand command = TableroCommandMapper.toCommand(id, request);
-        Tablero tablero = agregarColumnaUseCase.agregarColumna(command);
-        return ResponseEntity.status(HttpStatus.CREATED).body(TableroResponse.fromDomain(tablero, columnaRepository));
-    }
 
     /**
      * Removes a column from an existing Tablero.

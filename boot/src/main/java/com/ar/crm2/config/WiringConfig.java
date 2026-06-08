@@ -185,7 +185,6 @@ import com.ar.crm2.application.ficha.service.EditFichaService;
 import com.ar.crm2.application.ficha.service.GetAllFichasService;
 import com.ar.crm2.application.ficha.service.GetFichaByIdService;
 import com.ar.crm2.application.ficha.service.MoverColumnaFichaService;
-import com.ar.crm2.application.tablero.port.in.AgregarColumnaTableroUseCase;
 import com.ar.crm2.application.tablero.port.in.AsignarColumnaTableroUseCase;
 import com.ar.crm2.application.tablero.port.in.CreateTableroUseCase;
 import com.ar.crm2.application.tablero.port.in.DeleteTableroUseCase;
@@ -200,7 +199,6 @@ import com.ar.crm2.application.tablero.port.out.FindAllTablerosPort;
 import com.ar.crm2.application.tablero.port.out.FindTableroByIdPort;
 import com.ar.crm2.application.tablero.port.out.SaveTableroPort;
 import com.ar.crm2.application.tablero.port.out.ExistsColumnaEnTableroPort;
-import com.ar.crm2.application.tablero.service.AgregarColumnaTableroService;
 import com.ar.crm2.application.tablero.service.AsignarColumnaTableroService;
 import com.ar.crm2.application.tablero.service.CreateTableroService;
 import com.ar.crm2.application.tablero.service.DeleteTableroService;
@@ -405,9 +403,10 @@ public class WiringConfig {
     @Bean
     public CreateTableroUseCase createTableroUseCase(
             TableroRepositoryAdapter adapter,
-            SaveColumnaPort saveColumnaPort
+            ColumnaRepositoryAdapter findAllColumnasPort,
+            CreateColumnaUseCase createColumnaUseCase
     ) {
-        return new CreateTableroService(adapter, saveColumnaPort);
+        return new CreateTableroService(adapter, findAllColumnasPort, createColumnaUseCase);
     }
 
     @Bean
@@ -431,14 +430,6 @@ public class WiringConfig {
             TableroRepositoryAdapter deletePort
     ) {
         return new DeleteTableroService(findPort, deletePort);
-    }
-
-    @Bean
-    public AgregarColumnaTableroUseCase agregarColumnaTableroUseCase(
-            TableroRepositoryAdapter findPort,
-            TableroRepositoryAdapter savePort
-    ) {
-        return new AgregarColumnaTableroService(findPort, savePort);
     }
 
     @Bean

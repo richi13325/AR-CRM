@@ -1,13 +1,11 @@
 package com.ar.crm2.adapter.in.rest.mapper;
 
-import com.ar.crm2.adapter.in.rest.dto.request.AgregarColumnaRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.AsignarColumnaRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.CreateTableroRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.EditTableroRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.ReordenarColumnasRequest;
 import com.ar.crm2.application.security.ActorContext;
 import com.ar.crm2.application.security.exception.AuthenticatedUsuarioRequiredException;
-import com.ar.crm2.application.tablero.command.AgregarColumnaTableroCommand;
 import com.ar.crm2.application.tablero.command.AsignarColumnaTableroCommand;
 import com.ar.crm2.application.tablero.command.CreateTableroCommand;
 import com.ar.crm2.application.tablero.command.DeleteTableroCommand;
@@ -78,24 +76,6 @@ public final class TableroCommandMapper {
     }
 
     /**
-     * Maps a REST add-column request to an application command.
-     */
-    public static AgregarColumnaTableroCommand toCommand(UUID tableroId, AgregarColumnaRequest request) {
-        return new AgregarColumnaTableroCommand(
-            tableroId,
-            request.nombre(),
-            request.color(),
-            request.tipoColumna(),
-            request.limiteWip(),
-            request.nota(),
-            request.estadoTarea(),
-            request.estadoTrato(),
-            request.totalValorEstimado(),
-            request.existeOtraColumnaConMismoNombre()
-        );
-    }
-
-    /**
      * Maps a path tableroId and columnaId to an application delete-column command.
      */
     public static EliminarColumnaDelTableroCommand toDeleteColumnCommand(UUID tableroId, UUID columnaId) {
@@ -112,9 +92,9 @@ public final class TableroCommandMapper {
     /**
      * Maps a REST assign-column request to an application command.
      *
-     * <p>Unlike {@link #toCommand(UUID, AgregarColumnaRequest)}, this command does NOT
-     * carry column definition fields (nombre, color, tipoColumna). Those belong to the
-     * Columna catalog. This overload only carries board-specific context (WIP, note, state).
+     * <p>This command does NOT carry column definition fields (nombre, color,
+     * tipoColumna). Those belong to the Columna catalog. This overload only
+     * carries board-specific context (WIP, note, state).
      */
     public static AsignarColumnaTableroCommand toAsignarCommand(
             UUID tableroId,

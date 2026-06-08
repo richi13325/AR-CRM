@@ -1,6 +1,5 @@
 package com.ar.crm2.adapter.in.rest;
 
-import com.ar.crm2.adapter.in.rest.dto.request.AgregarColumnaRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.AsignarColumnaRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.CreateTableroRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.EditTableroRequest;
@@ -10,7 +9,6 @@ import com.ar.crm2.adapter.in.rest.mapper.TableroCommandMapper;
 import com.ar.crm2.adapter.out.persistence.repository.ColumnaRepository;
 import com.ar.crm2.application.security.ActorContext;
 import com.ar.crm2.application.security.exception.AuthenticatedUsuarioRequiredException;
-import com.ar.crm2.application.tablero.command.AgregarColumnaTableroCommand;
 import com.ar.crm2.application.tablero.command.AsignarColumnaTableroCommand;
 import com.ar.crm2.application.tablero.command.CreateTableroCommand;
 import com.ar.crm2.application.tablero.command.DeleteTableroCommand;
@@ -18,7 +16,6 @@ import com.ar.crm2.application.tablero.command.EditTableroCommand;
 import com.ar.crm2.application.tablero.command.EliminarColumnaDelTableroCommand;
 import com.ar.crm2.application.tablero.command.GetTableroByIdCommand;
 import com.ar.crm2.application.tablero.command.ReordenarColumnasCommand;
-import com.ar.crm2.application.tablero.port.in.AgregarColumnaTableroUseCase;
 import com.ar.crm2.application.tablero.port.in.AsignarColumnaTableroUseCase;
 import com.ar.crm2.application.tablero.port.in.CreateTableroUseCase;
 import com.ar.crm2.application.tablero.port.in.DeleteTableroUseCase;
@@ -72,9 +69,6 @@ class TableroControllerTest {
 
     @Mock
     private DeleteTableroUseCase deleteUseCase;
-
-    @Mock
-    private AgregarColumnaTableroUseCase agregarColumnaUseCase;
 
     @Mock
     private AsignarColumnaTableroUseCase asignarColumnaUseCase;
@@ -314,35 +308,6 @@ class TableroControllerTest {
         ArgumentCaptor<DeleteTableroCommand> captor = ArgumentCaptor.forClass(DeleteTableroCommand.class);
         verify(deleteUseCase).delete(captor.capture());
         assertEquals(id, captor.getValue().id());
-    }
-
-    // ── agregarColumna ─────────────────────────────────────────────
-
-    @Test
-    void agregarColumna_shouldReturnCreatedWithTableroResponse() {
-        UUID tableroId = UUID.randomUUID();
-        Tablero tablero = createDomainTablero(tableroId, "Board with column");
-
-        when(agregarColumnaUseCase.agregarColumna(any(AgregarColumnaTableroCommand.class)))
-                .thenReturn(tablero);
-
-        AgregarColumnaRequest request = new AgregarColumnaRequest(
-                "New Column",
-                "#FF0000",
-                com.ar.crm2.model.enums.TipoColumna.PERSONALIZADA,
-                5,
-                "Note",
-                TipoEstadoColumnaTableroTarea.PENDIENTE,
-                null,
-                new BigDecimal("1000"),
-                false
-        );
-
-        ResponseEntity<TableroResponse> response = controller.agregarColumna(tableroId, request);
-
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertNotNull(response.getBody());
-        verify(agregarColumnaUseCase).agregarColumna(any(AgregarColumnaTableroCommand.class));
     }
 
     // ── eliminarColumna ────────────────────────────────────────────

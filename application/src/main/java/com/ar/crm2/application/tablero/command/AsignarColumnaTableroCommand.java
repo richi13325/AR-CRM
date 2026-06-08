@@ -6,13 +6,12 @@ import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTrato;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-/**
- * Command to assign an existing catalog Columna to a Tablero with contextual data.
- *
- * <p>Unlike {@link AgregarColumnaTableroCommand}, this command does NOT carry
- * column definition (nombre, color, tipoColumna). Those belong to the catalog.
- * This command only carries the board-specific context (WIP limit, note, state).
- */
+    /**
+     * Command to assign an existing catalog Columna to a Tablero with contextual data.
+     *
+     * <p>Column definition (nombre, color, tipoColumna) belongs to the catalog.
+     * This command only carries the board-specific context (WIP limit, note, state).
+     */
 public record AsignarColumnaTableroCommand(
     UUID tableroId,
     UUID columnaId,

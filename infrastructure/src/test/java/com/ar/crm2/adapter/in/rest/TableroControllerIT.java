@@ -1,13 +1,11 @@
 package com.ar.crm2.adapter.in.rest;
 
-import com.ar.crm2.adapter.in.rest.dto.request.AgregarColumnaRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.AsignarColumnaRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.CreateTableroRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.EditTableroRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.ReordenarColumnasRequest;
 import com.ar.crm2.adapter.out.persistence.repository.ColumnaRepository;
 import com.ar.crm2.application.security.ActorContext;
-import com.ar.crm2.application.tablero.command.AgregarColumnaTableroCommand;
 import com.ar.crm2.application.tablero.command.AsignarColumnaTableroCommand;
 import com.ar.crm2.application.tablero.command.CreateTableroCommand;
 import com.ar.crm2.application.tablero.command.DeleteTableroCommand;
@@ -15,7 +13,6 @@ import com.ar.crm2.application.tablero.command.EditTableroCommand;
 import com.ar.crm2.application.tablero.command.EliminarColumnaDelTableroCommand;
 import com.ar.crm2.application.tablero.command.GetTableroByIdCommand;
 import com.ar.crm2.application.tablero.command.ReordenarColumnasCommand;
-import com.ar.crm2.application.tablero.port.in.AgregarColumnaTableroUseCase;
 import com.ar.crm2.application.tablero.port.in.AsignarColumnaTableroUseCase;
 import com.ar.crm2.application.tablero.port.in.CreateTableroUseCase;
 import com.ar.crm2.application.tablero.port.in.DeleteTableroUseCase;
@@ -25,8 +22,6 @@ import com.ar.crm2.application.tablero.port.in.GetAllTablerosUseCase;
 import com.ar.crm2.application.tablero.port.in.GetTableroByIdUseCase;
 import com.ar.crm2.application.tablero.port.in.ReordenarColumnasUseCase;
 import com.ar.crm2.model.entity.Tablero;
-import com.ar.crm2.model.enums.TipoColumna;
-import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTarea;
 import com.ar.crm2.model.enums.TipoEstadoColumnaTableroTrato;
 import com.ar.crm2.model.enums.TipoTablero;
 import com.ar.crm2.model.vo.ColumnaId;
@@ -42,7 +37,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -97,9 +91,6 @@ class TableroControllerIT {
 
     @MockitoBean
     private DeleteTableroUseCase deleteUseCase;
-
-    @MockitoBean
-    private AgregarColumnaTableroUseCase agregarColumnaUseCase;
 
     @MockitoBean
     private AsignarColumnaTableroUseCase asignarColumnaUseCase;
@@ -268,15 +259,9 @@ class TableroControllerIT {
         verify(deleteUseCase).delete(any(DeleteTableroCommand.class));
     }
 
-    // ── POST /api/tableros/agregar-columna ───────────────────────
-
     @Test
-    void agregarColumna_shouldReturn201WithTableroJson() throws Exception {
+    void agregarColumna_shouldReturn404BecauseEndpointWasRemoved() throws Exception {
         UUID tableroId = UUID.randomUUID();
-        Tablero tablero = buildTablero(tableroId, "Board with column");
-
-        when(agregarColumnaUseCase.agregarColumna(any(AgregarColumnaTableroCommand.class)))
-                .thenReturn(tablero);
 
         String body = """
                 {
@@ -296,10 +281,7 @@ class TableroControllerIT {
                         .param("id", tableroId.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(tableroId.toString()));
-
-        verify(agregarColumnaUseCase).agregarColumna(any(AgregarColumnaTableroCommand.class));
+                .andExpect(status().isNotFound());
     }
 
     // ── DELETE /api/tableros/eliminar-columna ────────────────────

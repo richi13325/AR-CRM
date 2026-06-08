@@ -1,6 +1,9 @@
 package com.ar.crm2.application.tablero.service;
 
-import com.ar.crm2.application.columna.port.out.SaveColumnaPort;
+import com.ar.crm2.application.columna.command.CreateColumnaCommand;
+import com.ar.crm2.application.columna.port.in.CreateColumnaUseCase;
+import com.ar.crm2.application.columna.port.out.FindAllColumnasPort;
+import com.ar.crm2.application.columna.service.ColumnaNamePolicy;
 import com.ar.crm2.application.tablero.command.CreateTableroCommand;
 import com.ar.crm2.application.tablero.port.out.SaveTableroPort;
 import com.ar.crm2.application.tablero.port.in.CreateTableroUseCase;
@@ -17,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Application service implementing CreateTableroUseCase.
@@ -27,7 +31,8 @@ import java.util.List;
 public class CreateTableroService implements CreateTableroUseCase {
 
     private final SaveTableroPort savePort;
-    private final SaveColumnaPort saveColumnaPort;
+    private final FindAllColumnasPort findAllColumnasPort;
+    private final CreateColumnaUseCase createColumnaUseCase;
 
     @Override
     public Tablero create(CreateTableroCommand command) {
@@ -36,7 +41,7 @@ public class CreateTableroService implements CreateTableroUseCase {
         // TableroMapper.toColumnaTableroDomain() re-hydrates the catalog Columna
         // for each child. Saving the Tablero first would create dangling
         // columna_id references in columnas_tablero and crash on read.
-        List<ColumnaTablero> columnasPredeterminadas = buildDefaultColumns(command.tipoTablero());
+        List<ColumnaTablero> columnasPredeterminadas = buildDefaultColumns(command);
 
         Tablero tablero = Tablero.create(
             command.nombre(),
@@ -60,33 +65,33 @@ public class CreateTableroService implements CreateTableroUseCase {
      *   <li>TRATOS: ABIERTO, GANADO, PERDIDO, ARCHIVED</li>
      * </ul>
      *
-     * @param tipoTablero the type of the board
+     * @param command the board creation command
      * @return list of 4 default ColumnaTablero contextual wrappers
      */
-    private List<ColumnaTablero> buildDefaultColumns(TipoTablero tipoTablero) {
-        SuperUsuarioId superUsuarioId = SuperUsuarioId.create();
-
+    private List<ColumnaTablero> buildDefaultColumns(CreateTableroCommand command) {
+        TipoTablero tipoTablero = command.tipoTablero();
+        List<Columna> existingColumnas = findAllColumnasPort.findAll();
         List<ColumnaTablero> columnas = new ArrayList<>(4);
 
         switch (tipoTablero) {
             case TAREAS -> {
-                columnas.add(makeColumnaTablero(superUsuarioId,
+                columnas.add(makeColumnaTablero(existingColumnas, command,
                     "Pendiente", TipoEstadoColumnaTableroTarea.PENDIENTE, null, 5));
-                columnas.add(makeColumnaTablero(superUsuarioId,
+                columnas.add(makeColumnaTablero(existingColumnas, command,
                     "En Curso", TipoEstadoColumnaTableroTarea.EN_CURSO, null, 3));
-                columnas.add(makeColumnaTablero(superUsuarioId,
+                columnas.add(makeColumnaTablero(existingColumnas, command,
                     "Finalizada", TipoEstadoColumnaTableroTarea.FINALIZADA, null, 5));
-                columnas.add(makeColumnaTablero(superUsuarioId,
+                columnas.add(makeColumnaTablero(existingColumnas, command,
                     "Cancelada", TipoEstadoColumnaTableroTarea.PENDIENTE, null, 5));
             }
             case TRATOS -> {
-                columnas.add(makeColumnaTableroTrato(superUsuarioId,
+                columnas.add(makeColumnaTableroTrato(existingColumnas, command,
                     "Abierto", TipoEstadoColumnaTableroTrato.ABIERTO, BigDecimal.ZERO, 10));
-                columnas.add(makeColumnaTableroTrato(superUsuarioId,
+                columnas.add(makeColumnaTableroTrato(existingColumnas, command,
                     "Ganado", TipoEstadoColumnaTableroTrato.GANADO, BigDecimal.ZERO, 10));
-                columnas.add(makeColumnaTableroTrato(superUsuarioId,
+                columnas.add(makeColumnaTableroTrato(existingColumnas, command,
                     "Perdido", TipoEstadoColumnaTableroTrato.PERDIDO, BigDecimal.ZERO, 10));
-                columnas.add(makeColumnaTableroTrato(superUsuarioId,
+                columnas.add(makeColumnaTableroTrato(existingColumnas, command,
                     "Archived", TipoEstadoColumnaTableroTrato.PERDIDO, BigDecimal.ZERO, 10));
             }
         }
@@ -95,25 +100,14 @@ public class CreateTableroService implements CreateTableroUseCase {
     }
 
     private ColumnaTablero makeColumnaTablero(
-        SuperUsuarioId superUsuarioId,
+        List<Columna> existingColumnas,
+        CreateTableroCommand command,
         String nombre,
         TipoEstadoColumnaTableroTarea estadoTarea,
         TipoEstadoColumnaTableroTrato estadoTrato,
         int limiteWip
     ) {
-        Columna columna = Columna.create(
-            superUsuarioId,
-            nombre,
-            TipoTablero.TAREAS,
-            TipoColumna.PREDETERMINADA,
-            "#FFFFFF",
-            false
-        );
-
-        // Persist the catalog Columna first so columnas_tablero.columna_id
-        // references a row that already exists. TableroMapper re-hydrates
-        // the catalog on read and would throw IllegalStateException otherwise.
-        Columna persisted = saveColumnaPort.save(columna);
+        Columna persisted = resolveDefaultCatalogColumn(existingColumnas, command, nombre, TipoTablero.TAREAS);
 
         return ColumnaTablero.create(
             persisted.getId(),
@@ -127,25 +121,14 @@ public class CreateTableroService implements CreateTableroUseCase {
     }
 
     private ColumnaTablero makeColumnaTableroTrato(
-        SuperUsuarioId superUsuarioId,
+        List<Columna> existingColumnas,
+        CreateTableroCommand command,
         String nombre,
         TipoEstadoColumnaTableroTrato estadoTrato,
         BigDecimal totalValorEstimado,
         int limiteWip
     ) {
-        Columna columna = Columna.create(
-            superUsuarioId,
-            nombre,
-            TipoTablero.TRATOS,
-            TipoColumna.PREDETERMINADA,
-            "#FFFFFF",
-            false
-        );
-
-        // Persist the catalog Columna first so columnas_tablero.columna_id
-        // references a row that already exists. TableroMapper re-hydrates
-        // the catalog on read and would throw IllegalStateException otherwise.
-        Columna persisted = saveColumnaPort.save(columna);
+        Columna persisted = resolveDefaultCatalogColumn(existingColumnas, command, nombre, TipoTablero.TRATOS);
 
         return ColumnaTablero.create(
             persisted.getId(),
@@ -156,5 +139,25 @@ public class CreateTableroService implements CreateTableroUseCase {
             estadoTrato,
             totalValorEstimado
         );
+    }
+
+    private Columna resolveDefaultCatalogColumn(
+        List<Columna> existingColumnas,
+        CreateTableroCommand command,
+        String nombre,
+        TipoTablero tipoTablero
+    ) {
+        Optional<Columna> existing = ColumnaNamePolicy.findDefaultCatalogColumn(existingColumnas, tipoTablero, nombre);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+
+        return createColumnaUseCase.create(new CreateColumnaCommand(
+            Optional.of(command.superUsuarioId()),
+            nombre,
+            "#FFFFFF",
+            tipoTablero,
+            TipoColumna.PREDETERMINADA
+        ));
     }
 }
