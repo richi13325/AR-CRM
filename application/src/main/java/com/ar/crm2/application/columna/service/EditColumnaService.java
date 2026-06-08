@@ -29,9 +29,12 @@ public class EditColumnaService implements EditColumnaUseCase {
         Columna existing = findPort.findById(columnaId)
                 .orElseThrow(() -> ColumnaNotFoundException.forId(command.id()));
 
-        boolean existeDuplicado = findAllPort.findAll().stream()
-                .anyMatch(c -> c.getColumnanombre().equals(command.nombre())
-                        && !c.getId().equals(columnaId));
+        boolean existeDuplicado = ColumnaNamePolicy.hasDuplicateForEdit(
+            findAllPort.findAll(),
+            columnaId,
+            command.tipoTablero(),
+            command.nombre()
+        );
 
         Columna updated = Columna.reconstitute(
                 existing.getId(),

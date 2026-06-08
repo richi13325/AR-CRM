@@ -25,8 +25,11 @@ public class CreateColumnaService implements CreateColumnaUseCase {
 
     @Override
     public Columna create(CreateColumnaCommand command) {
-        boolean existeDuplicado = findAllPort.findAll().stream()
-            .anyMatch(c -> c.getColumnanombre().equals(command.nombre()));
+        boolean existeDuplicado = ColumnaNamePolicy.hasDuplicateForCreate(
+            findAllPort.findAll(),
+            command.tipoTablero(),
+            command.nombre()
+        );
 
         Columna columna = Columna.create(
             command.superUsuarioId()
