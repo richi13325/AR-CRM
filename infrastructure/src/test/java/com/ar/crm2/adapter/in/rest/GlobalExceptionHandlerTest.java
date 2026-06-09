@@ -7,6 +7,7 @@ import com.ar.crm2.application.etiqueta.exception.EtiquetaRequiresConfirmationEx
 import com.ar.crm2.application.identity.model.IdentityProvisioningException;
 import com.ar.crm2.application.tablero.exception.TableroNotFoundException;
 import com.ar.crm2.exception.ColumnaConFichasNoPuedeEliminarseException;
+import com.ar.crm2.exception.ColumnaYaExisteEnTableroException;
 import com.ar.crm2.exception.DomainException;
 import com.ar.crm2.exception.InvariantViolationException;
 import org.junit.jupiter.api.Test;
@@ -99,6 +100,21 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
         assertNotNull(response.getBody());
+    }
+
+    @Test
+    void handleColumnaYaExisteEnTablero_shouldReturn409() {
+        // Regression: POST /api/tableros/asignar-columna throws this
+        // domain exception when the column is already assigned. It must
+        // map to 409 Conflict, not the generic DomainException 400.
+        ColumnaYaExisteEnTableroException ex = new ColumnaYaExisteEnTableroException();
+
+        ResponseEntity<Map<String, String>> response = handler.handleColumnaYaExisteEnTablero(ex);
+
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode(),
+            "ColumnaYaExisteEnTableroException must map to 409 Conflict");
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().containsKey("error"));
     }
 
     // ── 400 Bad Request ────────────────────────────────────────────

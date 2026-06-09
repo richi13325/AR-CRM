@@ -20,6 +20,7 @@ import com.ar.crm2.application.tarea.exception.TareaNotFoundException;
 import com.ar.crm2.application.trato.exception.TratoNotFoundException;
 import com.ar.crm2.application.usuario.exception.UsuarioNotFoundException;
 import com.ar.crm2.exception.ColumnaConFichasNoPuedeEliminarseException;
+import com.ar.crm2.exception.ColumnaYaExisteEnTableroException;
 import com.ar.crm2.exception.DomainException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -190,6 +191,20 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(ColumnaConFichasNoPuedeEliminarseException.class)
     public ResponseEntity<Map<String, String>> handleColumnaConFichasNoPuedeEliminarse(ColumnaConFichasNoPuedeEliminarseException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * Handles ColumnaYaExisteEnTableroException as 409 Conflict.
+     * Thrown when the caller attempts to assign a Columna that is already
+     * part of the target Tablero. Surfaced by
+     * POST /api/tableros/asignar-columna; must NOT fall through to the
+     * generic DomainException 400 handler (would hide the conflict
+     * semantics and confuse clients).
+     */
+    @ExceptionHandler(ColumnaYaExisteEnTableroException.class)
+    public ResponseEntity<Map<String, String>> handleColumnaYaExisteEnTablero(ColumnaYaExisteEnTableroException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(Map.of("error", ex.getMessage()));
     }

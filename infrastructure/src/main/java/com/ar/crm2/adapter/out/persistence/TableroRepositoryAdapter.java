@@ -1,5 +1,6 @@
 package com.ar.crm2.adapter.out.persistence;
 
+import com.ar.crm2.adapter.out.persistence.entity.ColumnaTableroEntity;
 import com.ar.crm2.adapter.out.persistence.entity.TableroEntity;
 import com.ar.crm2.adapter.out.persistence.mapper.ColumnaMapper;
 import com.ar.crm2.adapter.out.persistence.mapper.TableroMapper;
@@ -19,7 +20,9 @@ import com.ar.crm2.model.vo.TableroId;
 import com.ar.crm2.model.enums.TipoTablero;
 import lombok.RequiredArgsConstructor;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -31,9 +34,38 @@ public class TableroRepositoryAdapter implements SaveTableroPort, FindAllTablero
 
     @Override
     public Tablero save(Tablero tablero) {
-        TableroEntity entity = mapper.toEntity(tablero);
+        Map<String, String> existingChildRowIds = loadExistingChildRowIds(tablero);
+        TableroEntity entity = mapper.toEntity(tablero, existingChildRowIds);
         TableroEntity saved = repository.save(entity);
         return mapper.toDomain(saved);
+    }
+
+    /**
+     * Returns a map of {@code columnaId → persisted row id} for the
+     * children that already exist on the given Tablero's row, or an
+     * empty map when the Tablero is new (no row in the database) or
+     * has no children.
+     *
+     * <p>This is required so that updating an existing Tablero (e.g.
+     * POST /api/tableros/asignar-columna) reuses each child's persisted
+     * primary key. Otherwise {@link TableroMapper#toEntity} would
+     * regenerate a UUID per child on every save, and JPA would emit
+     * INSERTs that collide with
+     * {@code uk_columnas_tablero_tablero_columna}.
+     */
+    private Map<String, String> loadExistingChildRowIds(Tablero tablero) {
+        Optional<TableroEntity> existing = repository.findById(tablero.getId().value().toString());
+        if (existing.isEmpty() || existing.get().getColumnasTablero() == null
+            || existing.get().getColumnasTablero().isEmpty()) {
+            return Map.of();
+        }
+        Map<String, String> map = new HashMap<>(existing.get().getColumnasTablero().size());
+        for (ColumnaTableroEntity child : existing.get().getColumnasTablero()) {
+            if (child.getColumnaId() != null && child.getId() != null) {
+                map.put(child.getColumnaId(), child.getId());
+            }
+        }
+        return map;
     }
 
     @Override

@@ -12,6 +12,7 @@ import com.ar.crm2.model.vo.TableroId;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -26,13 +27,24 @@ import java.util.UUID;
  * catalog fields. The catalog remains the single source of truth for column definition.
  *
  * <p><b>Child row id strategy</b>: each {@code ColumnaTableroEntity} row
- * generated here owns its own fresh UUID technical id. The catalog
+ * generated here owns its own UUID technical id. The catalog
  * {@code columnaId} is stored in its own {@code columna_id} column so the
  * row can still reference the Columna catalog. The row id MUST NOT be a
  * copy of the catalog id — it is a technical id, not a domain identity.
- * This contract is enforced by
+ *
+ * <p>For NEW {@code Tablero} aggregates (no existing row in the database)
+ * the row id is a freshly generated UUID. For EXISTING aggregates
+ * (updates, column assignments, edits) the caller passes a map of
+ * {@code columnaId → existing row id} so each child row keeps its
+ * persisted primary key. This avoids PostgreSQL duplicate-key violations
+ * on {@code uk_columnas_tablero_tablero_columna} when JPA treats a
+ * re-saved child row as a new INSERT instead of an UPDATE.
+ *
+ * <p>This contract is enforced by
  * {@code TableroMapperTest#toEntity_childRowId_isGeneratedUuidNotEqualToColumnaId}
- * and is the same strategy used by {@code FichaMapper#toEntity} for
+ * for new rows and
+ * {@code TableroMapperTest#toEntity_existingChildRowIds_preservesPersistedRowId}
+ * for updates, and is the same strategy used by {@code FichaMapper#toEntity} for
  * {@code FichaEtiquetaEntity}.
  */
 public final class TableroMapper {
@@ -47,10 +59,34 @@ public final class TableroMapper {
 
     /**
      * Maps a domain Tablero to a persistence TableroEntity.
-     * Used for save operations. Children (columnasTablero) are mapped inline.
+     * Used for save operations on NEW aggregates (no existing row to merge with).
+     * Children (columnasTablero) are mapped inline with freshly generated UUIDs.
      */
     public TableroEntity toEntity(Tablero domain) {
+        return toEntity(domain, java.util.Collections.emptyMap());
+    }
+
+    /**
+     * Maps a domain Tablero to a persistence TableroEntity, reusing the
+     * existing child row ids for updates.
+     *
+     * <p>For each child whose {@code columnaId} is present in
+     * {@code existingChildRowIds}, the corresponding
+     * {@code ColumnaTableroEntity.id} is reused (preserving the persisted
+     * primary key). For children whose {@code columnaId} is NOT in the
+     * map (i.e. genuinely new assignments), a fresh UUID is generated.
+     *
+     * @param domain                the domain aggregate to persist (non-null)
+     * @param existingChildRowIds   map of {@code columnaId → existing row id}
+     *                              for children that already exist in the
+     *                              database; empty or null for new aggregates
+     */
+    public TableroEntity toEntity(Tablero domain, Map<String, String> existingChildRowIds) {
         if (domain == null) return null;
+
+        Map<String, String> safeExisting = existingChildRowIds != null
+            ? existingChildRowIds
+            : java.util.Collections.emptyMap();
 
         TableroEntity entity = TableroEntity.builder()
             .id(domain.getId().value().toString())
@@ -63,7 +99,7 @@ public final class TableroMapper {
         List<ColumnaTableroEntity> childEntities = new ArrayList<>(domain.getColumnasTablero().size());
         int orden = 0;
         for (ColumnaTablero ct : domain.getColumnasTablero()) {
-            childEntities.add(toColumnaTableroEntity(ct, entity, orden++));
+            childEntities.add(toColumnaTableroEntity(ct, entity, orden++, safeExisting));
         }
         entity.setColumnasTablero(childEntities);
 
@@ -74,20 +110,33 @@ public final class TableroMapper {
      * Maps a domain ColumnaTablero to a persistence ColumnaTableroEntity.
      * Used for save operations within a Tablero aggregate.
      *
-     * <p>Identity strategy: the row owns its own generated UUID as its
+     * <p>Identity strategy: the row owns its own UUID as its
      * technical id. The catalog {@code columnaId} is stored in its own
      * {@code columna_id} column so the row can still reference the
      * Columna catalog. The row id MUST NOT be a copy of the catalog id
      * (it is a technical id, not a domain identity) — this matches the
      * {@code FichaMapper#toEntity} contract for {@code FichaEtiquetaEntity}.
      *
-     * @param orden the position of this column in the parent's column list (used for @OrderColumn)
+     * <p>If {@code columnaId} is present in {@code existingChildRowIds},
+     * the persisted row id is reused (for updates). Otherwise a fresh
+     * UUID is generated (for new assignments).
+     *
+     * @param orden                the position of this column in the parent's column list (used for @OrderColumn)
+     * @param existingChildRowIds  map of {@code columnaId → persisted row id}
      */
-    private ColumnaTableroEntity toColumnaTableroEntity(ColumnaTablero ct, TableroEntity parent, int orden) {
+    private ColumnaTableroEntity toColumnaTableroEntity(
+        ColumnaTablero ct,
+        TableroEntity parent,
+        int orden,
+        Map<String, String> existingChildRowIds
+    ) {
+        String columnaIdKey = ct.getColumnaId().value().toString();
+        String rowId = existingChildRowIds.getOrDefault(columnaIdKey, UUID.randomUUID().toString());
+
         return ColumnaTableroEntity.builder()
-            .id(UUID.randomUUID().toString())
+            .id(rowId)
             .tablero(parent)
-            .columnaId(ct.getColumnaId().value().toString())
+            .columnaId(columnaIdKey)
             .tipoTablero(ct.getTipoTablero())
             .limiteWip(ct.getLimiteWip())
             .nota(ct.getNota())

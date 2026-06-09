@@ -29,6 +29,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -94,14 +95,15 @@ class TableroRepositoryAdapterTest {
         Tablero tablero = createDomainTablero(id, "Sprint Board", List.of());
         TableroEntity savedEntity = createTableroEntity(id.toString(), "Sprint Board");
 
-        when(mapper.toEntity(tablero)).thenReturn(savedEntity);
+        when(repository.findById(id.toString())).thenReturn(Optional.empty());
+        when(mapper.toEntity(eq(tablero), any(java.util.Map.class))).thenReturn(savedEntity);
         when(repository.save(savedEntity)).thenReturn(savedEntity);
         when(mapper.toDomain(savedEntity)).thenReturn(tablero);
 
         Tablero result = adapter.save(tablero);
 
         assertSame(tablero, result);
-        verify(mapper).toEntity(tablero);
+        verify(mapper).toEntity(eq(tablero), any(java.util.Map.class));
         verify(repository).save(savedEntity);
         verify(mapper).toDomain(savedEntity);
     }
@@ -113,7 +115,8 @@ class TableroRepositoryAdapterTest {
         TableroEntity savedEntity = createTableroEntity(id.toString(), "Board");
         Tablero reconstituted = createDomainTablero(id, "Board", List.of());
 
-        when(mapper.toEntity(tablero)).thenReturn(savedEntity);
+        when(repository.findById(id.toString())).thenReturn(Optional.empty());
+        when(mapper.toEntity(eq(tablero), any(java.util.Map.class))).thenReturn(savedEntity);
         when(repository.save(savedEntity)).thenReturn(savedEntity);
         when(mapper.toDomain(savedEntity)).thenReturn(reconstituted);
 
@@ -352,5 +355,132 @@ class TableroRepositoryAdapterTest {
         adapter.findById(ColumnaId.from(id));
 
         verify(columnaRepository).findById("550e8400-e29b-41d4-a716-446655440000");
+    }
+
+    // ── save: existing-child-row-id preservation (regression for
+    //    uk_columnas_tablero_tablero_columna duplicate-key violations) ─
+
+    @Test
+    void save_existingTablero_passesExistingChildRowIdsToMapper() {
+        UUID tableroId = UUID.randomUUID();
+        UUID existingColumnaId = UUID.randomUUID();
+        String persistedChildRowId = "persisted-row-id-1";
+
+        // Domain aggregate that includes the already-persisted column
+        Tablero tablero = createDomainTablero(tableroId, "Existing Board", List.of(
+            ColumnaTablero.reconstitute(ColumnaId.from(existingColumnaId),
+                TipoTablero.TAREAS, 5, null, BigDecimal.ZERO)
+        ));
+
+        // Persisted Tablero row with one child carrying a stable row id.
+        // This is what repository.findById will return — and the adapter
+        // must build its existing-child-row-ids map from THESE children.
+        TableroEntity reloaded = createTableroEntity(tableroId.toString(), "Existing Board");
+        reloaded.getColumnasTablero().add(ColumnaTableroEntity.builder()
+            .id(persistedChildRowId)
+            .tablero(reloaded)
+            .columnaId(existingColumnaId.toString())
+            .tipoTablero(TipoTablero.TAREAS)
+            .limiteWip(5)
+            .nota(null)
+            .totalValorEstimado(BigDecimal.ZERO)
+            .orden(0)
+            .build());
+
+        when(repository.findById(tableroId.toString())).thenReturn(Optional.of(reloaded));
+        when(mapper.toEntity(eq(tablero), any(java.util.Map.class))).thenAnswer(inv -> {
+            java.util.Map<String, String> map = inv.getArgument(1);
+            // CRITICAL: the persisted row id for the already-existing column
+            // must be present so the mapper can reuse it on save.
+            assertEquals(persistedChildRowId, map.get(existingColumnaId.toString()),
+                "adapter must pass the persisted child row id keyed by columnaId");
+            return reloaded;
+        });
+        when(repository.save(reloaded)).thenReturn(reloaded);
+        when(mapper.toDomain(reloaded)).thenReturn(tablero);
+
+        adapter.save(tablero);
+    }
+
+    @Test
+    void save_existingTablero_newAssignment_mixesPreservedAndFreshChildRowIds() {
+        UUID tableroId = UUID.randomUUID();
+        UUID existingColumnaId = UUID.randomUUID();
+        UUID newColumnaId = UUID.randomUUID();
+        String persistedRowIdForExisting = "existing-row-1";
+
+        // Domain has BOTH the existing and the new column
+        Tablero tablero = createDomainTablero(tableroId, "Board", List.of(
+            ColumnaTablero.reconstitute(ColumnaId.from(existingColumnaId),
+                TipoTablero.TAREAS, 5, null, BigDecimal.ZERO),
+            ColumnaTablero.reconstitute(ColumnaId.from(newColumnaId),
+                TipoTablero.TAREAS, 3, null, BigDecimal.ZERO)
+        ));
+
+        // Persisted row carries only the already-existing column; the new
+        // column is genuinely new and must NOT be in the existing-row map.
+        TableroEntity reloaded = createTableroEntity(tableroId.toString(), "Board");
+        reloaded.getColumnasTablero().add(ColumnaTableroEntity.builder()
+            .id(persistedRowIdForExisting)
+            .tablero(reloaded)
+            .columnaId(existingColumnaId.toString())
+            .tipoTablero(TipoTablero.TAREAS)
+            .limiteWip(5)
+            .nota(null)
+            .totalValorEstimado(BigDecimal.ZERO)
+            .orden(0)
+            .build());
+
+        when(repository.findById(tableroId.toString())).thenReturn(Optional.of(reloaded));
+        when(mapper.toEntity(eq(tablero), any(java.util.Map.class))).thenAnswer(inv -> {
+            java.util.Map<String, String> map = inv.getArgument(1);
+            assertEquals(persistedRowIdForExisting, map.get(existingColumnaId.toString()),
+                "existing column must carry its persisted row id");
+            assertNull(map.get(newColumnaId.toString()),
+                "new column must NOT be present in the existing-row-id map");
+            return reloaded;
+        });
+        when(repository.save(reloaded)).thenReturn(reloaded);
+        when(mapper.toDomain(reloaded)).thenReturn(tablero);
+
+        adapter.save(tablero);
+    }
+
+    @Test
+    void save_newTablero_passesEmptyMapToMapper() {
+        UUID tableroId = UUID.randomUUID();
+        Tablero tablero = createDomainTablero(tableroId, "Brand New Board", List.of());
+        TableroEntity savedEntity = createTableroEntity(tableroId.toString(), "Brand New Board");
+
+        when(repository.findById(tableroId.toString())).thenReturn(Optional.empty());
+        when(mapper.toEntity(eq(tablero), any(java.util.Map.class))).thenAnswer(inv -> {
+            java.util.Map<String, String> map = inv.getArgument(1);
+            assertTrue(map.isEmpty(),
+                "for a brand-new Tablero the existing-child-row-ids map must be empty");
+            return savedEntity;
+        });
+        when(repository.save(savedEntity)).thenReturn(savedEntity);
+        when(mapper.toDomain(savedEntity)).thenReturn(tablero);
+
+        adapter.save(tablero);
+    }
+
+    @Test
+    void save_existingTablero_noChildren_passesEmptyMapToMapper() {
+        UUID tableroId = UUID.randomUUID();
+        Tablero tablero = createDomainTablero(tableroId, "Board", List.of());
+        TableroEntity reloaded = createTableroEntity(tableroId.toString(), "Board");
+
+        when(repository.findById(tableroId.toString())).thenReturn(Optional.of(reloaded));
+        when(mapper.toEntity(eq(tablero), any(java.util.Map.class))).thenAnswer(inv -> {
+            java.util.Map<String, String> map = inv.getArgument(1);
+            assertTrue(map.isEmpty(),
+                "an existing Tablero with no children yields an empty map");
+            return reloaded;
+        });
+        when(repository.save(reloaded)).thenReturn(reloaded);
+        when(mapper.toDomain(reloaded)).thenReturn(tablero);
+
+        adapter.save(tablero);
     }
 }

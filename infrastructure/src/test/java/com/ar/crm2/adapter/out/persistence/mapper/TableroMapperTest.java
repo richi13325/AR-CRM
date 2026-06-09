@@ -467,4 +467,97 @@ class TableroMapperTest {
         assertNotEquals(child.getId(), child.getColumnaId(),
             "row id and columnaId must be independent fields");
     }
+
+    // ── Slice-5: existing-child-row-id preservation on update ───────
+    //
+    // Regression for uk_columnas_tablero_tablero_columna duplicate-key
+    // violations triggered by POST /api/tableros/asignar-columna. The
+    // mapper must distinguish "new" children (fresh UUID) from
+    // "existing" children (reuse persisted row id keyed by columnaId).
+
+    @Test
+    void toEntity_existingChildRowIds_preservesPersistedRowId() {
+        UUID tableroId = UUID.randomUUID();
+        UUID columnaId = UUID.randomUUID();
+        String persistedRowId = "persisted-uuid-123";
+
+        Tablero domain = Tablero.reconstitute(
+            TableroId.from(tableroId), "Board", "Desc",
+            List.of(ColumnaTablero.reconstitute(
+                ColumnaId.from(columnaId), TipoTablero.TAREAS, 5, null, BigDecimal.ZERO)),
+            TipoTablero.TAREAS,
+            LocalDateTime.now()
+        );
+
+        TableroEntity entity = mapper.toEntity(domain,
+            java.util.Map.of(columnaId.toString(), persistedRowId));
+
+        assertEquals(1, entity.getColumnasTablero().size());
+        assertEquals(persistedRowId, entity.getColumnasTablero().get(0).getId(),
+            "mapper must reuse the persisted row id when one is provided for the columnaId");
+    }
+
+    @Test
+    void toEntity_existingChildRowIds_newChildGeneratesUuid() {
+        UUID tableroId = UUID.randomUUID();
+        UUID existingColumnaId = UUID.randomUUID();
+        UUID newColumnaId = UUID.randomUUID();
+        String persistedRowIdForExisting = "persisted-uuid-existing";
+
+        Tablero domain = Tablero.reconstitute(
+            TableroId.from(tableroId), "Board", "Desc",
+            List.of(
+                ColumnaTablero.reconstitute(
+                    ColumnaId.from(existingColumnaId), TipoTablero.TAREAS, 5, null, BigDecimal.ZERO),
+                ColumnaTablero.reconstitute(
+                    ColumnaId.from(newColumnaId), TipoTablero.TAREAS, 3, null, BigDecimal.ZERO)
+            ),
+            TipoTablero.TAREAS,
+            LocalDateTime.now()
+        );
+
+        TableroEntity entity = mapper.toEntity(domain,
+            java.util.Map.of(existingColumnaId.toString(), persistedRowIdForExisting));
+
+        assertEquals(2, entity.getColumnasTablero().size());
+
+        ColumnaTableroEntity first = entity.getColumnasTablero().get(0);
+        assertEquals(persistedRowIdForExisting, first.getId(),
+            "existing child must keep its persisted row id");
+
+        ColumnaTableroEntity second = entity.getColumnasTablero().get(1);
+        assertNotEquals(persistedRowIdForExisting, second.getId(),
+            "new child must NOT inherit the existing child's row id");
+        assertNotNull(second.getId());
+        assertNotEquals(newColumnaId.toString(), second.getId(),
+            "new child must own its own generated row id, not the catalog id");
+        // Generated UUID is well-formed
+        UUID.fromString(second.getId());
+    }
+
+    @Test
+    void toEntity_existingChildRowIds_emptyMap_behavesLikeSingleArgOverload() {
+        UUID tableroId = UUID.randomUUID();
+        UUID columnaId = UUID.randomUUID();
+
+        Tablero domain = Tablero.reconstitute(
+            TableroId.from(tableroId), "Board", "Desc",
+            List.of(ColumnaTablero.reconstitute(
+                ColumnaId.from(columnaId), TipoTablero.TAREAS, 5, null, BigDecimal.ZERO)),
+            TipoTablero.TAREAS,
+            LocalDateTime.now()
+        );
+
+        TableroEntity entityWithEmpty = mapper.toEntity(domain, java.util.Map.of());
+        TableroEntity entityWithNoArg = mapper.toEntity(domain);
+
+        assertNotNull(entityWithEmpty.getColumnasTablero().get(0).getId());
+        assertNotNull(entityWithNoArg.getColumnasTablero().get(0).getId());
+        // Both overloads produce a fresh, distinct UUID for the child row
+        assertNotEquals(entityWithEmpty.getColumnasTablero().get(0).getId(),
+            entityWithNoArg.getColumnasTablero().get(0).getId());
+        // Neither reuses the catalog id
+        assertNotEquals(columnaId.toString(),
+            entityWithEmpty.getColumnasTablero().get(0).getId());
+    }
 }
