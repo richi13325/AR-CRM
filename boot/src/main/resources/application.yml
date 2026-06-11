@@ -20,6 +20,11 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+    # Run schema.sql/data.sql AFTER Hibernate creates the entity tables.
+    # schema.sql is a patch script (drops legacy columns, adds indexes, FKs to
+    # Hibernate-managed tables like `fichas`), so it must run last. Without this,
+    # Spring runs the scripts before Hibernate and fails on an empty database.
+    defer-datasource-initialization: true
     show-sql: false
     properties:
       hibernate:
