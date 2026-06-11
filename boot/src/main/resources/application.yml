@@ -3,9 +3,9 @@ spring:
     name: CRM2
 
   datasource:
-    url: jdbc:postgresql://localhost:5433/crm2
-    username: crm2
-    password: crm2
+    url: ${CRM2_DB_URL:jdbc:postgresql://localhost:5433/crm2}
+    username: ${CRM2_DB_USERNAME:crm2}
+    password: ${CRM2_DB_PASSWORD:crm2}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -30,8 +30,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8180/realms/crm2-local
-          audiences: crm2-api
+          issuer-uri: ${CRM2_KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/crm2-local}
+          audiences: ${CRM2_KEYCLOAK_AUDIENCE:crm2-api}
 
   mail:
     host: smtp.gmail.com
@@ -51,9 +51,9 @@ server:
 crm2:
   keycloak:
     admin:
-      server-url: http://localhost:8180
-      realm: crm2-local
-      client-id: crm2-api
+      server-url: ${CRM2_KEYCLOAK_SERVER_URL:http://localhost:8180}
+      realm: ${CRM2_KEYCLOAK_REALM:crm2-local}
+      client-id: ${CRM2_KEYCLOAK_CLIENT_ID:crm2-api}
       client-secret: ${KEYCLOAK_ADMIN_SECRET:admin-secret}
       connect-timeout-ms: 5000
       read-timeout-ms: 10000

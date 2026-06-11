@@ -1,0 +1,25 @@
+# Build output — rebuilt inside the image
+**/target/
+build/
+
+# Local env & secrets — must NEVER land in the image
+.env
+*.env
+
+# IDE / editor
+.idea/
+.vscode/
+*.iml
+
+# VCS & docs
+.git/
+.gitignore
+*.md
+!Keycloak/**/*.md
+
+# Local-only tooling
+.atl/
+scripts/
+
+# Keep the multi-stage build context lean: docker-compose is dev-only
+docker-compose.yml
