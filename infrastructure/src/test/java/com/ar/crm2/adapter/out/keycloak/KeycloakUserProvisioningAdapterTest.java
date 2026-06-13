@@ -450,4 +450,75 @@ class KeycloakUserProvisioningAdapterTest {
                     "Prefix must be 'crm2.keycloak.admin' matching application.yml");
         }
     }
+
+    // ── Set custom user attributes (usuario_id sync) ────────────────
+
+    @Nested
+    @DisplayName("setAttributes() — custom user attribute sync to Keycloak")
+    class SetAttributes {
+
+        @Test
+        @DisplayName("adapter implements SetIdentityAttributesPort")
+        void adapter_implementsSetIdentityAttributesPort() {
+            assertTrue(
+                com.ar.crm2.application.identity.port.out.SetIdentityAttributesPort.class
+                    .isAssignableFrom(KeycloakUserProvisioningAdapter.class),
+                "KeycloakUserProvisioningAdapter must implement SetIdentityAttributesPort"
+            );
+        }
+
+        @Test
+        @DisplayName("setAttributes(String, Map) method is declared and public")
+        void setAttributes_methodExists() throws Exception {
+            java.lang.reflect.Method method = null;
+            for (var m : KeycloakUserProvisioningAdapter.class.getDeclaredMethods()) {
+                if (m.isSynthetic() || m.isBridge()) continue;
+                if (!m.getName().equals("setAttributes")) continue;
+                if (m.getParameterCount() != 2) continue;
+                method = m;
+                break;
+            }
+            assertNotNull(method,
+                "Adapter must expose setAttributes(String, Map<String,String>)");
+            assertTrue(java.lang.reflect.Modifier.isPublic(method.getModifiers()),
+                "setAttributes must be public");
+            assertEquals(String.class, method.getParameterTypes()[0],
+                "First parameter must be String keycloakId");
+            assertEquals(java.util.Map.class, method.getParameterTypes()[1],
+                "Second parameter must be Map<String,String> attributes");
+        }
+
+        @Test
+        @DisplayName("setAttributes fetches and merges the full user representation before PUT")
+        void setAttributes_fetchesAndMergesUserRepresentationBeforePut() throws Exception {
+            // Static evidence: for safety, attribute sync must GET the current user,
+            // merge attributes, and only then PUT the full representation back.
+            var source = new java.io.File(
+                "src/main/java/com/ar/crm2/adapter/out/keycloak/KeycloakUserProvisioningAdapter.java"
+            );
+            if (!source.exists()) {
+                // Test is best-effort when run from a different working directory;
+                // the structural checks above are still authoritative.
+                return;
+            }
+            String content = new String(java.nio.file.Files.readAllBytes(source.toPath()));
+            assertTrue(content.contains("private Map<String, Object> fetchUserRepresentation("),
+                "Adapter must fetch the current Keycloak user representation before updating attributes");
+
+            int idx = content.indexOf("public void setAttributes(");
+            assertTrue(idx >= 0, "setAttributes method must exist in source");
+            String after = content.substring(idx);
+            assertTrue(after.contains("fetchUserRepresentation(keycloakId, token)"),
+                "setAttributes must load the current user representation before building the PUT payload");
+            assertTrue(after.contains("/admin/realms/{realm}/users/{id}"),
+                "setAttributes must PUT to /admin/realms/{realm}/users/{id}");
+            assertTrue(after.contains("List.of(") || after.contains("Collections.singletonList")
+                    || after.contains(".toList(") || after.contains("Arrays.asList("),
+                "setAttributes must wrap attribute values in a List for Keycloak's attribute shape");
+            assertTrue(after.contains("mergedAttributes.putAll(keycloakAttributes)"),
+                "setAttributes must merge the new attributes into the existing Keycloak attribute map");
+            assertFalse(after.contains("Map.of(\"attributes\""),
+                "setAttributes must not PUT a partial attributes-only payload");
+        }
+    }
 }

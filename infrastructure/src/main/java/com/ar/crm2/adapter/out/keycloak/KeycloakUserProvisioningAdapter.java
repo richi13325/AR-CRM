@@ -6,6 +6,7 @@ import com.ar.crm2.adapter.out.keycloak.dto.KeycloakTokenResponse;
 import com.ar.crm2.application.identity.model.IdentityProvisioningException;
 import com.ar.crm2.application.identity.model.ProvisionedIdentity;
 import com.ar.crm2.config.KeycloakAdminProperties;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.util.LinkedMultiValueMap;
@@ -14,8 +15,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.reactive.function.BodyInserters;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import reactor.core.publisher.Mono;
 
@@ -24,6 +27,7 @@ public class KeycloakUserProvisioningAdapter
             com.ar.crm2.application.identity.port.out.ProvisionIdentityPort,
             com.ar.crm2.application.identity.port.out.SyncIdentityEmailPort,
             com.ar.crm2.application.identity.port.out.SetIdentityEnabledPort,
+            com.ar.crm2.application.identity.port.out.SetIdentityAttributesPort,
             com.ar.crm2.application.identity.port.out.DeleteIdentityPort,
             com.ar.crm2.application.identity.port.out.SendIdentityUpdatePasswordEmailPort {
 
@@ -157,6 +161,58 @@ public class KeycloakUserProvisioningAdapter
                 .retrieve()
                 .bodyToMono(Void.class)
                 .block();
+    }
+
+    @Override
+    public void setAttributes(String keycloakId, Map<String, String> attributes) {
+        String token = obtainAdminToken();
+        Map<String, Object> currentRepresentation = fetchUserRepresentation(keycloakId, token);
+        // Keycloak stores user attributes as Map<String, List<String>>.
+        Map<String, List<String>> keycloakAttributes = attributes.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> List.of(e.getValue())
+                ));
+
+        Map<String, Object> mergedAttributes = new LinkedHashMap<>();
+        Object existingAttributes = currentRepresentation.get("attributes");
+        if (existingAttributes instanceof Map<?, ?> existingAttributeMap) {
+            existingAttributeMap.forEach((key, value) -> {
+                if (key instanceof String attributeName) {
+                    mergedAttributes.put(attributeName, value);
+                }
+            });
+        }
+        mergedAttributes.putAll(keycloakAttributes);
+
+        Map<String, Object> updatePayload = new LinkedHashMap<>(currentRepresentation);
+        updatePayload.put("attributes", mergedAttributes);
+        webClient.put()
+                .uri("/admin/realms/{realm}/users/{id}", props.getRealm(), keycloakId)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .bodyValue(updatePayload)
+                .retrieve()
+                .bodyToMono(Void.class)
+                .block();
+    }
+
+    private Map<String, Object> fetchUserRepresentation(String keycloakId, String token) {
+        Map<String, Object> userRepresentation = webClient.get()
+                .uri("/admin/realms/{realm}/users/{id}", props.getRealm(), keycloakId)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                .block();
+
+        if (userRepresentation == null || userRepresentation.isEmpty()) {
+            throw new IdentityProvisioningException(
+                keycloakId,
+                "Keycloak returned an empty user representation during attribute sync",
+                IdentityProvisioningException.Reason.SERVER_ERROR
+            );
+        }
+
+        return userRepresentation;
     }
 
     @Override

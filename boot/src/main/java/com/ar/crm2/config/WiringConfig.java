@@ -45,6 +45,7 @@ import com.ar.crm2.application.identity.port.out.DeleteIdentityPort;
 import com.ar.crm2.application.identity.port.out.ProvisionIdentityPort;
 import com.ar.crm2.application.identity.port.out.SetIdentityEnabledPort;
 import com.ar.crm2.application.identity.port.out.SendIdentityUpdatePasswordEmailPort;
+import com.ar.crm2.application.identity.port.out.SetIdentityAttributesPort;
 import com.ar.crm2.application.identity.port.out.SyncIdentityEmailPort;
 import com.ar.crm2.application.superusuario.port.in.CreateSuperUsuarioUseCase;
 import com.ar.crm2.application.superusuario.port.in.DeleteSuperUsuarioUseCase;
@@ -668,9 +669,10 @@ public class WiringConfig {
     public CreateUsuarioUseCase createUsuarioUseCase(
             UsuarioRepositoryAdapter adapter,
             ProvisionIdentityPort provisionPort,
-            DeleteIdentityPort deleteIdentityPort
+            DeleteIdentityPort deleteIdentityPort,
+            SetIdentityAttributesPort setAttributesPort
     ) {
-        return new CreateUsuarioService(adapter, provisionPort, deleteIdentityPort);
+        return new CreateUsuarioService(adapter, provisionPort, deleteIdentityPort, setAttributesPort);
     }
 
     @Bean
