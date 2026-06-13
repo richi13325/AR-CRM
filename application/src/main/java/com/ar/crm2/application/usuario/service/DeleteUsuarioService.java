@@ -1,6 +1,6 @@
 package com.ar.crm2.application.usuario.service;
 
-import com.ar.crm2.application.identity.port.out.SetIdentityEnabledPort;
+import com.ar.crm2.application.identity.port.out.DeleteIdentityPort;
 import com.ar.crm2.application.usuario.command.DeleteUsuarioCommand;
 import com.ar.crm2.application.usuario.exception.UsuarioNotFoundException;
 import com.ar.crm2.application.usuario.port.in.DeleteUsuarioUseCase;
@@ -11,7 +11,23 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Application service implementing DeleteUsuarioUseCase.
- * Validates existence, disables Keycloak user, then deletes local record.
+ * <p>
+ * Consistency model: the local DB is the source of truth, so the local row is
+ * deleted first and the Keycloak identity is removed as a best-effort follow-up.
+ * <p>
+ * Flow:
+ * <ol>
+ *   <li>Look up the local usuario to obtain its {@code keycloakId} (and to
+ *       surface {@link UsuarioNotFoundException} when it does not exist).</li>
+ *   <li>Delete the local DB row. If this fails, the Keycloak identity is left
+ *       untouched — the operator can retry the delete without producing a
+ *       stale Keycloak user with no CRM counterpart.</li>
+ *   <li>If a {@code keycloakId} is present, call
+ *       {@link DeleteIdentityPort#delete(String)} as best-effort cleanup. A
+ *       failure here is swallowed and the method still returns success:
+ *       orphaning a Keycloak identity is strictly preferable to blocking the
+ *       user delete, and the orphan can be reconciled by an operator later.</li>
+ * </ol>
  * No Spring annotations — constructor injection via Lombok.
  */
 @RequiredArgsConstructor
@@ -19,21 +35,34 @@ public class DeleteUsuarioService implements DeleteUsuarioUseCase {
 
     private final FindUsuarioByIdPort findPort;
     private final DeleteUsuarioByIdPort deletePort;
-    private final SetIdentityEnabledPort setEnabledPort;
+    private final DeleteIdentityPort deleteIdentityPort;
 
     @Override
     public void delete(DeleteUsuarioCommand command) {
         UsuarioId usuarioId = UsuarioId.from(command.id());
 
-        // Verify usuario exists and get keycloakId for Keycloak disable
-        var existing = findPort.findById(usuarioId)
-                .orElseThrow(() -> UsuarioNotFoundException.forId(command.id()));
+        // Resolve keycloakId up front: we need it for the post-delete Keycloak
+        // cleanup, and the lookup also surfaces UsuarioNotFoundException for
+        // missing entities before we touch the DB.
+        String keycloakId = findPort.findById(usuarioId)
+                .orElseThrow(() -> UsuarioNotFoundException.forId(command.id()))
+                .getKeycloakId();
 
-        // Disable in Keycloak before local delete
-        if (existing.getKeycloakId() != null) {
-            setEnabledPort.setEnabled(existing.getKeycloakId(), false);
-        }
-
+        // Delete the local row first. The local DB is the source of truth;
+        // if this fails, Keycloak must NOT be touched (otherwise the Keycloak
+        // user would be left without a CRM counterpart).
         deletePort.deleteById(usuarioId);
+
+        // Best-effort Keycloak cleanup. The local delete is already committed,
+        // so any failure here is recorded as an orphan identity and must not
+        // cause the caller's delete to fail.
+        if (keycloakId != null) {
+            try {
+                deleteIdentityPort.delete(keycloakId);
+            } catch (RuntimeException keycloakDeleteFailure) {
+                // Intentionally swallowed: the local delete stands, and the
+                // orphan Keycloak identity is reconciled out-of-band.
+            }
+        }
     }
 }

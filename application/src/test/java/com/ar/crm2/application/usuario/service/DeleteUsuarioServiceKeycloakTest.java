@@ -1,6 +1,6 @@
 package com.ar.crm2.application.usuario.service;
 
-import com.ar.crm2.application.identity.port.out.SetIdentityEnabledPort;
+import com.ar.crm2.application.identity.port.out.DeleteIdentityPort;
 import com.ar.crm2.application.usuario.command.DeleteUsuarioCommand;
 import com.ar.crm2.application.usuario.exception.UsuarioNotFoundException;
 import com.ar.crm2.application.usuario.port.out.DeleteUsuarioByIdPort;
@@ -12,6 +12,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -24,8 +25,13 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Unit tests for {@link DeleteUsuarioService} Keycloak disable flow.
- * Covers: disable then delete success, Keycloak disable failure.
+ * Unit tests for {@link DeleteUsuarioService} Keycloak deletion flow.
+ * <p>
+ * Covers: local delete runs before the best-effort Keycloak delete, the
+ * Keycloak cleanup is skipped when there is no {@code keycloakId}, Keycloak
+ * failures are swallowed so the local delete still stands, and missing
+ * entities surface {@link UsuarioNotFoundException} without touching either
+ * store.
  */
 @ExtendWith(MockitoExtension.class)
 class DeleteUsuarioServiceKeycloakTest {
@@ -42,7 +48,7 @@ class DeleteUsuarioServiceKeycloakTest {
     private DeleteUsuarioByIdPort deletePort;
 
     @Mock
-    private SetIdentityEnabledPort setEnabledPort;
+    private DeleteIdentityPort deleteIdentityPort;
 
     @InjectMocks
     private DeleteUsuarioService service;
@@ -50,12 +56,12 @@ class DeleteUsuarioServiceKeycloakTest {
     // ── Happy path ─────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("delete disables Keycloak user then deletes local")
+    @DisplayName("delete removes local row first, then Keycloak user")
     class DeleteExitoso {
 
         @Test
-        @DisplayName("disables Keycloak user first, then deletes local record")
-        void delete_exitoso_desactivaKeycloakAntesDeLocal() {
+        @DisplayName("deletes local record first, then deletes Keycloak user")
+        void delete_exitoso_eliminaLocalAntesDeKeycloak() {
             // Given
             UUID id = UUID.randomUUID();
             UsuarioId usuarioId = UsuarioId.from(id);
@@ -70,9 +76,11 @@ class DeleteUsuarioServiceKeycloakTest {
             // When
             service.delete(cmd);
 
-            // Then — disable called first, then local delete
-            verify(setEnabledPort).setEnabled(KEYCLOAK_ID, false);
-            verify(deletePort).deleteById(usuarioId);
+            // Then — local delete is invoked before Keycloak delete
+            InOrder inOrder = inOrder(findPort, deletePort, deleteIdentityPort);
+            inOrder.verify(findPort).findById(usuarioId);
+            inOrder.verify(deletePort).deleteById(usuarioId);
+            inOrder.verify(deleteIdentityPort).delete(KEYCLOAK_ID);
         }
 
         @Test
@@ -93,20 +101,20 @@ class DeleteUsuarioServiceKeycloakTest {
             service.delete(cmd);
 
             // Then — no Keycloak call, only local delete
-            verify(setEnabledPort, never()).setEnabled(any(), anyBoolean());
+            verify(deleteIdentityPort, never()).delete(any());
             verify(deletePort).deleteById(usuarioId);
         }
     }
 
-    // ── Keycloak disable failure ─────────────────────────────────
+    // ── Keycloak delete failure (best-effort) ──────────────────────
 
     @Nested
-    @DisplayName("Keycloak disable fails — local delete still proceeds")
-    class KeycloakDisableFalla {
+    @DisplayName("Keycloak delete fails after local delete — best-effort")
+    class KeycloakDeleteFalla {
 
         @Test
-        @DisplayName("fails when Keycloak disable throws — local delete still attempted")
-        void delete_keycloakFalla_localElimina() {
+        @DisplayName("swallows Keycloak delete failure and returns success after local delete")
+        void delete_keycloakFalla_eliminaLocalYContinua() {
             // Given
             UUID id = UUID.randomUUID();
             UsuarioId usuarioId = UsuarioId.from(id);
@@ -116,15 +124,42 @@ class DeleteUsuarioServiceKeycloakTest {
             );
             when(findPort.findById(usuarioId)).thenReturn(Optional.of(existing));
             doThrow(new RuntimeException("Keycloak unreachable"))
-                .when(setEnabledPort).setEnabled(KEYCLOAK_ID, false);
+                .when(deleteIdentityPort).delete(KEYCLOAK_ID);
+
+            DeleteUsuarioCommand cmd = new DeleteUsuarioCommand(id);
+
+            // When / Then — local delete still happens, no exception surfaces
+            assertDoesNotThrow(() -> service.delete(cmd));
+            verify(deletePort).deleteById(usuarioId);
+            verify(deleteIdentityPort).delete(KEYCLOAK_ID);
+        }
+    }
+
+    // ── Local delete failure ───────────────────────────────────────
+
+    @Nested
+    @DisplayName("local delete fails — Keycloak must NOT be touched")
+    class LocalDeleteFalla {
+
+        @Test
+        @DisplayName("does not call Keycloak when local delete throws")
+        void delete_localFalla_noLlamaKeycloak() {
+            // Given
+            UUID id = UUID.randomUUID();
+            UsuarioId usuarioId = UsuarioId.from(id);
+            Usuario existing = Usuario.reconstitute(
+                usuarioId, NOMBRE, CORREO, RolId.create(),
+                AHORA.minusDays(1), true, KEYCLOAK_ID
+            );
+            when(findPort.findById(usuarioId)).thenReturn(Optional.of(existing));
+            doThrow(new RuntimeException("DB constraint violation"))
+                .when(deletePort).deleteById(usuarioId);
 
             DeleteUsuarioCommand cmd = new DeleteUsuarioCommand(id);
 
             // When / Then
             assertThrows(RuntimeException.class, () -> service.delete(cmd));
-            // Local delete still proceeds per design (or we document this differently)
-            // Per current design: disable fails → exception propagates → no local delete
-            // This matches spec: "deleting in CRM disables in Keycloak" — if disable fails, we fail
+            verify(deleteIdentityPort, never()).delete(any());
         }
     }
 
@@ -147,7 +182,7 @@ class DeleteUsuarioServiceKeycloakTest {
             // When / Then
             assertThrows(UsuarioNotFoundException.class, () -> service.delete(cmd));
             verify(deletePort, never()).deleteById(any());
-            verify(setEnabledPort, never()).setEnabled(any(), anyBoolean());
+            verify(deleteIdentityPort, never()).delete(any());
         }
     }
 }
