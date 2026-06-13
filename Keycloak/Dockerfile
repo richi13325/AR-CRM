@@ -16,5 +16,9 @@ FROM quay.io/keycloak/keycloak:25.0.6
 # Branded login + email theme (referenced by the realm as loginTheme/emailTheme = crm2).
 COPY themes /opt/keycloak/themes
 
+# Build-time guard: prove the theme actually landed in the image. The build FAILS
+# loudly here if `crm2` is missing, instead of silently shipping a themeless image.
+RUN ls -la /opt/keycloak/themes && test -d /opt/keycloak/themes/crm2/login
+
 # Realm to import on first startup (ignored if the realm already exists in the DB).
 COPY realm-export.json /opt/keycloak/data/import/realm-export.json
