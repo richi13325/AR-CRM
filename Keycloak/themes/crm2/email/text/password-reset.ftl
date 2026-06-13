@@ -1,13 +1,13 @@
 <#--
-  CRM2 Text Email — Restablecer contraseña
+  Pipely Text Email — Restablecer contraseña
 -->
-CRM2 — Restablecer contraseña
+Pipely — Restablecer contraseña
 
 Hola ${user.firstName!"usuario"},
 
 Se solicitó un restablecimiento de contraseña para tu cuenta en ${realmName}.
 
-Visitá el siguiente enlace para crear una nueva contraseña:
+Visita el siguiente enlace para crear una nueva contraseña:
 
 ${link}
 
@@ -15,10 +15,10 @@ ${link}
 Este enlace expira en ${linkExpiration}.
 </#if>
 
-Si no solicitaste este cambio, podés ignorar este mensaje. Tu contraseña seguirá siendo la misma.
+Si no solicitaste este cambio, puedes ignorar este mensaje. Tu contraseña seguirá siendo la misma.
 
 Saludos,
-El equipo CRM2
+El equipo de Pipely
 
 ---
-CRM2 — Tu plataforma de gestión comercial
+Pipely — Tu plataforma de gestión comercial

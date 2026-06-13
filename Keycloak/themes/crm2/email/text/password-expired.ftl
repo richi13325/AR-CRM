@@ -1,13 +1,13 @@
 <#--
-  CRM2 Text Email — Contraseña expirada
+  Pipely Text Email — Contraseña expirada
 -->
-CRM2 — Tu contraseña ha expirado
+Pipely — Tu contraseña ha expirado
 
 Hola ${user.firstName!"usuario"},
 
-Tu contraseña ha expirado. Para continuar usando tu cuenta, debés crear una nueva contraseña.
+Tu contraseña ha expirado. Para continuar usando tu cuenta, debes crear una nueva contraseña.
 
-Visitá el siguiente enlace para crear una nueva contraseña:
+Visita el siguiente enlace para crear una nueva contraseña:
 
 ${link}
 
@@ -16,7 +16,7 @@ Este enlace expira en ${linkExpiration}.
 </#if>
 
 Saludos,
-El equipo CRM2
+El equipo de Pipely
 
 ---
-CRM2 — Tu plataforma de gestión comercial
+Pipely — Tu plataforma de gestión comercial

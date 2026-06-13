@@ -1,8 +1,14 @@
 {
   "realm": "crm2-local",
   "enabled": true,
-  "displayName": "CRM2 Local Development",
-  "displayNameHtml": "<div>CRM2 Local Development</div>",
+  "displayName": "Pipely",
+  "displayNameHtml": "<div class=\"kc-logo-text\"><span>Pipely</span></div>",
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "es",
+    "en"
+  ],
+  "defaultLocale": "es",
   "loginTheme": "crm2",
   "emailTheme": "crm2",
   "accessTokenLifespan": 300,

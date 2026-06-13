@@ -10,7 +10,7 @@
   <div class="crm2-login-card">
     <div class="crm2-welcome">
       <h1>${msg("loginTitle", "Iniciar sesión")}</h1>
-      <p class="crm2-subtitle">Ingresa tus credenciales para entrar a CRM2</p>
+      <p class="crm2-subtitle">Ingresa tus credenciales para entrar a Pipely</p>
     </div>
     <form id="kc-form-login" class="crm2-form" action="${url.loginAction}" method="post">
       <#if usernameEditDisabled??>

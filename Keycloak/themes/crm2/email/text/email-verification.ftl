@@ -1,18 +1,18 @@
 <#--
-  CRM2 Text Email — Verificación de correo electrónico
+  Pipely Text Email — Verificación de correo electrónico
 -->
-CRM2 — Verifica tu dirección de correo
+Pipely — Verifica tu dirección de correo
 
 Hola ${user.firstName!"usuario"},
 
-Para verificar tu correo electrónico, visitá el siguiente enlace:
+Para verificar tu correo electrónico, visita el siguiente enlace:
 
 ${link}
 
-Si no solicitaste este enlace, podés ignorar este mensaje.
+Si no solicitaste este enlace, puedes ignorar este mensaje.
 
 Saludos,
-El equipo CRM2
+El equipo de Pipely
 
 ---
-CRM2 — Tu plataforma de gestión comercial
+Pipely — Tu plataforma de gestión comercial

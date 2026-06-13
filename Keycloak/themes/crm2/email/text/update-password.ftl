@@ -1,13 +1,13 @@
 <#--
-  CRM2 Text Email — Actualizar contraseña
+  Pipely Text Email — Actualizar contraseña
 -->
-CRM2 — Actualiza tu contraseña
+Pipely — Actualiza tu contraseña
 
 Hola ${user.firstName!"usuario"},
 
-Se te solicita actualizar la contraseña de tu cuenta CRM2 en ${realmName}.
+Se te solicita actualizar la contraseña de tu cuenta de Pipely en ${realmName}.
 
-Visitá el siguiente enlace para establecer una nueva contraseña:
+Visita el siguiente enlace para establecer una nueva contraseña:
 
 ${link}
 
@@ -16,7 +16,7 @@ Este enlace expira en ${linkExpiration}.
 </#if>
 
 Saludos,
-El equipo CRM2
+El equipo de Pipely
 
 ---
-CRM2 — Tu plataforma de gestión comercial
+Pipely — Tu plataforma de gestión comercial

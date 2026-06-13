@@ -1,4 +1,4 @@
-<#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false>
+<#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false displayWelcome=true>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -9,10 +9,12 @@
 </head>
 <body class="${bodyClass}">
   <div class="crm2-login-card">
-    <div class="crm2-welcome">
-      <#nested "header">
-      <p class="crm2-subtitle">Ingresa tus credenciales para entrar a CRM2</p>
-    </div>
+    <#if displayWelcome>
+      <div class="crm2-welcome">
+        <#nested "header">
+        <p class="crm2-subtitle">Ingresa tus credenciales para entrar a Pipely</p>
+      </div>
+    </#if>
     <#if displayMessage && message?has_content>
       <div class="crm2-alert-${message.type}" role="alert">
         ${message.summary?no_esc}
