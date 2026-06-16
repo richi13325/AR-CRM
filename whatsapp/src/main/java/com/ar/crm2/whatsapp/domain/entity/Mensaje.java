@@ -1,0 +1,132 @@
+package com.ar.crm2.whatsapp.domain.entity;
+
+import com.ar.crm2.model.vo.UsuarioId;
+import com.ar.crm2.shared.DomainAssert;
+import com.ar.crm2.whatsapp.domain.enums.DireccionMensaje;
+import com.ar.crm2.whatsapp.domain.enums.StatusMensaje;
+import com.ar.crm2.whatsapp.domain.enums.TipoMensaje;
+import com.ar.crm2.whatsapp.domain.vo.ConversacionId;
+import com.ar.crm2.whatsapp.domain.vo.MensajeId;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
+
+import java.time.LocalDateTime;
+
+@Getter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder(access = AccessLevel.PRIVATE)
+public class Mensaje {
+
+    @EqualsAndHashCode.Include
+    private final MensajeId id;
+
+    private final ConversacionId conversacionId;
+    private final String waMessageId;       // ID de Evolution API — UNIQUE para idempotencia
+    private final TipoMensaje tipo;
+    private final DireccionMensaje direccion;
+    private final String contenido;         // texto del mensaje
+    private final String mediaUrl;          // nullable — solo para mensajes de media
+    private final StatusMensaje status;
+    private final UsuarioId enviadoPor;     // nullable — null en mensajes ENTRANTES
+    private final LocalDateTime creadoEn;
+
+    public static Mensaje createEntrante(
+            ConversacionId conversacionId,
+            String waMessageId,
+            TipoMensaje tipo,
+            String contenido,
+            String mediaUrl
+    ) {
+        DomainAssert.notNull(conversacionId, "conversacionId");
+        DomainAssert.notBlank(waMessageId, "waMessageId");
+        DomainAssert.notNull(tipo, "tipo");
+
+        return Mensaje.builder()
+                .id(MensajeId.create())
+                .conversacionId(conversacionId)
+                .waMessageId(waMessageId)
+                .tipo(tipo)
+                .direccion(DireccionMensaje.ENTRANTE)
+                .contenido(contenido)
+                .mediaUrl(mediaUrl)
+                .status(StatusMensaje.ENTREGADO)
+                .enviadoPor(null)
+                .creadoEn(LocalDateTime.now())
+                .build();
+    }
+
+    public static Mensaje createSaliente(
+            ConversacionId conversacionId,
+            String waMessageId,
+            TipoMensaje tipo,
+            String contenido,
+            String mediaUrl,
+            UsuarioId enviadoPor
+    ) {
+        DomainAssert.notNull(conversacionId, "conversacionId");
+        DomainAssert.notBlank(waMessageId, "waMessageId");
+        DomainAssert.notNull(tipo, "tipo");
+        DomainAssert.notNull(enviadoPor, "enviadoPor");
+
+        return Mensaje.builder()
+                .id(MensajeId.create())
+                .conversacionId(conversacionId)
+                .waMessageId(waMessageId)
+                .tipo(tipo)
+                .direccion(DireccionMensaje.SALIENTE)
+                .contenido(contenido)
+                .mediaUrl(mediaUrl)
+                .status(StatusMensaje.ENVIADO)
+                .enviadoPor(enviadoPor)
+                .creadoEn(LocalDateTime.now())
+                .build();
+    }
+
+    public static Mensaje reconstitute(
+            MensajeId id,
+            ConversacionId conversacionId,
+            String waMessageId,
+            TipoMensaje tipo,
+            DireccionMensaje direccion,
+            String contenido,
+            String mediaUrl,
+            StatusMensaje status,
+            UsuarioId enviadoPor,
+            LocalDateTime creadoEn
+    ) {
+        return Mensaje.builder()
+                .id(id)
+                .conversacionId(conversacionId)
+                .waMessageId(waMessageId)
+                .tipo(tipo)
+                .direccion(direccion)
+                .contenido(contenido)
+                .mediaUrl(mediaUrl)
+                .status(status)
+                .enviadoPor(enviadoPor)
+                .creadoEn(creadoEn)
+                .build();
+    }
+
+    public Mensaje actualizarStatus(StatusMensaje nuevoStatus) {
+        DomainAssert.notNull(nuevoStatus, "status");
+        return Mensaje.builder()
+                .id(this.id)
+                .conversacionId(this.conversacionId)
+                .waMessageId(this.waMessageId)
+                .tipo(this.tipo)
+                .direccion(this.direccion)
+                .contenido(this.contenido)
+                .mediaUrl(this.mediaUrl)
+                .status(nuevoStatus)
+                .enviadoPor(this.enviadoPor)
+                .creadoEn(this.creadoEn)
+                .build();
+    }
+}
