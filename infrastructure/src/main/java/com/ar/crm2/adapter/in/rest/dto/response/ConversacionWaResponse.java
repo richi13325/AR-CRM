@@ -1,0 +1,33 @@
+package com.ar.crm2.adapter.in.rest.dto.response;
+
+import com.ar.crm2.whatsapp.domain.entity.Conversacion;
+import com.ar.crm2.whatsapp.domain.enums.EstadoConversacion;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+public record ConversacionWaResponse(
+        UUID id,
+        UUID canalId,
+        UUID contactoId,
+        String numeroTelefono,
+        String nombreContacto,
+        EstadoConversacion estado,
+        UUID asignadoA,
+        LocalDateTime creadoEn,
+        LocalDateTime actualizadoEn
+) {
+    public static ConversacionWaResponse fromDomain(Conversacion c) {
+        return new ConversacionWaResponse(
+                c.getId().value(),
+                c.getCanalId().value(),
+                c.getContactoId() != null ? c.getContactoId().value() : null,
+                c.getNumeroTelefono(),
+                c.getNombreContacto(),
+                c.getEstado(),
+                c.getAsignadoA() != null ? c.getAsignadoA().value() : null,
+                c.getCreadoEn(),
+                c.getActualizadoEn()
+        );
+    }
+}

@@ -40,12 +40,14 @@ public class SecurityConfig {
     private static final RequestMatcher CORS_PREFLIGHT = PathPatternRequestMatcher.pathPattern(HttpMethod.OPTIONS, "/**");
     private static final RequestMatcher SUPERUSUARIO_CREATE = PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/superusuarios/create");
     private static final RequestMatcher API_ENDPOINTS = PathPatternRequestMatcher.pathPattern("/api/**");
+    private static final RequestMatcher WA_WEBHOOK = PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/wa/webhook");
 
     @Bean
     @Order(0)
     public SecurityFilterChain apiSecurityFilterChain(
             HttpSecurity http,
-            ActorContextRequestAttributeFilter actorContextRequestAttributeFilter
+            ActorContextRequestAttributeFilter actorContextRequestAttributeFilter,
+            WaApiKeyFilter waApiKeyFilter
     ) throws Exception {
         http
             // Route authorization
@@ -58,6 +60,8 @@ public class SecurityConfig {
                 .requestMatchers(FORGOT_PASSWORD).permitAll()
                 // Preflight CORS
                 .requestMatchers(CORS_PREFLIGHT).permitAll()
+                // WhatsApp webhook: validated by WaApiKeyFilter, not Keycloak JWT
+                .requestMatchers(WA_WEBHOOK).permitAll()
                 // SuperUsuario bootstrap: requires authenticated + SUPER_USUARIO technical role.
                 // This is a technical guard only — CRM2 business authorization is separate.
                 .requestMatchers(SUPERUSUARIO_CREATE)
@@ -83,6 +87,7 @@ public class SecurityConfig {
                     jwt.jwtAuthenticationConverter(keycloakJwtAuthenticationConverter())
                 )
             )
+            .addFilterBefore(waApiKeyFilter, BearerTokenAuthenticationFilter.class)
             .addFilterAfter(actorContextRequestAttributeFilter, BearerTokenAuthenticationFilter.class);
 
         return http.build();

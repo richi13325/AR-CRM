@@ -57,3 +57,55 @@ CREATE TABLE IF NOT EXISTS fichas_etiquetas (
 
 CREATE INDEX IF NOT EXISTS idx_fichas_etiquetas_etiqueta
     ON fichas_etiquetas (etiqueta_id);
+
+-- WhatsApp module tables (ambarcrm-2-0 feature/whatsapp-module)
+CREATE TABLE IF NOT EXISTS wa_canal_whatsapp (
+    id              VARCHAR(36)  NOT NULL,
+    empresa_id      VARCHAR(36)  NOT NULL,
+    nombre          VARCHAR(100) NOT NULL,
+    instance_name   VARCHAR(100) NOT NULL,
+    proveedor       VARCHAR(30)  NOT NULL,
+    estado          VARCHAR(30)  NOT NULL,
+    api_url         VARCHAR(500) NOT NULL,
+    api_key         VARCHAR(500) NOT NULL,
+    creado_en       TIMESTAMP    NOT NULL,
+    actualizado_en  TIMESTAMP    NOT NULL,
+    CONSTRAINT pk_wa_canal_whatsapp PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS wa_conversacion (
+    id              VARCHAR(36)  NOT NULL,
+    canal_id        VARCHAR(36)  NOT NULL,
+    contacto_id     VARCHAR(36),
+    numero_telefono VARCHAR(30)  NOT NULL,
+    nombre_contacto VARCHAR(150),
+    estado          VARCHAR(30)  NOT NULL,
+    asignado_a      VARCHAR(36),
+    creado_en       TIMESTAMP    NOT NULL,
+    actualizado_en  TIMESTAMP    NOT NULL,
+    CONSTRAINT pk_wa_conversacion PRIMARY KEY (id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_wa_conversacion_canal
+    ON wa_conversacion (canal_id);
+
+CREATE INDEX IF NOT EXISTS idx_wa_conversacion_telefono_canal
+    ON wa_conversacion (numero_telefono, canal_id);
+
+CREATE TABLE IF NOT EXISTS wa_mensaje (
+    id              VARCHAR(36)  NOT NULL,
+    conversacion_id VARCHAR(36)  NOT NULL,
+    wa_message_id   VARCHAR(100) NOT NULL,
+    tipo            VARCHAR(30)  NOT NULL,
+    direccion       VARCHAR(20)  NOT NULL,
+    contenido       VARCHAR(4096),
+    media_url       VARCHAR(1000),
+    status          VARCHAR(20)  NOT NULL,
+    enviado_por     VARCHAR(36),
+    creado_en       TIMESTAMP    NOT NULL,
+    CONSTRAINT pk_wa_mensaje PRIMARY KEY (id),
+    CONSTRAINT uk_wa_mensaje_wa_message_id UNIQUE (wa_message_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_wa_mensaje_conversacion
+    ON wa_mensaje (conversacion_id, creado_en);

@@ -1,15 +1,14 @@
 package com.ar.crm2;
 
+import com.ar.crm2.security.WaProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-/**
- * Spring Boot entry point.
- * Bootstraps the CRM2 application via cascading component scan from infrastructure.
- */
 @SpringBootApplication
 @EnableScheduling
+@EnableConfigurationProperties(WaProperties.class)
 public class BootApplication {
 
     public static void main(String[] args) {
