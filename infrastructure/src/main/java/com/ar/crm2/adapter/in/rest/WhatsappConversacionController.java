@@ -1,11 +1,13 @@
 package com.ar.crm2.adapter.in.rest;
 
+import com.ar.crm2.adapter.in.rest.dto.request.AplicarLabelsWaRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.SendMensajeWaRequest;
 import com.ar.crm2.adapter.in.rest.dto.response.ConversacionWaResponse;
 import com.ar.crm2.adapter.in.rest.dto.response.MensajeWaResponse;
 import com.ar.crm2.application.security.ActorContext;
 import com.ar.crm2.security.ActorContextRequestAttributeFilter;
 import com.ar.crm2.whatsapp.application.conversacion.command.AsignarAgenteCommand;
+import com.ar.crm2.whatsapp.application.conversacion.port.in.AplicarLabelsUseCase;
 import com.ar.crm2.whatsapp.application.conversacion.port.in.AsignarAgenteUseCase;
 import com.ar.crm2.whatsapp.application.conversacion.port.in.CerrarConversacionUseCase;
 import com.ar.crm2.whatsapp.application.conversacion.port.in.GetAllConversacionesUseCase;
@@ -23,6 +25,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @RestController
@@ -37,6 +40,7 @@ public class WhatsappConversacionController {
     private final SendMensajeUseCase sendMensajeUseCase;
     private final com.ar.crm2.whatsapp.application.conversacion.port.in.MarcarConversacionLeidaUseCase marcarLeidaUseCase;
     private final com.ar.crm2.whatsapp.application.conversacion.port.in.ReabrirConversacionUseCase reabrirUseCase;
+    private final AplicarLabelsUseCase aplicarLabelsUseCase;
 
     @GetMapping("/api/wa/conversaciones/get-all")
     public ResponseEntity<List<ConversacionWaResponse>> getAll(@RequestParam UUID empresaId) {
@@ -104,6 +108,19 @@ public class WhatsappConversacionController {
     @PutMapping("/api/wa/conversaciones/reabrir")
     public ResponseEntity<ConversacionWaResponse> reabrir(@RequestParam UUID id) {
         Conversacion c = reabrirUseCase.reabrir(id);
+        return ResponseEntity.ok(ConversacionWaResponse.fromDomain(c));
+    }
+
+    /**
+     * Toggle de bot/handoff desde el panel humano (JWT). Mismo contrato de labels que
+     * usa el bot de n8n (POST .../labels con api_access_token) — mandar ["escalado_humano"]
+     * apaga el bot; mandar [] lo reactiva. Ver BotConversationController.
+     */
+    @PutMapping("/api/wa/conversaciones/labels")
+    public ResponseEntity<ConversacionWaResponse> aplicarLabels(
+            @RequestParam UUID id, @RequestBody AplicarLabelsWaRequest request) {
+        Set<String> labels = request.labels() != null ? Set.copyOf(request.labels()) : Set.of();
+        Conversacion c = aplicarLabelsUseCase.aplicar(id, labels);
         return ResponseEntity.ok(ConversacionWaResponse.fromDomain(c));
     }
 }

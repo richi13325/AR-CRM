@@ -1020,6 +1020,13 @@ public class WiringConfig {
     }
 
     @Bean
+    public com.ar.crm2.whatsapp.application.bot.port.in.ToggleBotActivoUseCase toggleBotActivoUseCase(
+            com.ar.crm2.adapter.out.persistence.BotRepositoryAdapter adapter
+    ) {
+        return new com.ar.crm2.whatsapp.application.bot.service.ToggleBotActivoService(adapter, adapter);
+    }
+
+    @Bean
     public com.ar.crm2.whatsapp.application.funnel.port.in.MoverFunnelUseCase moverFunnelUseCase(
             com.ar.crm2.adapter.out.persistence.ConversacionRepositoryAdapter conversacionAdapter,
             com.ar.crm2.adapter.out.persistence.FunnelMovementAdapter funnelAdapter

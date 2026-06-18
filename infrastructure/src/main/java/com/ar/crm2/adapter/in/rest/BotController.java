@@ -10,6 +10,7 @@ import com.ar.crm2.whatsapp.application.bot.port.in.DeleteBotUseCase;
 import com.ar.crm2.whatsapp.application.bot.port.in.EditBotUseCase;
 import com.ar.crm2.whatsapp.application.bot.port.in.GetAllBotsUseCase;
 import com.ar.crm2.whatsapp.application.bot.port.in.GetBotByIdUseCase;
+import com.ar.crm2.whatsapp.application.bot.port.in.ToggleBotActivoUseCase;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -30,6 +31,7 @@ public class BotController {
     private final GetBotByIdUseCase getByIdUseCase;
     private final EditBotUseCase editUseCase;
     private final DeleteBotUseCase deleteUseCase;
+    private final ToggleBotActivoUseCase toggleActivoUseCase;
 
     @PostMapping
     public ResponseEntity<BotResponse> create(@Valid @RequestBody CreateBotRequest request) {
@@ -57,5 +59,15 @@ public class BotController {
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         deleteUseCase.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/activar")
+    public ResponseEntity<BotResponse> activar(@PathVariable UUID id) {
+        return ResponseEntity.ok(BotResponse.fromDomain(toggleActivoUseCase.activar(id)));
+    }
+
+    @PutMapping("/{id}/desactivar")
+    public ResponseEntity<BotResponse> desactivar(@PathVariable UUID id) {
+        return ResponseEntity.ok(BotResponse.fromDomain(toggleActivoUseCase.desactivar(id)));
     }
 }
