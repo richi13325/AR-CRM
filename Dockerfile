@@ -13,6 +13,7 @@ WORKDIR /build
 COPY pom.xml ./
 COPY domain/pom.xml domain/
 COPY application/pom.xml application/
+COPY whatsapp/pom.xml whatsapp/
 COPY infrastructure/pom.xml infrastructure/
 COPY boot/pom.xml boot/
 
@@ -23,6 +24,7 @@ RUN mvn -B -ntp -pl boot -am dependency:go-offline || true
 # Now the sources. Changing code only invalidates from here down.
 COPY domain/src domain/src
 COPY application/src application/src
+COPY whatsapp/src whatsapp/src
 COPY infrastructure/src infrastructure/src
 COPY boot/src boot/src
 
