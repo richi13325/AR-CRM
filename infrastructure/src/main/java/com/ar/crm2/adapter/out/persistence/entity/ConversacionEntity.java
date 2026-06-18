@@ -38,6 +38,15 @@ public class ConversacionEntity {
     @Column(name = "asignado_a")
     private String asignadoA;
 
+    @Column(name = "no_leidos", nullable = false)
+    private int noLeidos;
+
+    @Column(name = "ultimo_mensaje_at")
+    private LocalDateTime ultimoMensajeAt;
+
+    @Column(name = "ultimo_mensaje_texto", length = 200)
+    private String ultimoMensajeTexto;
+
     @Column(name = "creado_en", nullable = false)
     private LocalDateTime creadoEn;
 

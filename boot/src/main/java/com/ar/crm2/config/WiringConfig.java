@@ -239,6 +239,11 @@ public class WiringConfig {
         return new ObjectMapper();
     }
 
+    @Bean
+    public org.springframework.web.reactive.function.client.WebClient.Builder webClientBuilder() {
+        return org.springframework.web.reactive.function.client.WebClient.builder();
+    }
+
     // ── Infrastructure Adapter Beans (created explicitly to avoid component-scan duplication) ──
 
     @Bean
@@ -249,6 +254,11 @@ public class WiringConfig {
     @Bean
     public ContactoRepositoryAdapter contactoRepositoryAdapter(ContactoRepository repository) {
         return new ContactoRepositoryAdapter(repository);
+    }
+
+    @Bean
+    public com.ar.crm2.adapter.out.persistence.ContactoUpsertAdapter contactoUpsertAdapter(ContactoRepository repository) {
+        return new com.ar.crm2.adapter.out.persistence.ContactoUpsertAdapter(repository);
     }
 
     @Bean
@@ -919,9 +929,15 @@ public class WiringConfig {
 
     @Bean
     public com.ar.crm2.adapter.out.evolution.EvolutionWhatsappAdapter evolutionWhatsappAdapter(
-            org.springframework.web.reactive.function.client.WebClient.Builder webClientBuilder
+            org.springframework.web.reactive.function.client.WebClient.Builder webClientBuilder,
+            com.ar.crm2.security.WaProperties waProperties
     ) {
-        return new com.ar.crm2.adapter.out.evolution.EvolutionWhatsappAdapter(webClientBuilder);
+        return new com.ar.crm2.adapter.out.evolution.EvolutionWhatsappAdapter(webClientBuilder, waProperties);
+    }
+
+    @Bean
+    public com.ar.crm2.adapter.out.media.LocalMediaStorageAdapter localMediaStorageAdapter() {
+        return new com.ar.crm2.adapter.out.media.LocalMediaStorageAdapter();
     }
 
     @Bean
@@ -945,7 +961,7 @@ public class WiringConfig {
     public com.ar.crm2.whatsapp.application.canal.port.in.GetAllCanalesUseCase getAllCanalesUseCase(
             com.ar.crm2.adapter.out.persistence.CanalWhatsappRepositoryAdapter adapter
     ) {
-        return new com.ar.crm2.whatsapp.application.canal.service.GetAllCanalesService(adapter);
+        return new com.ar.crm2.whatsapp.application.canal.service.GetAllCanalesService(adapter, adapter);
     }
 
     @Bean
@@ -967,6 +983,22 @@ public class WiringConfig {
             com.ar.crm2.adapter.out.persistence.CanalWhatsappRepositoryAdapter adapter
     ) {
         return new com.ar.crm2.whatsapp.application.canal.service.DeleteCanalService(adapter, adapter);
+    }
+
+    @Bean
+    public com.ar.crm2.whatsapp.application.canal.port.in.ConectarCanalUseCase conectarCanalUseCase(
+            com.ar.crm2.adapter.out.persistence.CanalWhatsappRepositoryAdapter adapter,
+            com.ar.crm2.adapter.out.evolution.EvolutionWhatsappAdapter evolutionAdapter
+    ) {
+        return new com.ar.crm2.whatsapp.application.canal.service.ConectarCanalService(adapter, adapter, evolutionAdapter);
+    }
+
+    @Bean
+    public com.ar.crm2.whatsapp.application.canal.port.in.GetEstadoCanalUseCase getEstadoCanalUseCase(
+            com.ar.crm2.adapter.out.persistence.CanalWhatsappRepositoryAdapter adapter,
+            com.ar.crm2.adapter.out.evolution.EvolutionWhatsappAdapter evolutionAdapter
+    ) {
+        return new com.ar.crm2.whatsapp.application.canal.service.GetEstadoCanalService(adapter, adapter, evolutionAdapter);
     }
 
 
@@ -1007,6 +1039,20 @@ public class WiringConfig {
         return new com.ar.crm2.whatsapp.application.conversacion.service.CerrarConversacionService(adapter, adapter);
     }
 
+    @Bean
+    public com.ar.crm2.whatsapp.application.conversacion.port.in.MarcarConversacionLeidaUseCase marcarConversacionLeidaUseCase(
+            com.ar.crm2.adapter.out.persistence.ConversacionRepositoryAdapter adapter
+    ) {
+        return new com.ar.crm2.whatsapp.application.conversacion.service.MarcarConversacionLeidaService(adapter, adapter);
+    }
+
+    @Bean
+    public com.ar.crm2.whatsapp.application.conversacion.port.in.ReabrirConversacionUseCase reabrirConversacionUseCase(
+            com.ar.crm2.adapter.out.persistence.ConversacionRepositoryAdapter adapter
+    ) {
+        return new com.ar.crm2.whatsapp.application.conversacion.service.ReabrirConversacionService(adapter, adapter);
+    }
+
 
     // ── WhatsApp Module: Mensaje UseCase Beans ──────────────────────────────
 
@@ -1014,10 +1060,41 @@ public class WiringConfig {
     public com.ar.crm2.whatsapp.application.mensaje.port.in.ReceiveMensajeUseCase receiveMensajeUseCase(
             com.ar.crm2.adapter.out.persistence.MensajeRepositoryAdapter mensajeAdapter,
             com.ar.crm2.whatsapp.application.conversacion.port.in.GetOrCreateConversacionUseCase getOrCreate,
-            com.ar.crm2.adapter.out.sse.SseMensajeNotifyAdapter notifyAdapter
+            com.ar.crm2.adapter.out.sse.SseMensajeNotifyAdapter notifyAdapter,
+            com.ar.crm2.adapter.out.persistence.CanalWhatsappRepositoryAdapter canalAdapter,
+            com.ar.crm2.adapter.out.persistence.ConversacionRepositoryAdapter conversacionAdapter,
+            com.ar.crm2.adapter.out.persistence.ContactoUpsertAdapter contactoUpsertAdapter,
+            com.ar.crm2.adapter.out.evolution.EvolutionWhatsappAdapter evolutionAdapter,
+            com.ar.crm2.adapter.out.media.LocalMediaStorageAdapter mediaStorage,
+            com.ar.crm2.adapter.out.persistence.AjustesWaAdapter ajustesAdapter,
+            com.ar.crm2.adapter.out.persistence.SugerirResponsableAdapter sugerirResponsableAdapter
     ) {
         return new com.ar.crm2.whatsapp.application.mensaje.service.ReceiveMensajeService(
-                mensajeAdapter, getOrCreate, mensajeAdapter, notifyAdapter);
+                mensajeAdapter, getOrCreate, mensajeAdapter, notifyAdapter,
+                canalAdapter, conversacionAdapter, contactoUpsertAdapter, evolutionAdapter, mediaStorage,
+                ajustesAdapter, evolutionAdapter, mensajeAdapter, sugerirResponsableAdapter);
+    }
+
+    @Bean
+    public com.ar.crm2.adapter.out.persistence.AjustesWaAdapter ajustesWaAdapter(
+            com.ar.crm2.adapter.out.persistence.repository.AjustesWaRepository repository
+    ) {
+        return new com.ar.crm2.adapter.out.persistence.AjustesWaAdapter(repository);
+    }
+
+    @Bean
+    public com.ar.crm2.adapter.out.persistence.PlantillaAdapter plantillaAdapter(
+            com.ar.crm2.adapter.out.persistence.repository.PlantillaRepository repository
+    ) {
+        return new com.ar.crm2.adapter.out.persistence.PlantillaAdapter(repository);
+    }
+
+    @Bean
+    public com.ar.crm2.adapter.out.persistence.SugerirResponsableAdapter sugerirResponsableAdapter(
+            com.ar.crm2.adapter.out.persistence.repository.UsuarioRepository usuarioRepository,
+            com.ar.crm2.adapter.out.persistence.repository.ConversacionRepository conversacionRepository
+    ) {
+        return new com.ar.crm2.adapter.out.persistence.SugerirResponsableAdapter(usuarioRepository, conversacionRepository);
     }
 
     @Bean
@@ -1029,7 +1106,7 @@ public class WiringConfig {
             com.ar.crm2.adapter.out.sse.SseMensajeNotifyAdapter notifyAdapter
     ) {
         return new com.ar.crm2.whatsapp.application.mensaje.service.SendMensajeService(
-                conversacionAdapter, canalAdapter, evolutionAdapter, mensajeAdapter, notifyAdapter);
+                conversacionAdapter, canalAdapter, evolutionAdapter, mensajeAdapter, notifyAdapter, conversacionAdapter);
     }
 
     @Bean
@@ -1037,6 +1114,52 @@ public class WiringConfig {
             com.ar.crm2.adapter.out.persistence.MensajeRepositoryAdapter adapter
     ) {
         return new com.ar.crm2.whatsapp.application.mensaje.service.GetMensajesByConversacionService(adapter);
+    }
+
+    @Bean
+    public com.ar.crm2.whatsapp.application.canal.port.in.SyncChatsUseCase syncChatsUseCase(
+            com.ar.crm2.adapter.out.persistence.CanalWhatsappRepositoryAdapter canalAdapter,
+            com.ar.crm2.adapter.out.evolution.EvolutionWhatsappAdapter evolutionAdapter,
+            com.ar.crm2.whatsapp.application.conversacion.port.in.GetOrCreateConversacionUseCase getOrCreate,
+            com.ar.crm2.adapter.out.persistence.ConversacionRepositoryAdapter conversacionAdapter,
+            com.ar.crm2.adapter.out.persistence.ContactoUpsertAdapter contactoUpsertAdapter,
+            com.ar.crm2.adapter.out.persistence.MensajeRepositoryAdapter mensajeAdapter,
+            com.ar.crm2.adapter.out.media.LocalMediaStorageAdapter mediaStorage
+    ) {
+        return new com.ar.crm2.whatsapp.application.canal.service.SyncChatsService(
+                canalAdapter, evolutionAdapter, getOrCreate, conversacionAdapter, contactoUpsertAdapter,
+                mensajeAdapter, mensajeAdapter, mediaStorage);
+    }
+
+    @Bean
+    public com.ar.crm2.whatsapp.application.mensaje.service.ActualizarStatusMensajeService actualizarStatusMensajeService(
+            com.ar.crm2.adapter.out.persistence.MensajeRepositoryAdapter mensajeAdapter,
+            com.ar.crm2.adapter.out.sse.SseMensajeNotifyAdapter notifyAdapter
+    ) {
+        return new com.ar.crm2.whatsapp.application.mensaje.service.ActualizarStatusMensajeService(
+                mensajeAdapter, mensajeAdapter, notifyAdapter);
+    }
+
+    // ── WhatsApp Module: Grupos ─────────────────────────────────────────────
+
+    @Bean
+    public com.ar.crm2.adapter.out.persistence.GrupoRepositoryAdapter grupoRepositoryAdapter(
+            com.ar.crm2.adapter.out.persistence.repository.GrupoRepository grupoRepository,
+            com.ar.crm2.adapter.out.persistence.repository.MensajeGrupoRepository mensajeGrupoRepository
+    ) {
+        return new com.ar.crm2.adapter.out.persistence.GrupoRepositoryAdapter(grupoRepository, mensajeGrupoRepository);
+    }
+
+    @Bean
+    public com.ar.crm2.whatsapp.application.grupo.service.GrupoService grupoService(
+            com.ar.crm2.adapter.out.persistence.GrupoRepositoryAdapter grupoAdapter,
+            com.ar.crm2.adapter.out.sse.SseMensajeNotifyAdapter notifyAdapter,
+            com.ar.crm2.adapter.out.evolution.EvolutionWhatsappAdapter evolutionAdapter,
+            com.ar.crm2.adapter.out.media.LocalMediaStorageAdapter mediaStorage,
+            com.ar.crm2.adapter.out.persistence.CanalWhatsappRepositoryAdapter canalAdapter
+    ) {
+        return new com.ar.crm2.whatsapp.application.grupo.service.GrupoService(
+                grupoAdapter, grupoAdapter, notifyAdapter, evolutionAdapter, mediaStorage, canalAdapter);
     }
 
 }

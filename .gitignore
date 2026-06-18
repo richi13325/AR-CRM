@@ -35,5 +35,11 @@ build/
 ### Local environment ###
 .env
 
+### WhatsApp runtime media (se genera en disco, no versionar) ###
+boot/uploads/
+
+### Script local de arranque (contiene credenciales de Evolution) ###
+start-backend.sh
+
 ### Gentle AI / SDD skill registry (regenerated locally) ###
 .atl/

@@ -123,4 +123,12 @@ public class CanalWhatsapp {
                 .actualizadoEn(LocalDateTime.now())
                 .build();
     }
+
+    public CanalWhatsapp conectar() {
+        return this.cambiarEstado(EstadoCanal.ACTIVO);
+    }
+
+    public CanalWhatsapp desconectar() {
+        return this.cambiarEstado(EstadoCanal.DESCONECTADO);
+    }
 }

@@ -5,6 +5,7 @@ import com.ar.crm2.adapter.out.persistence.repository.CanalWhatsappRepository;
 import com.ar.crm2.model.vo.EmpresaId;
 import com.ar.crm2.whatsapp.application.canal.port.out.DeleteCanalByIdPort;
 import com.ar.crm2.whatsapp.application.canal.port.out.FindAllCanalesByEmpresaPort;
+import com.ar.crm2.whatsapp.application.canal.port.out.FindAllCanalesPort;
 import com.ar.crm2.whatsapp.application.canal.port.out.FindCanalByIdPort;
 import com.ar.crm2.whatsapp.application.canal.port.out.SaveCanalPort;
 import com.ar.crm2.whatsapp.domain.entity.CanalWhatsapp;
@@ -16,7 +17,7 @@ import java.util.Optional;
 
 @RequiredArgsConstructor
 public class CanalWhatsappRepositoryAdapter
-        implements SaveCanalPort, FindCanalByIdPort, FindAllCanalesByEmpresaPort, DeleteCanalByIdPort {
+        implements SaveCanalPort, FindCanalByIdPort, FindAllCanalesByEmpresaPort, FindAllCanalesPort, DeleteCanalByIdPort {
 
     private final CanalWhatsappRepository repository;
 
@@ -31,10 +32,15 @@ public class CanalWhatsappRepositoryAdapter
     }
 
     @Override
-    public List<CanalWhatsapp> findAllByEmpresa(EmpresaId empresaId) {
+    public List<CanalWhatsapp> findAllByEmpresaId(EmpresaId empresaId) {
         return repository.findByEmpresaId(empresaId.value().toString()).stream()
                 .map(CanalWhatsappMapper::toDomain)
                 .toList();
+    }
+
+    @Override
+    public List<CanalWhatsapp> findAll() {
+        return repository.findAll().stream().map(CanalWhatsappMapper::toDomain).toList();
     }
 
     @Override

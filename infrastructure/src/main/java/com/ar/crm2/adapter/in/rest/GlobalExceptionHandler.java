@@ -230,6 +230,17 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handles IllegalStateException as 502 Bad Gateway.
+     * Used when an upstream integration (e.g. Evolution API) fails to return
+     * the data we need, distinct from a client input error.
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, String>> handleIllegalState(IllegalStateException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
      * Handles AuthenticatedUsuarioRequiredException as 403 Forbidden.
      * This exception is thrown when the JWT token lacks the required usuario_id claim.
      */

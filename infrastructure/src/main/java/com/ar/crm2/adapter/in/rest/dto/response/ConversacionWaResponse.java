@@ -14,6 +14,9 @@ public record ConversacionWaResponse(
         String nombreContacto,
         EstadoConversacion estado,
         UUID asignadoA,
+        int noLeidos,
+        LocalDateTime ultimoMensajeAt,
+        String ultimoMensajeTexto,
         LocalDateTime creadoEn,
         LocalDateTime actualizadoEn
 ) {
@@ -26,6 +29,9 @@ public record ConversacionWaResponse(
                 c.getNombreContacto(),
                 c.getEstado(),
                 c.getAsignadoA() != null ? c.getAsignadoA().value() : null,
+                c.getNoLeidos(),
+                c.getUltimoMensajeAt(),
+                c.getUltimoMensajeTexto(),
                 c.getCreadoEn(),
                 c.getActualizadoEn()
         );

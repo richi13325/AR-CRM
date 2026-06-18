@@ -17,7 +17,8 @@ public record CreateCanalCommand(
         if (nombre == null || nombre.isBlank()) throw new IllegalArgumentException("nombre es requerido");
         if (instanceName == null || instanceName.isBlank()) throw new IllegalArgumentException("instanceName es requerido");
         if (proveedor == null) throw new IllegalArgumentException("proveedor es requerido");
-        if (apiUrl == null || apiUrl.isBlank()) throw new IllegalArgumentException("apiUrl es requerido");
-        if (apiKey == null || apiKey.isBlank()) throw new IllegalArgumentException("apiKey es requerido");
+        // apiUrl y apiKey son rellenados desde configuración global si no se proveen
+        if (apiUrl == null || apiUrl.isBlank()) throw new IllegalArgumentException("apiUrl es requerido (configura EVOLUTION_API_URL en el servidor)");
+        if (apiKey == null || apiKey.isBlank()) throw new IllegalArgumentException("apiKey es requerido (configura EVOLUTION_API_KEY en el servidor)");
     }
 }

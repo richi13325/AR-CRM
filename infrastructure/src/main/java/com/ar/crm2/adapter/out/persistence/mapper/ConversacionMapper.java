@@ -22,6 +22,9 @@ public final class ConversacionMapper {
                 .nombreContacto(domain.getNombreContacto())
                 .estado(domain.getEstado())
                 .asignadoA(domain.getAsignadoA() != null ? domain.getAsignadoA().value().toString() : null)
+                .noLeidos(domain.getNoLeidos())
+                .ultimoMensajeAt(domain.getUltimoMensajeAt())
+                .ultimoMensajeTexto(domain.getUltimoMensajeTexto())
                 .creadoEn(domain.getCreadoEn())
                 .actualizadoEn(domain.getActualizadoEn())
                 .build();
@@ -36,6 +39,9 @@ public final class ConversacionMapper {
                 entity.getNombreContacto(),
                 entity.getEstado(),
                 entity.getAsignadoA() != null ? UsuarioId.from(UUID.fromString(entity.getAsignadoA())) : null,
+                entity.getNoLeidos(),
+                entity.getUltimoMensajeAt(),
+                entity.getUltimoMensajeTexto(),
                 entity.getCreadoEn(),
                 entity.getActualizadoEn()
         );

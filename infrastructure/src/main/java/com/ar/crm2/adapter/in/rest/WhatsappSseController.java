@@ -21,6 +21,6 @@ public class WhatsappSseController {
     public SseEmitter stream(HttpServletRequest httpRequest) {
         ActorContext actor = (ActorContext) httpRequest.getAttribute(
                 ActorContextRequestAttributeFilter.ACTOR_CONTEXT_ATTRIBUTE);
-        return registry.register(actor.usuarioId().value());
+        return registry.register(actor.usuarioId().orElseThrow());
     }
 }

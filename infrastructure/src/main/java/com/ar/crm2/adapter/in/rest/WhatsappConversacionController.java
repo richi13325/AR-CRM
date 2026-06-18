@@ -35,6 +35,8 @@ public class WhatsappConversacionController {
     private final CerrarConversacionUseCase cerrarUseCase;
     private final GetMensajesByConversacionUseCase getMensajesUseCase;
     private final SendMensajeUseCase sendMensajeUseCase;
+    private final com.ar.crm2.whatsapp.application.conversacion.port.in.MarcarConversacionLeidaUseCase marcarLeidaUseCase;
+    private final com.ar.crm2.whatsapp.application.conversacion.port.in.ReabrirConversacionUseCase reabrirUseCase;
 
     @GetMapping("/api/wa/conversaciones/get-all")
     public ResponseEntity<List<ConversacionWaResponse>> getAll(@RequestParam UUID empresaId) {
@@ -68,7 +70,7 @@ public class WhatsappConversacionController {
                 ActorContextRequestAttributeFilter.ACTOR_CONTEXT_ATTRIBUTE);
         SendMensajeCommand command = new SendMensajeCommand(
                 conversacionId,
-                actor.usuarioId().value(),
+                actor.usuarioId().orElseThrow(),
                 request.tipo(),
                 request.contenido(),
                 request.mediaUrl()
@@ -90,6 +92,18 @@ public class WhatsappConversacionController {
     @PutMapping("/api/wa/conversaciones/cerrar")
     public ResponseEntity<ConversacionWaResponse> cerrar(@RequestParam UUID id) {
         Conversacion c = cerrarUseCase.cerrar(id);
+        return ResponseEntity.ok(ConversacionWaResponse.fromDomain(c));
+    }
+
+    @PutMapping("/api/wa/conversaciones/marcar-leido")
+    public ResponseEntity<ConversacionWaResponse> marcarLeido(@RequestParam UUID id) {
+        Conversacion c = marcarLeidaUseCase.marcarLeida(id);
+        return ResponseEntity.ok(ConversacionWaResponse.fromDomain(c));
+    }
+
+    @PutMapping("/api/wa/conversaciones/reabrir")
+    public ResponseEntity<ConversacionWaResponse> reabrir(@RequestParam UUID id) {
+        Conversacion c = reabrirUseCase.reabrir(id);
         return ResponseEntity.ok(ConversacionWaResponse.fromDomain(c));
     }
 }

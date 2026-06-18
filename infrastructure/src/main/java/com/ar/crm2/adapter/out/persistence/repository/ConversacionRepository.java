@@ -14,6 +14,8 @@ public interface ConversacionRepository extends JpaRepository<ConversacionEntity
 
     @Query("SELECT c FROM ConversacionEntity c WHERE c.canalId IN " +
            "(SELECT ca.id FROM CanalWhatsappEntity ca WHERE ca.empresaId = :empresaId) " +
-           "ORDER BY c.actualizadoEn DESC")
+           "ORDER BY c.ultimoMensajeAt DESC NULLS LAST")
     List<ConversacionEntity> findByEmpresaId(@Param("empresaId") String empresaId);
+
+    long countByAsignadoA(String asignadoA);
 }

@@ -1,0 +1,38 @@
+# Perfil noauth: H2 en memoria + sin Keycloak.
+# Solo para desarrollo/pruebas locales.
+# Levantar con: mvnw spring-boot:run -pl boot -Dspring-boot.run.profiles=noauth
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:crm2;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;DATABASE_TO_LOWER=true;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration
+
+  # Anular el issuer-uri para que Spring no intente conectar a Keycloak en startup
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ""
+
+# Evolution API — configura tus credenciales reales aquí (o en variables de entorno)
+crm2:
+  wa:
+    evolution:
+      api-url: ${EVOLUTION_API_URL:}
+      api-key: ${EVOLUTION_API_KEY:}

@@ -39,7 +39,7 @@ public class ConversacionRepositoryAdapter
     }
 
     @Override
-    public List<Conversacion> findAllByEmpresa(EmpresaId empresaId) {
+    public List<Conversacion> findAllByEmpresaId(EmpresaId empresaId) {
         return repository.findByEmpresaId(empresaId.value().toString()).stream()
                 .map(ConversacionMapper::toDomain)
                 .toList();

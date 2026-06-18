@@ -11,7 +11,9 @@ public record ReceiveMensajeCommand(
         String nombreContacto,
         TipoMensaje tipo,
         String contenido,
-        String mediaUrl
+        String mediaUrl,
+        Object rawMensaje,
+        boolean esSaliente
 ) {
     public ReceiveMensajeCommand {
         if (canalId == null) throw new IllegalArgumentException("canalId es requerido");

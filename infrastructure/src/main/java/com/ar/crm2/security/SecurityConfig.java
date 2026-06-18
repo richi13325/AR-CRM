@@ -2,6 +2,7 @@ package com.ar.crm2.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpMethod;
 import org.springframework.core.annotation.Order;
@@ -31,6 +32,7 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
  */
 @Configuration
 @EnableWebSecurity
+@Profile("!noauth")
 public class SecurityConfig {
 
     private static final RequestMatcher SWAGGER_UI = PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/swagger-ui/**");
@@ -40,7 +42,9 @@ public class SecurityConfig {
     private static final RequestMatcher CORS_PREFLIGHT = PathPatternRequestMatcher.pathPattern(HttpMethod.OPTIONS, "/**");
     private static final RequestMatcher SUPERUSUARIO_CREATE = PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/superusuarios/create");
     private static final RequestMatcher API_ENDPOINTS = PathPatternRequestMatcher.pathPattern("/api/**");
-    private static final RequestMatcher WA_WEBHOOK = PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/wa/webhook");
+    private static final RequestMatcher WA_WEBHOOK = PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/wa/webhook/**");
+    private static final RequestMatcher WA_WEBHOOK_ROOT = PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/wa/webhook");
+    private static final RequestMatcher MEDIA = PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/api/media/**");
 
     @Bean
     @Order(0)
@@ -61,7 +65,10 @@ public class SecurityConfig {
                 // Preflight CORS
                 .requestMatchers(CORS_PREFLIGHT).permitAll()
                 // WhatsApp webhook: validated by WaApiKeyFilter, not Keycloak JWT
+                .requestMatchers(WA_WEBHOOK_ROOT).permitAll()
                 .requestMatchers(WA_WEBHOOK).permitAll()
+                // Media servida de solo lectura (archivos ya generados por el CRM)
+                .requestMatchers(MEDIA).permitAll()
                 // SuperUsuario bootstrap: requires authenticated + SUPER_USUARIO technical role.
                 // This is a technical guard only — CRM2 business authorization is separate.
                 .requestMatchers(SUPERUSUARIO_CREATE)

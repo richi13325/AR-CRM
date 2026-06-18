@@ -81,6 +81,9 @@ CREATE TABLE IF NOT EXISTS wa_conversacion (
     nombre_contacto VARCHAR(150),
     estado          VARCHAR(30)  NOT NULL,
     asignado_a      VARCHAR(36),
+    no_leidos            INT       NOT NULL DEFAULT 0,
+    ultimo_mensaje_at    TIMESTAMP,
+    ultimo_mensaje_texto VARCHAR(200),
     creado_en       TIMESTAMP    NOT NULL,
     actualizado_en  TIMESTAMP    NOT NULL,
     CONSTRAINT pk_wa_conversacion PRIMARY KEY (id)
@@ -109,3 +112,57 @@ CREATE TABLE IF NOT EXISTS wa_mensaje (
 
 CREATE INDEX IF NOT EXISTS idx_wa_mensaje_conversacion
     ON wa_mensaje (conversacion_id, creado_en);
+
+CREATE TABLE IF NOT EXISTS wa_grupo (
+    id                VARCHAR(36)  NOT NULL,
+    canal_id          VARCHAR(36),
+    jid               VARCHAR(100) NOT NULL,
+    nombre            VARCHAR(200) NOT NULL,
+    no_leidos         INT          NOT NULL DEFAULT 0,
+    ultimo_mensaje_at TIMESTAMP,
+    creado_en         TIMESTAMP    NOT NULL,
+    CONSTRAINT pk_wa_grupo PRIMARY KEY (id),
+    CONSTRAINT uk_wa_grupo_jid UNIQUE (jid)
+);
+
+CREATE TABLE IF NOT EXISTS wa_mensaje_grupo (
+    id            VARCHAR(36)  NOT NULL,
+    grupo_id      VARCHAR(36)  NOT NULL,
+    direccion     VARCHAR(20)  NOT NULL,
+    tipo          VARCHAR(30)  NOT NULL,
+    contenido     VARCHAR(4096),
+    media_url     VARCHAR(1000),
+    remitente     VARCHAR(200),
+    remitente_tel VARCHAR(50),
+    status        VARCHAR(20)  NOT NULL,
+    wa_message_id VARCHAR(100),
+    timestamp     TIMESTAMP    NOT NULL,
+    creado_en     TIMESTAMP    NOT NULL,
+    CONSTRAINT pk_wa_mensaje_grupo PRIMARY KEY (id),
+    CONSTRAINT uk_wa_mensaje_grupo_wa_message_id UNIQUE (wa_message_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_wa_mensaje_grupo_grupo
+    ON wa_mensaje_grupo (grupo_id, timestamp);
+
+CREATE TABLE IF NOT EXISTS wa_ajustes (
+    id                  VARCHAR(36)  NOT NULL,
+    auto_asignar        BOOLEAN      NOT NULL DEFAULT FALSE,
+    bienvenida_activa   BOOLEAN      NOT NULL DEFAULT FALSE,
+    bienvenida_texto    VARCHAR(2000),
+    horario_activo      BOOLEAN      NOT NULL DEFAULT FALSE,
+    horario_inicio      VARCHAR(5),
+    horario_fin         VARCHAR(5),
+    horario_dias        VARCHAR(30),
+    fuera_horario_texto VARCHAR(2000),
+    csat_activo         BOOLEAN      NOT NULL DEFAULT FALSE,
+    CONSTRAINT pk_wa_ajustes PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS wa_plantilla (
+    id        VARCHAR(36)  NOT NULL,
+    titulo    VARCHAR(120) NOT NULL,
+    contenido VARCHAR(2000) NOT NULL,
+    creado_en TIMESTAMP    NOT NULL,
+    CONSTRAINT pk_wa_plantilla PRIMARY KEY (id)
+);

@@ -3,6 +3,7 @@ package com.ar.crm2.whatsapp.application.mensaje.service;
 import com.ar.crm2.model.vo.UsuarioId;
 import com.ar.crm2.whatsapp.application.canal.port.out.FindCanalByIdPort;
 import com.ar.crm2.whatsapp.application.conversacion.port.out.FindConversacionByIdPort;
+import com.ar.crm2.whatsapp.application.conversacion.port.out.SaveConversacionPort;
 import com.ar.crm2.whatsapp.application.mensaje.command.SendMensajeCommand;
 import com.ar.crm2.whatsapp.application.mensaje.port.in.SendMensajeUseCase;
 import com.ar.crm2.whatsapp.application.mensaje.port.out.NotifyNewMensajePort;
@@ -23,6 +24,7 @@ public class SendMensajeService implements SendMensajeUseCase {
     private final SendWhatsappMessagePort sendWhatsappPort;
     private final SaveMensajePort saveMensajePort;
     private final NotifyNewMensajePort notifyPort;
+    private final SaveConversacionPort saveConversacionPort;
 
     @Override
     public Mensaje send(SendMensajeCommand command) {
@@ -51,6 +53,12 @@ public class SendMensajeService implements SendMensajeUseCase {
 
         Mensaje saved = saveMensajePort.save(mensaje);
         notifyPort.notify(saved);
+
+        // El agente respondió: actualiza preview/orden y marca la conversación como leída.
+        String preview = command.contenido() != null && !command.contenido().isBlank()
+                ? command.contenido() : "📎 Adjunto";
+        saveConversacionPort.save(
+                conversacion.registrarMensajeSaliente(preview, saved.getCreadoEn()).marcarLeido());
         return saved;
     }
 }
