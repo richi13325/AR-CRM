@@ -947,6 +947,86 @@ public class WiringConfig {
         return new com.ar.crm2.adapter.out.sse.SseMensajeNotifyAdapter(registry);
     }
 
+    @Bean
+    public com.ar.crm2.adapter.out.persistence.BotRepositoryAdapter botRepositoryAdapter(
+            com.ar.crm2.adapter.out.persistence.repository.BotRepository repository
+    ) {
+        return new com.ar.crm2.adapter.out.persistence.BotRepositoryAdapter(repository);
+    }
+
+    @Bean
+    public com.ar.crm2.adapter.out.bot.BotWebhookNotifier botWebhookNotifier(
+            org.springframework.web.reactive.function.client.WebClient.Builder webClientBuilder,
+            com.ar.crm2.adapter.out.persistence.BotRepositoryAdapter botAdapter,
+            com.ar.crm2.security.WaProperties waProperties
+    ) {
+        return new com.ar.crm2.adapter.out.bot.BotWebhookNotifier(webClientBuilder, botAdapter, waProperties);
+    }
+
+    @Bean
+    public com.ar.crm2.adapter.out.persistence.FunnelMovementAdapter funnelMovementAdapter(
+            com.ar.crm2.adapter.out.persistence.repository.TratoRepository tratoRepository,
+            com.ar.crm2.adapter.out.persistence.repository.FichaRepository fichaRepository,
+            com.ar.crm2.adapter.out.persistence.repository.TableroRepository tableroRepository,
+            com.ar.crm2.adapter.out.persistence.repository.ColumnaRepository columnaRepository
+    ) {
+        return new com.ar.crm2.adapter.out.persistence.FunnelMovementAdapter(
+                tratoRepository, fichaRepository, tableroRepository, columnaRepository);
+    }
+
+
+    // ── WhatsApp Module: Bot UseCase Beans ──────────────────────────────────
+
+    @Bean
+    public com.ar.crm2.whatsapp.application.bot.port.in.CreateBotUseCase createBotUseCase(
+            com.ar.crm2.adapter.out.persistence.BotRepositoryAdapter adapter
+    ) {
+        return new com.ar.crm2.whatsapp.application.bot.service.CreateBotService(adapter);
+    }
+
+    @Bean
+    public com.ar.crm2.whatsapp.application.bot.port.in.EditBotUseCase editBotUseCase(
+            com.ar.crm2.adapter.out.persistence.BotRepositoryAdapter adapter
+    ) {
+        return new com.ar.crm2.whatsapp.application.bot.service.EditBotService(adapter, adapter);
+    }
+
+    @Bean
+    public com.ar.crm2.whatsapp.application.bot.port.in.GetAllBotsUseCase getAllBotsUseCase(
+            com.ar.crm2.adapter.out.persistence.BotRepositoryAdapter adapter
+    ) {
+        return new com.ar.crm2.whatsapp.application.bot.service.GetAllBotsService(adapter);
+    }
+
+    @Bean
+    public com.ar.crm2.whatsapp.application.bot.port.in.GetBotByIdUseCase getBotByIdUseCase(
+            com.ar.crm2.adapter.out.persistence.BotRepositoryAdapter adapter
+    ) {
+        return new com.ar.crm2.whatsapp.application.bot.service.GetBotByIdService(adapter);
+    }
+
+    @Bean
+    public com.ar.crm2.whatsapp.application.bot.port.in.DeleteBotUseCase deleteBotUseCase(
+            com.ar.crm2.adapter.out.persistence.BotRepositoryAdapter adapter
+    ) {
+        return new com.ar.crm2.whatsapp.application.bot.service.DeleteBotService(adapter);
+    }
+
+    @Bean
+    public com.ar.crm2.whatsapp.application.bot.port.in.FindBotByTokenUseCase findBotByTokenUseCase(
+            com.ar.crm2.adapter.out.persistence.BotRepositoryAdapter adapter
+    ) {
+        return new com.ar.crm2.whatsapp.application.bot.service.FindBotByTokenService(adapter);
+    }
+
+    @Bean
+    public com.ar.crm2.whatsapp.application.funnel.port.in.MoverFunnelUseCase moverFunnelUseCase(
+            com.ar.crm2.adapter.out.persistence.ConversacionRepositoryAdapter conversacionAdapter,
+            com.ar.crm2.adapter.out.persistence.FunnelMovementAdapter funnelAdapter
+    ) {
+        return new com.ar.crm2.whatsapp.application.funnel.service.MoverFunnelService(conversacionAdapter, funnelAdapter);
+    }
+
 
     // ── WhatsApp Module: Canal UseCase Beans ────────────────────────────────
 
@@ -1053,6 +1133,20 @@ public class WiringConfig {
         return new com.ar.crm2.whatsapp.application.conversacion.service.ReabrirConversacionService(adapter, adapter);
     }
 
+    @Bean
+    public com.ar.crm2.whatsapp.application.conversacion.port.in.AplicarLabelsUseCase aplicarLabelsUseCase(
+            com.ar.crm2.adapter.out.persistence.ConversacionRepositoryAdapter adapter
+    ) {
+        return new com.ar.crm2.whatsapp.application.conversacion.service.AplicarLabelsService(adapter, adapter);
+    }
+
+    @Bean
+    public com.ar.crm2.whatsapp.application.conversacion.port.in.AutoResolverConversacionesUseCase autoResolverConversacionesUseCase(
+            com.ar.crm2.adapter.out.persistence.ConversacionRepositoryAdapter adapter
+    ) {
+        return new com.ar.crm2.whatsapp.application.conversacion.service.AutoResolverConversacionesService(adapter, adapter);
+    }
+
 
     // ── WhatsApp Module: Mensaje UseCase Beans ──────────────────────────────
 
@@ -1067,12 +1161,13 @@ public class WiringConfig {
             com.ar.crm2.adapter.out.evolution.EvolutionWhatsappAdapter evolutionAdapter,
             com.ar.crm2.adapter.out.media.LocalMediaStorageAdapter mediaStorage,
             com.ar.crm2.adapter.out.persistence.AjustesWaAdapter ajustesAdapter,
-            com.ar.crm2.adapter.out.persistence.SugerirResponsableAdapter sugerirResponsableAdapter
+            com.ar.crm2.adapter.out.persistence.SugerirResponsableAdapter sugerirResponsableAdapter,
+            com.ar.crm2.adapter.out.bot.BotWebhookNotifier botWebhookNotifier
     ) {
         return new com.ar.crm2.whatsapp.application.mensaje.service.ReceiveMensajeService(
                 mensajeAdapter, getOrCreate, mensajeAdapter, notifyAdapter,
                 canalAdapter, conversacionAdapter, contactoUpsertAdapter, evolutionAdapter, mediaStorage,
-                ajustesAdapter, evolutionAdapter, mensajeAdapter, sugerirResponsableAdapter);
+                ajustesAdapter, evolutionAdapter, mensajeAdapter, sugerirResponsableAdapter, botWebhookNotifier);
     }
 
     @Bean
@@ -1106,6 +1201,18 @@ public class WiringConfig {
             com.ar.crm2.adapter.out.sse.SseMensajeNotifyAdapter notifyAdapter
     ) {
         return new com.ar.crm2.whatsapp.application.mensaje.service.SendMensajeService(
+                conversacionAdapter, canalAdapter, evolutionAdapter, mensajeAdapter, notifyAdapter, conversacionAdapter);
+    }
+
+    @Bean
+    public com.ar.crm2.whatsapp.application.mensaje.port.in.ResponderBotUseCase responderBotUseCase(
+            com.ar.crm2.adapter.out.persistence.ConversacionRepositoryAdapter conversacionAdapter,
+            com.ar.crm2.adapter.out.persistence.CanalWhatsappRepositoryAdapter canalAdapter,
+            com.ar.crm2.adapter.out.evolution.EvolutionWhatsappAdapter evolutionAdapter,
+            com.ar.crm2.adapter.out.persistence.MensajeRepositoryAdapter mensajeAdapter,
+            com.ar.crm2.adapter.out.sse.SseMensajeNotifyAdapter notifyAdapter
+    ) {
+        return new com.ar.crm2.whatsapp.application.mensaje.service.ResponderBotService(
                 conversacionAdapter, canalAdapter, evolutionAdapter, mensajeAdapter, notifyAdapter, conversacionAdapter);
     }
 

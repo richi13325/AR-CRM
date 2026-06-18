@@ -84,10 +84,15 @@ CREATE TABLE IF NOT EXISTS wa_conversacion (
     no_leidos            INT       NOT NULL DEFAULT 0,
     ultimo_mensaje_at    TIMESTAMP,
     ultimo_mensaje_texto VARCHAR(200),
+    labels          VARCHAR(500),
+    bot_activo      BOOLEAN      NOT NULL DEFAULT TRUE,
     creado_en       TIMESTAMP    NOT NULL,
     actualizado_en  TIMESTAMP    NOT NULL,
     CONSTRAINT pk_wa_conversacion PRIMARY KEY (id)
 );
+
+ALTER TABLE wa_conversacion ADD COLUMN IF NOT EXISTS labels VARCHAR(500);
+ALTER TABLE wa_conversacion ADD COLUMN IF NOT EXISTS bot_activo BOOLEAN NOT NULL DEFAULT TRUE;
 
 CREATE INDEX IF NOT EXISTS idx_wa_conversacion_canal
     ON wa_conversacion (canal_id);
@@ -166,3 +171,20 @@ CREATE TABLE IF NOT EXISTS wa_plantilla (
     creado_en TIMESTAMP    NOT NULL,
     CONSTRAINT pk_wa_plantilla PRIMARY KEY (id)
 );
+
+-- Bots de n8n (Agent Bot estilo Chatwoot): webhook saliente + token de respuesta.
+CREATE TABLE IF NOT EXISTS wa_bot (
+    id                VARCHAR(36)  NOT NULL,
+    nombre            VARCHAR(100) NOT NULL,
+    canal_id          VARCHAR(36),
+    webhook_url       VARCHAR(500) NOT NULL,
+    api_access_token  VARCHAR(100) NOT NULL,
+    activo            BOOLEAN      NOT NULL DEFAULT TRUE,
+    creado_en         TIMESTAMP    NOT NULL,
+    actualizado_en    TIMESTAMP    NOT NULL,
+    CONSTRAINT pk_wa_bot PRIMARY KEY (id),
+    CONSTRAINT uk_wa_bot_api_access_token UNIQUE (api_access_token)
+);
+
+CREATE INDEX IF NOT EXISTS idx_wa_bot_canal
+    ON wa_bot (canal_id);

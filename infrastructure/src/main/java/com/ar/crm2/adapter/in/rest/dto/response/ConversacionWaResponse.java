@@ -4,6 +4,7 @@ import com.ar.crm2.whatsapp.domain.entity.Conversacion;
 import com.ar.crm2.whatsapp.domain.enums.EstadoConversacion;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.UUID;
 
 public record ConversacionWaResponse(
@@ -17,6 +18,8 @@ public record ConversacionWaResponse(
         int noLeidos,
         LocalDateTime ultimoMensajeAt,
         String ultimoMensajeTexto,
+        Set<String> labels,
+        boolean botActivo,
         LocalDateTime creadoEn,
         LocalDateTime actualizadoEn
 ) {
@@ -32,6 +35,8 @@ public record ConversacionWaResponse(
                 c.getNoLeidos(),
                 c.getUltimoMensajeAt(),
                 c.getUltimoMensajeTexto(),
+                c.getLabels(),
+                c.isBotActivo(),
                 c.getCreadoEn(),
                 c.getActualizadoEn()
         );

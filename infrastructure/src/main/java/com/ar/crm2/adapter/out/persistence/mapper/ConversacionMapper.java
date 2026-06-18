@@ -7,7 +7,9 @@ import com.ar.crm2.whatsapp.domain.entity.Conversacion;
 import com.ar.crm2.whatsapp.domain.vo.CanalWhatsappId;
 import com.ar.crm2.whatsapp.domain.vo.ConversacionId;
 
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public final class ConversacionMapper {
 
@@ -25,6 +27,8 @@ public final class ConversacionMapper {
                 .noLeidos(domain.getNoLeidos())
                 .ultimoMensajeAt(domain.getUltimoMensajeAt())
                 .ultimoMensajeTexto(domain.getUltimoMensajeTexto())
+                .labels(String.join(",", domain.getLabels()))
+                .botActivo(domain.isBotActivo())
                 .creadoEn(domain.getCreadoEn())
                 .actualizadoEn(domain.getActualizadoEn())
                 .build();
@@ -42,8 +46,18 @@ public final class ConversacionMapper {
                 entity.getNoLeidos(),
                 entity.getUltimoMensajeAt(),
                 entity.getUltimoMensajeTexto(),
+                parseLabels(entity.getLabels()),
+                entity.isBotActivo(),
                 entity.getCreadoEn(),
                 entity.getActualizadoEn()
         );
+    }
+
+    private static Set<String> parseLabels(String csv) {
+        if (csv == null || csv.isBlank()) return Set.of();
+        return java.util.Arrays.stream(csv.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toUnmodifiableSet());
     }
 }

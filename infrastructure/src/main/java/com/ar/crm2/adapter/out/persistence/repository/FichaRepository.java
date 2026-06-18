@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 /**
  * JPA repository for FichaEntity persistence operations.
  * Uses String as the id type to match the String ID boundary convention.
@@ -21,4 +23,6 @@ public interface FichaRepository extends JpaRepository<FichaEntity, String> {
      */
     @Query("SELECT COUNT(f) > 0 FROM FichaEntity f WHERE f.columnaId = :columnaId")
     boolean existsByColumnaId(@Param("columnaId") String columnaId);
+
+    Optional<FichaEntity> findByTratoId(String tratoId);
 }

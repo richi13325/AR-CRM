@@ -47,6 +47,12 @@ public class ConversacionEntity {
     @Column(name = "ultimo_mensaje_texto", length = 200)
     private String ultimoMensajeTexto;
 
+    @Column(name = "labels", length = 500)
+    private String labels;
+
+    @Column(name = "bot_activo", nullable = false)
+    private boolean botActivo;
+
     @Column(name = "creado_en", nullable = false)
     private LocalDateTime creadoEn;
 

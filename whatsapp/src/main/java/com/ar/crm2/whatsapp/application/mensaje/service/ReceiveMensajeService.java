@@ -14,6 +14,7 @@ import com.ar.crm2.whatsapp.application.mensaje.port.in.ReceiveMensajeUseCase;
 import com.ar.crm2.whatsapp.application.mensaje.port.out.ExistsMensajeByWaMessageIdPort;
 import com.ar.crm2.whatsapp.application.mensaje.port.out.FindMensajesByConversacionIdPort;
 import com.ar.crm2.whatsapp.application.mensaje.port.out.MediaStoragePort;
+import com.ar.crm2.whatsapp.application.mensaje.port.out.NotifyBotPort;
 import com.ar.crm2.whatsapp.application.mensaje.port.out.NotifyNewMensajePort;
 import com.ar.crm2.whatsapp.application.mensaje.port.out.SaveMensajePort;
 import com.ar.crm2.whatsapp.application.mensaje.port.out.SendWhatsappMessagePort;
@@ -48,6 +49,7 @@ public class ReceiveMensajeService implements ReceiveMensajeUseCase {
     private final SendWhatsappMessagePort sendWhatsappPort;
     private final FindMensajesByConversacionIdPort findMensajesPort;
     private final SugerirResponsablePort sugerirResponsablePort;
+    private final NotifyBotPort notifyBotPort;
 
     @Override
     public Mensaje receive(ReceiveMensajeCommand command) {
@@ -102,9 +104,11 @@ public class ReceiveMensajeService implements ReceiveMensajeUseCase {
         notifyPort.notify(saved);
 
         // Mueve la conversación al tope de la bandeja y sube el contador de no leídos.
-        saveConversacionPort.save(conversacion.registrarMensajeEntrante(preview, saved.getCreadoEn()));
+        Conversacion actualizada = conversacion.registrarMensajeEntrante(preview, saved.getCreadoEn());
+        saveConversacionPort.save(actualizada);
 
         enviarBienvenidaSiAplica(canal, conversacion, conversacionNueva);
+        if (actualizada.isBotActivo()) notifyBotPort.notificarMensajeEntrante(actualizada, saved, canal);
         return saved;
     }
 

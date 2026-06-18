@@ -6,19 +6,22 @@ import com.ar.crm2.model.vo.EmpresaId;
 import com.ar.crm2.whatsapp.application.conversacion.port.out.FindAllConversacionesByEmpresaPort;
 import com.ar.crm2.whatsapp.application.conversacion.port.out.FindConversacionByIdPort;
 import com.ar.crm2.whatsapp.application.conversacion.port.out.FindConversacionByTelefonoYCanalPort;
+import com.ar.crm2.whatsapp.application.conversacion.port.out.FindConversacionesInactivasPort;
 import com.ar.crm2.whatsapp.application.conversacion.port.out.SaveConversacionPort;
 import com.ar.crm2.whatsapp.domain.entity.Conversacion;
 import com.ar.crm2.whatsapp.domain.vo.CanalWhatsappId;
 import com.ar.crm2.whatsapp.domain.vo.ConversacionId;
 import lombok.RequiredArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
 public class ConversacionRepositoryAdapter
         implements SaveConversacionPort, FindConversacionByIdPort,
-                   FindConversacionByTelefonoYCanalPort, FindAllConversacionesByEmpresaPort {
+                   FindConversacionByTelefonoYCanalPort, FindAllConversacionesByEmpresaPort,
+                   FindConversacionesInactivasPort {
 
     private final ConversacionRepository repository;
 
@@ -41,6 +44,13 @@ public class ConversacionRepositoryAdapter
     @Override
     public List<Conversacion> findAllByEmpresaId(EmpresaId empresaId) {
         return repository.findByEmpresaId(empresaId.value().toString()).stream()
+                .map(ConversacionMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Conversacion> findInactivasDesde(LocalDateTime limite) {
+        return repository.findInactivasDesde(limite).stream()
                 .map(ConversacionMapper::toDomain)
                 .toList();
     }

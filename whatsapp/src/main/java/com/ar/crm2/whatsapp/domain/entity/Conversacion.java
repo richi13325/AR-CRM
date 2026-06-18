@@ -14,6 +14,7 @@ import lombok.Getter;
 import lombok.ToString;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -21,6 +22,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder(access = AccessLevel.PRIVATE)
 public class Conversacion {
+
+    /** Label que dispara el handoff a humano (apaga el bot). Contrato compatible con AmbarCRM/Chatwoot. */
+    public static final String LABEL_ESCALADO_HUMANO = "escalado_humano";
 
     @EqualsAndHashCode.Include
     private final ConversacionId id;
@@ -34,6 +38,8 @@ public class Conversacion {
     private final int noLeidos;
     private final LocalDateTime ultimoMensajeAt;
     private final String ultimoMensajeTexto;      // preview del último mensaje
+    private final Set<String> labels;             // labels tipo Chatwoot (ej. "escalado_humano")
+    private final boolean botActivo;              // false tras handoff a humano
     private final LocalDateTime creadoEn;
     private final LocalDateTime actualizadoEn;
 
@@ -57,6 +63,8 @@ public class Conversacion {
                 .noLeidos(0)
                 .ultimoMensajeAt(now)
                 .ultimoMensajeTexto(null)
+                .labels(Set.of())
+                .botActivo(true)
                 .creadoEn(now)
                 .actualizadoEn(now)
                 .build();
@@ -73,6 +81,8 @@ public class Conversacion {
             int noLeidos,
             LocalDateTime ultimoMensajeAt,
             String ultimoMensajeTexto,
+            Set<String> labels,
+            boolean botActivo,
             LocalDateTime creadoEn,
             LocalDateTime actualizadoEn
     ) {
@@ -81,6 +91,8 @@ public class Conversacion {
                 .numeroTelefono(numeroTelefono).nombreContacto(nombreContacto)
                 .estado(estado).asignadoA(asignadoA)
                 .noLeidos(noLeidos).ultimoMensajeAt(ultimoMensajeAt).ultimoMensajeTexto(ultimoMensajeTexto)
+                .labels(labels != null ? Set.copyOf(labels) : Set.of())
+                .botActivo(botActivo)
                 .creadoEn(creadoEn).actualizadoEn(actualizadoEn)
                 .build();
     }
@@ -133,6 +145,19 @@ public class Conversacion {
         return toBuilder().noLeidos(0).build();
     }
 
+    /**
+     * Reemplaza las labels de la conversación (contrato Chatwoot/n8n: el bot manda la lista completa).
+     * Si la lista incluye {@link #LABEL_ESCALADO_HUMANO}, hace handoff: apaga el bot y pasa a EN_ESPERA.
+     * Si no la incluye, reactiva el bot (sin forzar el estado).
+     */
+    public Conversacion aplicarLabels(Set<String> nuevasLabels) {
+        Set<String> resolved = nuevasLabels != null ? Set.copyOf(nuevasLabels) : Set.of();
+        boolean escalado = resolved.contains(LABEL_ESCALADO_HUMANO);
+        ConversacionBuilder builder = toBuilder().labels(resolved).botActivo(!escalado);
+        if (escalado) builder.estado(EstadoConversacion.EN_ESPERA);
+        return builder.actualizadoEn(LocalDateTime.now()).build();
+    }
+
     private static ConversacionBuilder base() {
         return Conversacion.builder();
     }
@@ -143,6 +168,7 @@ public class Conversacion {
                 .numeroTelefono(this.numeroTelefono).nombreContacto(this.nombreContacto)
                 .estado(this.estado).asignadoA(this.asignadoA)
                 .noLeidos(this.noLeidos).ultimoMensajeAt(this.ultimoMensajeAt).ultimoMensajeTexto(this.ultimoMensajeTexto)
+                .labels(this.labels).botActivo(this.botActivo)
                 .creadoEn(this.creadoEn).actualizadoEn(this.actualizadoEn);
     }
 

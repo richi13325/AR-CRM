@@ -3,9 +3,13 @@ package com.ar.crm2.adapter.out.persistence.repository;
 import com.ar.crm2.adapter.out.persistence.entity.TratoEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Optional;
+
 /**
  * JPA repository for TratoEntity persistence operations.
  * Uses String as the id type to match the String ID boundary convention.
  */
 public interface TratoRepository extends JpaRepository<TratoEntity, String> {
+
+    Optional<TratoEntity> findFirstByContactoIdOrderByCreadoEnDesc(String contactoId);
 }
