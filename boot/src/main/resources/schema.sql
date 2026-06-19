@@ -97,7 +97,14 @@ ALTER TABLE wa_conversacion ADD COLUMN IF NOT EXISTS bot_activo BOOLEAN NOT NULL
 CREATE INDEX IF NOT EXISTS idx_wa_conversacion_canal
     ON wa_conversacion (canal_id);
 
-CREATE INDEX IF NOT EXISTS idx_wa_conversacion_telefono_canal
+-- UNIQUE: evita conversaciones duplicadas del mismo contacto en el mismo canal
+-- cuando dos mensajes llegan casi a la vez (ver GetOrCreateConversacionService).
+-- Se reemplaza el indice no-unico anterior (mismo par de columnas) por uno UNICO.
+-- NOTA: si la BD ya tuviera duplicados preexistentes, el CREATE UNIQUE fallaria
+-- al desplegar; en ese caso hay que limpiarlos antes (no deberia haber, el
+-- modulo es nuevo).
+DROP INDEX IF EXISTS idx_wa_conversacion_telefono_canal;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_wa_conversacion_telefono_canal
     ON wa_conversacion (numero_telefono, canal_id);
 
 CREATE TABLE IF NOT EXISTS wa_mensaje (

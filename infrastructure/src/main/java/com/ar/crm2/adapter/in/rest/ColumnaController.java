@@ -14,6 +14,7 @@ import com.ar.crm2.application.columna.port.in.EditColumnaUseCase;
 import com.ar.crm2.application.columna.port.in.GetAllColumnasUseCase;
 import com.ar.crm2.application.columna.port.in.GetColumnaByIdUseCase;
 import com.ar.crm2.model.entity.Columna;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -49,7 +50,7 @@ public class ColumnaController {
      * Creates a new Columna.
      */
     @PostMapping("/create")
-    public ResponseEntity<ColumnaResponse> create(@RequestBody CreateColumnaRequest request) {
+    public ResponseEntity<ColumnaResponse> create(@Valid @RequestBody CreateColumnaRequest request) {
         CreateColumnaCommand command = ColumnaCommandMapper.toCommand(request);
         Columna columna = createUseCase.create(command);
         return ResponseEntity.status(HttpStatus.CREATED).body(ColumnaResponse.fromDomain(columna));
@@ -79,7 +80,7 @@ public class ColumnaController {
      * Updates an existing Columna.
      */
     @PutMapping("/edit")
-    public ResponseEntity<ColumnaResponse> edit(@RequestParam UUID id, @RequestBody EditColumnaRequest request) {
+    public ResponseEntity<ColumnaResponse> edit(@RequestParam UUID id, @Valid @RequestBody EditColumnaRequest request) {
         EditColumnaCommand command = ColumnaCommandMapper.toCommand(id, request);
         Columna columna = editUseCase.edit(command);
         return ResponseEntity.ok(ColumnaResponse.fromDomain(columna));

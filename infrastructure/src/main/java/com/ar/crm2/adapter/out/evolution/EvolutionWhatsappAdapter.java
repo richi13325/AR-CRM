@@ -6,6 +6,7 @@ import com.ar.crm2.whatsapp.application.mensaje.port.out.SendWhatsappMessagePort
 import com.ar.crm2.whatsapp.domain.entity.CanalWhatsapp;
 import com.ar.crm2.whatsapp.domain.enums.TipoMensaje;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
 @RequiredArgsConstructor
 public class EvolutionWhatsappAdapter implements SendWhatsappMessagePort, EvolutionConectarPort {
 
@@ -75,6 +77,7 @@ public class EvolutionWhatsappAdapter implements SendWhatsappMessagePort, Evolut
             Object base64 = connectResponse.get("base64");
             return base64 != null ? base64.toString() : null;
         } catch (Exception e) {
+            log.warn("Evolution connect (QR) fallo (instance={}): {}", instanceName, e.getMessage());
             return null;
         }
     }
@@ -97,6 +100,7 @@ public class EvolutionWhatsappAdapter implements SendWhatsappMessagePort, Evolut
             }
             return "close";
         } catch (Exception e) {
+            log.warn("Evolution consultarEstado fallo (instance={}): {}", instanceName, e.getMessage());
             return "close";
         }
     }
@@ -115,6 +119,7 @@ public class EvolutionWhatsappAdapter implements SendWhatsappMessagePort, Evolut
             if (response == null) return List.of();
             return (List<Map<String, Object>>) response;
         } catch (Exception e) {
+            log.warn("Evolution fetchContacts fallo (instance={}): {}", instanceName, e.getMessage());
             return List.of();
         }
     }
@@ -134,6 +139,7 @@ public class EvolutionWhatsappAdapter implements SendWhatsappMessagePort, Evolut
             if (response == null) return List.of();
             return (List<Map<String, Object>>) response;
         } catch (Exception e) {
+            log.warn("Evolution fetchChats fallo (instance={}): {}", instanceName, e.getMessage());
             return List.of();
         }
     }
@@ -160,6 +166,7 @@ public class EvolutionWhatsappAdapter implements SendWhatsappMessagePort, Evolut
             }
             return List.of();
         } catch (Exception e) {
+            log.warn("Evolution fetchMessages fallo (instance={}, jid={}): {}", instanceName, remoteJid, e.getMessage());
             return List.of();
         }
     }
@@ -182,6 +189,7 @@ public class EvolutionWhatsappAdapter implements SendWhatsappMessagePort, Evolut
             return new com.ar.crm2.whatsapp.application.canal.port.out.MediaDescargada(
                     b64.toString(), mime != null ? mime.toString() : "application/octet-stream");
         } catch (Exception e) {
+            log.warn("Evolution descargarMedia fallo (instance={}): {}", instanceName, e.getMessage());
             return null;
         }
     }
@@ -201,6 +209,7 @@ public class EvolutionWhatsappAdapter implements SendWhatsappMessagePort, Evolut
             Object subject = data.get("subject");
             return subject != null ? subject.toString() : null;
         } catch (Exception e) {
+            log.warn("Evolution infoGrupo fallo (instance={}, grupoJid={}): {}", instanceName, grupoJid, e.getMessage());
             return null;
         }
     }
@@ -230,6 +239,7 @@ public class EvolutionWhatsappAdapter implements SendWhatsappMessagePort, Evolut
             }
             return out;
         } catch (Exception e) {
+            log.warn("Evolution listarGruposWA fallo (instance={}): {}", instanceName, e.getMessage());
             return List.of();
         }
     }
@@ -257,9 +267,11 @@ public class EvolutionWhatsappAdapter implements SendWhatsappMessagePort, Evolut
                     .retrieve()
                     .bodyToMono(Map.class)
                     .block();
-        } catch (Exception ignored) {
+        } catch (Exception e) {
             // Best-effort: si Evolution no acepta el webhook, el canal sigue
             // funcionando con sync manual; no bloqueamos la conexión por esto.
+            log.warn("Evolution configurarWebhook fallo (instance={}): {} — el canal seguira sin push en vivo",
+                    instanceName, e.getMessage());
         }
     }
 

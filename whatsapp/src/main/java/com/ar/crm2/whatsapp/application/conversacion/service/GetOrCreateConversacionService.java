@@ -19,8 +19,20 @@ public class GetOrCreateConversacionService implements GetOrCreateConversacionUs
     public Conversacion getOrCreate(UUID canalId, String numeroTelefono, String nombreContacto) {
         CanalWhatsappId canal = CanalWhatsappId.from(canalId);
         return findPort.findByTelefonoAndCanal(numeroTelefono, canal)
-                .orElseGet(() -> savePort.save(
-                        Conversacion.create(canal, numeroTelefono, nombreContacto)
-                ));
+                .orElseGet(() -> crearOReusar(canal, numeroTelefono, nombreContacto));
+    }
+
+    // Dos mensajes del mismo contacto que lleguen casi a la vez pueden pasar
+    // ambos el find inicial e intentar crear la conversación. El índice UNIQUE
+    // (numero_telefono, canal_id) en BD hace que el segundo save falle; en ese
+    // caso re-buscamos y devolvemos la que ganó la carrera, en vez de propagar
+    // el error. Si la re-búsqueda no la encuentra, el fallo fue por otra causa.
+    private Conversacion crearOReusar(CanalWhatsappId canal, String numeroTelefono, String nombreContacto) {
+        try {
+            return savePort.save(Conversacion.create(canal, numeroTelefono, nombreContacto));
+        } catch (RuntimeException e) {
+            return findPort.findByTelefonoAndCanal(numeroTelefono, canal)
+                    .orElseThrow(() -> e);
+        }
     }
 }

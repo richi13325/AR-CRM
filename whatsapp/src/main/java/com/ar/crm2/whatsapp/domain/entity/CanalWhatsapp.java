@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString
+@ToString(exclude = "apiKey") // nunca exponer la API key de Evolution en logs
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder(access = AccessLevel.PRIVATE)
 public class CanalWhatsapp {

@@ -24,10 +24,12 @@ import com.ar.crm2.exception.ColumnaYaExisteEnTableroException;
 import com.ar.crm2.exception.DomainException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Global exception handler for REST adapters.
@@ -227,6 +229,19 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * Handles @Valid body validation failures as 400 Bad Request, con el detalle
+     * por campo, en el mismo formato {"error": ...} que el resto de respuestas.
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, String>> handleValidation(MethodArgumentNotValidException ex) {
+        String detalle = ex.getBindingResult().getFieldErrors().stream()
+            .map(fe -> fe.getField() + ": " + (fe.getDefaultMessage() != null ? fe.getDefaultMessage() : "invalido"))
+            .collect(Collectors.joining("; "));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(Map.of("error", detalle.isBlank() ? "Datos invalidos" : detalle));
     }
 
     /**
