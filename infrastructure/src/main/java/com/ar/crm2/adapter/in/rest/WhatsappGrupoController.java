@@ -23,13 +23,14 @@ public class WhatsappGrupoController {
     private final GrupoService grupoService;
 
     public record GrupoResponse(String id, String canalId, String jid, String nombre,
-                                int noLeidos, String ultimoMensajeAt) {
+                                int noLeidos, String ultimoMensajeAt, String ultimoMensajeTexto) {
         static GrupoResponse from(Grupo g) {
             return new GrupoResponse(
                     g.getId().value().toString(),
                     g.getCanalId() != null ? g.getCanalId().value().toString() : null,
                     g.getJid(), g.getNombre(), g.getNoLeidos(),
-                    g.getUltimoMensajeAt() != null ? g.getUltimoMensajeAt().toString() : null);
+                    g.getUltimoMensajeAt() != null ? g.getUltimoMensajeAt().toString() : null,
+                    g.getUltimoMensajeTexto());
         }
     }
 

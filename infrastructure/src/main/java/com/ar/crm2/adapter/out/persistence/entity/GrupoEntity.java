@@ -33,6 +33,9 @@ public class GrupoEntity {
     @Column(name = "ultimo_mensaje_at")
     private LocalDateTime ultimoMensajeAt;
 
+    @Column(name = "ultimo_mensaje_texto", length = 200)
+    private String ultimoMensajeTexto;
+
     @Column(name = "creado_en", nullable = false)
     private LocalDateTime creadoEn;
 }

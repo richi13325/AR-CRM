@@ -70,6 +70,7 @@ public class GrupoRepositoryAdapter implements GrupoRepositoryPort, MensajeGrupo
                 .nombre(d.getNombre())
                 .noLeidos(d.getNoLeidos())
                 .ultimoMensajeAt(d.getUltimoMensajeAt())
+                .ultimoMensajeTexto(d.getUltimoMensajeTexto())
                 .creadoEn(d.getCreadoEn())
                 .build();
     }
@@ -78,7 +79,8 @@ public class GrupoRepositoryAdapter implements GrupoRepositoryPort, MensajeGrupo
         return Grupo.reconstitute(
                 GrupoId.from(UUID.fromString(e.getId())),
                 e.getCanalId() != null ? CanalWhatsappId.from(UUID.fromString(e.getCanalId())) : null,
-                e.getJid(), e.getNombre(), e.getNoLeidos(), e.getUltimoMensajeAt(), e.getCreadoEn());
+                e.getJid(), e.getNombre(), e.getNoLeidos(), e.getUltimoMensajeAt(),
+                e.getUltimoMensajeTexto(), e.getCreadoEn());
     }
 
     private MensajeGrupoEntity toMensajeEntity(MensajeGrupo d) {

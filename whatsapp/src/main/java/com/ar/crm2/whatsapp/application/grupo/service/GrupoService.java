@@ -59,7 +59,7 @@ public class GrupoService {
                 remitenteNombre, remitenteTel, timestamp);
         MensajeGrupo saved = mensajePort.save(mensaje);
 
-        grupoPort.save(grupo.conMensajeEntrante(saved.getTimestamp()));
+        grupoPort.save(grupo.conMensajeEntrante(saved.getTimestamp(), previewDe(tipo, contenido)));
         notifyPort.notifyGrupo(saved);
     }
 
@@ -82,9 +82,23 @@ public class GrupoService {
                 grupo.getId(), waMessageId, tipo, truncar(contenido, 4000), mediaUrl, LocalDateTime.now());
         MensajeGrupo saved = mensajePort.save(mensaje);
 
-        grupoPort.save(grupo.conMensajeSaliente(saved.getTimestamp()));
+        grupoPort.save(grupo.conMensajeSaliente(saved.getTimestamp(), previewDe(tipo, contenido)));
         notifyPort.notifyGrupo(saved);
         return saved;
+    }
+
+    // Texto para la bandeja: el contenido, o un placeholder según el tipo de media.
+    private String previewDe(TipoMensaje tipo, String contenido) {
+        if (contenido != null && !contenido.isBlank()) return contenido;
+        return switch (tipo) {
+            case IMAGEN -> "📷 Imagen";
+            case AUDIO -> "🎵 Audio";
+            case VIDEO -> "🎬 Video";
+            case DOCUMENTO -> "📄 Documento";
+            case STICKER -> "Sticker";
+            case UBICACION -> "📍 Ubicación";
+            default -> "";
+        };
     }
 
     // ── Lecturas ────────────────────────────────────────────────────────────

@@ -132,10 +132,13 @@ CREATE TABLE IF NOT EXISTS wa_grupo (
     nombre            VARCHAR(200) NOT NULL,
     no_leidos         INT          NOT NULL DEFAULT 0,
     ultimo_mensaje_at TIMESTAMP,
+    ultimo_mensaje_texto VARCHAR(200),
     creado_en         TIMESTAMP    NOT NULL,
     CONSTRAINT pk_wa_grupo PRIMARY KEY (id),
     CONSTRAINT uk_wa_grupo_jid UNIQUE (jid)
 );
+
+ALTER TABLE wa_grupo ADD COLUMN IF NOT EXISTS ultimo_mensaje_texto VARCHAR(200);
 
 CREATE TABLE IF NOT EXISTS wa_mensaje_grupo (
     id            VARCHAR(36)  NOT NULL,
