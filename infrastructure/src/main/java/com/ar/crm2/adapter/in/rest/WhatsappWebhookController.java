@@ -30,6 +30,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class WhatsappWebhookController {
 
+    private static final ZoneId MEXICO_ZONE = ZoneId.of("America/Mexico_City");
+
     private final ReceiveMensajeUseCase receiveMensajeUseCase;
     private final GrupoService grupoService;
     private final com.ar.crm2.whatsapp.application.mensaje.service.ActualizarStatusMensajeService actualizarStatusMensajeService;
@@ -46,7 +48,8 @@ public class WhatsappWebhookController {
                     request.contenido(),
                     request.mediaUrl(),
                     null,
-                    false
+                    false,
+                    LocalDateTime.now(MEXICO_ZONE)
             );
             Mensaje mensaje = receiveMensajeUseCase.receive(command);
             return ResponseEntity.ok(MensajeWaResponse.fromDomain(mensaje));
@@ -139,7 +142,8 @@ public class WhatsappWebhookController {
         String contenido = extractText(msg);
 
         ReceiveMensajeCommand command = new ReceiveMensajeCommand(
-                canalId, waMessageId, remoteJid, nombreContacto, tipo, contenido, null, msg, esSaliente
+                canalId, waMessageId, remoteJid, nombreContacto, tipo, contenido, null, msg, esSaliente,
+                extraerTimestamp(msg)
         );
         receiveMensajeUseCase.receive(command);
     }
@@ -174,11 +178,11 @@ public class WhatsappWebhookController {
 
     private LocalDateTime extraerTimestamp(Map<String, Object> msg) {
         Object ts = msg.get("messageTimestamp");
-        if (ts == null) return LocalDateTime.now();
+        if (ts == null) return LocalDateTime.now(MEXICO_ZONE);
         try {
-            return LocalDateTime.ofInstant(Instant.ofEpochSecond(Long.parseLong(ts.toString())), ZoneId.systemDefault());
+            return LocalDateTime.ofInstant(Instant.ofEpochSecond(Long.parseLong(ts.toString())), MEXICO_ZONE);
         } catch (Exception e) {
-            return LocalDateTime.now();
+            return LocalDateTime.now(MEXICO_ZONE);
         }
     }
 

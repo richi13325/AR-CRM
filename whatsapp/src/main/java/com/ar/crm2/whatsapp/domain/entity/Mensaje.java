@@ -41,7 +41,8 @@ public class Mensaje {
             String waMessageId,
             TipoMensaje tipo,
             String contenido,
-            String mediaUrl
+            String mediaUrl,
+            LocalDateTime creadoEn
     ) {
         DomainAssert.notNull(conversacionId, "conversacionId");
         DomainAssert.notBlank(waMessageId, "waMessageId");
@@ -57,7 +58,7 @@ public class Mensaje {
                 .mediaUrl(mediaUrl)
                 .status(StatusMensaje.ENTREGADO)
                 .enviadoPor(null)
-                .creadoEn(LocalDateTime.now())
+                .creadoEn(creadoEn != null ? creadoEn : LocalDateTime.now())
                 .build();
     }
 

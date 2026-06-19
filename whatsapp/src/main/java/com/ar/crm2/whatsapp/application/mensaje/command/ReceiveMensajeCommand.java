@@ -2,6 +2,7 @@ package com.ar.crm2.whatsapp.application.mensaje.command;
 
 import com.ar.crm2.whatsapp.domain.enums.TipoMensaje;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record ReceiveMensajeCommand(
@@ -13,7 +14,8 @@ public record ReceiveMensajeCommand(
         String contenido,
         String mediaUrl,
         Object rawMensaje,
-        boolean esSaliente
+        boolean esSaliente,
+        LocalDateTime timestamp
 ) {
     public ReceiveMensajeCommand {
         if (canalId == null) throw new IllegalArgumentException("canalId es requerido");

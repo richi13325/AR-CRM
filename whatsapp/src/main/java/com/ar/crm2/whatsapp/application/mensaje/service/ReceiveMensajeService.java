@@ -80,10 +80,11 @@ public class ReceiveMensajeService implements ReceiveMensajeUseCase {
         // Mensajes que el dueño manda desde su propio celular llegan con fromMe=true:
         // se guardan como SALIENTES para que también se vean en el CRM.
         if (command.esSaliente()) {
+            LocalDateTime creadoEn = command.timestamp() != null ? command.timestamp() : LocalDateTime.now();
             Mensaje mensaje = Mensaje.reconstitute(
                     com.ar.crm2.whatsapp.domain.vo.MensajeId.create(), conversacion.getId(),
                     command.waMessageId(), command.tipo(), DireccionMensaje.SALIENTE,
-                    command.contenido(), mediaUrl, StatusMensaje.ENVIADO, null, LocalDateTime.now());
+                    command.contenido(), mediaUrl, StatusMensaje.ENVIADO, null, creadoEn);
             Mensaje saved = saveMensajePort.save(mensaje);
             notifyPort.notify(saved);
             saveConversacionPort.save(conversacion.registrarMensajeSaliente(preview, saved.getCreadoEn()));
@@ -97,7 +98,8 @@ public class ReceiveMensajeService implements ReceiveMensajeUseCase {
                 command.waMessageId(),
                 command.tipo(),
                 command.contenido(),
-                mediaUrl
+                mediaUrl,
+                command.timestamp()
         );
 
         Mensaje saved = saveMensajePort.save(mensaje);
