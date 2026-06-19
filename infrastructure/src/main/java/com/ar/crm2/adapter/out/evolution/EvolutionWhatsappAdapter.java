@@ -304,15 +304,38 @@ public class EvolutionWhatsappAdapter implements SendWhatsappMessagePort, Evolut
     }
 
     private String sendMedia(WebClient client, String instance, String numero, TipoMensaje tipo, String url, String caption) {
-        String mediaType = tipo.name().toLowerCase();
+        // Evolution v2: endpoint único /message/sendMedia con mediatype en inglés.
+        // El "media" debe ser una URL que Evolution pueda alcanzar; convertimos la URL
+        // local (/api/media/xxx) a la pública del backend (WA_WEBHOOK_BASE_URL).
         Map<?, ?> response = client.post()
-                .uri("/message/send{type}/{instance}", capitalize(mediaType), instance)
-                .bodyValue(Map.of("number", numero, "mediatype", mediaType, "media", url, "caption", caption != null ? caption : ""))
+                .uri("/message/sendMedia/{instance}", instance)
+                .bodyValue(Map.of(
+                        "number", numero,
+                        "mediatype", mediatypeDe(tipo),
+                        "media", resolverUrlPublica(url),
+                        "caption", caption != null ? caption : ""))
                 .retrieve()
                 .bodyToMono(Map.class)
                 .block();
 
         return extractMessageId(response);
+    }
+
+    private String mediatypeDe(TipoMensaje tipo) {
+        return switch (tipo) {
+            case IMAGEN, STICKER -> "image";
+            case VIDEO -> "video";
+            case AUDIO -> "audio";
+            default -> "document";
+        };
+    }
+
+    private String resolverUrlPublica(String url) {
+        if (url == null) return null;
+        if (url.startsWith("http://") || url.startsWith("https://")) return url;
+        String base = waProperties.webhookBaseUrl();
+        if (base == null || base.isBlank()) return url; // dev local sin URL pública
+        return base.replaceAll("/$", "") + url;
     }
 
     // wa_message_id es UNIQUE NOT NULL: un literal fijo como "unknown" rompe el
@@ -327,10 +350,5 @@ public class EvolutionWhatsappAdapter implements SendWhatsappMessagePort, Evolut
             }
         }
         return "sin-id-" + UUID.randomUUID();
-    }
-
-    private String capitalize(String s) {
-        if (s == null || s.isEmpty()) return s;
-        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 }
