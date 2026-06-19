@@ -178,7 +178,7 @@ public class EvolutionWhatsappAdapter implements SendWhatsappMessagePort, Evolut
         try {
             Map<?, ?> data = client.post()
                     .uri("/chat/getBase64FromMediaMessage/{instance}", instanceName)
-                    .bodyValue(Map.of("message", rawMessage))
+                    .bodyValue(Map.of("message", soloKeyYMessage(rawMessage)))
                     .retrieve()
                     .bodyToMono(Map.class)
                     .block();
@@ -188,10 +188,33 @@ public class EvolutionWhatsappAdapter implements SendWhatsappMessagePort, Evolut
             Object mime = data.get("mimetype") != null ? data.get("mimetype") : data.get("mediaType");
             return new com.ar.crm2.whatsapp.application.canal.port.out.MediaDescargada(
                     b64.toString(), mime != null ? mime.toString() : "application/octet-stream");
+        } catch (WebClientResponseException e) {
+            // El body de la respuesta de Evolution dice exactamente qué rechaza (campo inválido, etc.).
+            log.warn("Evolution descargarMedia fallo (instance={}): {} - respuesta: {}",
+                    instanceName, e.getMessage(), e.getResponseBodyAsString());
+            return null;
         } catch (Exception e) {
             log.warn("Evolution descargarMedia fallo (instance={}): {}", instanceName, e.getMessage());
             return null;
         }
+    }
+
+    // getBase64FromMediaMessage de Evolution v2 valida el body de forma estricta:
+    // espera el mensaje de WhatsApp ({key, message}) y rechaza con 400 si le llegan
+    // campos extra del webhook (messageTimestamp, pushName, status, instanceId, ...).
+    @SuppressWarnings("unchecked")
+    private Object soloKeyYMessage(Object rawMessage) {
+        if (rawMessage instanceof Map<?, ?> m) {
+            Object key = m.get("key");
+            Object message = m.get("message");
+            if (key != null && message != null) {
+                java.util.Map<String, Object> trimmed = new java.util.HashMap<>();
+                trimmed.put("key", key);
+                trimmed.put("message", message);
+                return trimmed;
+            }
+        }
+        return rawMessage;
     }
 
     @Override
