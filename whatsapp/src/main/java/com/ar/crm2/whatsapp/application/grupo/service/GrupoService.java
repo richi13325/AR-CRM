@@ -7,6 +7,7 @@ import com.ar.crm2.whatsapp.application.grupo.port.out.GrupoRepositoryPort;
 import com.ar.crm2.whatsapp.application.grupo.port.out.MensajeGrupoRepositoryPort;
 import com.ar.crm2.whatsapp.application.grupo.port.out.NotifyMensajeGrupoPort;
 import com.ar.crm2.whatsapp.application.mensaje.port.out.MediaStoragePort;
+import com.ar.crm2.whatsapp.application.mensaje.port.out.SendWhatsappMessagePort;
 import com.ar.crm2.whatsapp.domain.entity.CanalWhatsapp;
 import com.ar.crm2.whatsapp.domain.entity.Grupo;
 import com.ar.crm2.whatsapp.domain.entity.MensajeGrupo;
@@ -35,6 +36,7 @@ public class GrupoService {
     private final EvolutionConectarPort evolutionPort;
     private final MediaStoragePort mediaStoragePort;
     private final FindCanalByIdPort findCanalPort;
+    private final SendWhatsappMessagePort sendWhatsappPort;
 
     private static final int MESSAGES_PER_GRUPO = 10;
 
@@ -59,6 +61,30 @@ public class GrupoService {
 
         grupoPort.save(grupo.conMensajeEntrante(saved.getTimestamp()));
         notifyPort.notifyGrupo(saved);
+    }
+
+    // ── Envío al grupo (desde el CRM) ───────────────────────────────────────
+    public MensajeGrupo enviarMensaje(UUID grupoId, TipoMensaje tipo, String contenido, String mediaUrl) {
+        Grupo grupo = grupoPort.findById(GrupoId.from(grupoId))
+                .orElseThrow(() -> new IllegalArgumentException("Grupo no encontrado: " + grupoId));
+
+        if (grupo.getCanalId() == null) {
+            throw new IllegalStateException(
+                    "El grupo no tiene un canal asociado; no se puede enviar. Reimportá los grupos.");
+        }
+        CanalWhatsapp canal = findCanalPort.findById(grupo.getCanalId())
+                .orElseThrow(() -> new IllegalStateException("Canal del grupo no encontrado: " + grupo.getCanalId()));
+
+        // El adapter de Evolution usa el "number" tal cual; para grupos es el jid @g.us.
+        String waMessageId = sendWhatsappPort.send(canal, grupo.getJid(), tipo, truncar(contenido, 4000), mediaUrl);
+
+        MensajeGrupo mensaje = MensajeGrupo.createSaliente(
+                grupo.getId(), waMessageId, tipo, truncar(contenido, 4000), mediaUrl, LocalDateTime.now());
+        MensajeGrupo saved = mensajePort.save(mensaje);
+
+        grupoPort.save(grupo.conMensajeSaliente(saved.getTimestamp()));
+        notifyPort.notifyGrupo(saved);
+        return saved;
     }
 
     // ── Lecturas ────────────────────────────────────────────────────────────

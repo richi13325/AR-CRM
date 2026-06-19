@@ -56,6 +56,11 @@ public class Grupo {
         return toBuilder().noLeidos(this.noLeidos + 1).ultimoMensajeAt(timestamp).build();
     }
 
+    /** Registra un mensaje saliente: actualiza la última actividad sin tocar no leídos. */
+    public Grupo conMensajeSaliente(LocalDateTime timestamp) {
+        return toBuilder().ultimoMensajeAt(timestamp).build();
+    }
+
     public Grupo marcarLeido() {
         return toBuilder().noLeidos(0).build();
     }

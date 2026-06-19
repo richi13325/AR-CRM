@@ -59,6 +59,29 @@ public class MensajeGrupo {
                 .build();
     }
 
+    /** Mensaje que el agente envía al grupo desde el CRM (sin remitente individual). */
+    public static MensajeGrupo createSaliente(
+            GrupoId grupoId, String waMessageId, TipoMensaje tipo, String contenido,
+            String mediaUrl, LocalDateTime timestamp) {
+        DomainAssert.notNull(grupoId, "grupoId");
+        DomainAssert.notBlank(waMessageId, "waMessageId");
+        DomainAssert.notNull(tipo, "tipo");
+        return MensajeGrupo.builder()
+                .id(MensajeGrupoId.create())
+                .grupoId(grupoId)
+                .direccion(DireccionMensaje.SALIENTE)
+                .tipo(tipo)
+                .contenido(contenido)
+                .mediaUrl(mediaUrl)
+                .remitente(null)
+                .remitenteTel(null)
+                .status(StatusMensaje.ENVIADO)
+                .waMessageId(waMessageId)
+                .timestamp(timestamp != null ? timestamp : LocalDateTime.now())
+                .creadoEn(LocalDateTime.now())
+                .build();
+    }
+
     public static MensajeGrupo reconstitute(
             MensajeGrupoId id, GrupoId grupoId, DireccionMensaje direccion, TipoMensaje tipo,
             String contenido, String mediaUrl, String remitente, String remitenteTel,

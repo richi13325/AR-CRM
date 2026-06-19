@@ -22,8 +22,24 @@ public class ContactoUpsertAdapter implements UpsertContactoPort {
         if (telefono == null || telefono.isBlank()) return null;
 
         return repository.findByEmpresaIdAndTelefono(empresaId.value().toString(), telefono)
-                .map(entity -> ContactoId.from(UUID.fromString(entity.getId())))
+                .map(entity -> {
+                    actualizarNombreSiMejora(entity, telefono, nombre);
+                    return ContactoId.from(UUID.fromString(entity.getId()));
+                })
                 .orElseGet(() -> crearContacto(empresaId, telefono, nombre));
+    }
+
+    // Si el contacto existente solo tenía el teléfono como nombre (o ninguno) y
+    // ahora llega un pushName real, lo completamos. Igual que AmbarCRM
+    // (importar/route.ts): el contacto "se enriquece" con el nombre cuando llega.
+    private void actualizarNombreSiMejora(ContactoEntity entity, String telefono, String nombre) {
+        if (nombre == null || nombre.isBlank() || nombre.matches("\\d+")) return;
+        String actual = entity.getNombre();
+        boolean sinNombreReal = actual == null || actual.isBlank() || actual.equals(telefono);
+        if (sinNombreReal && !nombre.equals(actual)) {
+            entity.setNombre(nombre);
+            repository.save(entity);
+        }
     }
 
     private ContactoId crearContacto(EmpresaId empresaId, String telefono, String nombre) {

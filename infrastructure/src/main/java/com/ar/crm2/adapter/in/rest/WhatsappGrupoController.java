@@ -3,7 +3,11 @@ package com.ar.crm2.adapter.in.rest;
 import com.ar.crm2.whatsapp.application.grupo.service.GrupoService;
 import com.ar.crm2.whatsapp.domain.entity.Grupo;
 import com.ar.crm2.whatsapp.domain.entity.MensajeGrupo;
+import com.ar.crm2.whatsapp.domain.enums.TipoMensaje;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,9 +50,18 @@ public class WhatsappGrupoController {
         return ResponseEntity.ok(grupoService.getAll().stream().map(GrupoResponse::from).toList());
     }
 
+    public record SendMensajeGrupoRequest(@NotNull TipoMensaje tipo, String contenido, String mediaUrl) {}
+
     @GetMapping("/{id}/mensajes")
     public ResponseEntity<List<MensajeGrupoResponse>> getMensajes(@PathVariable UUID id) {
         return ResponseEntity.ok(grupoService.getMensajes(id).stream().map(MensajeGrupoResponse::from).toList());
+    }
+
+    @PostMapping("/{id}/mensajes")
+    public ResponseEntity<MensajeGrupoResponse> enviar(
+            @PathVariable UUID id, @Valid @RequestBody SendMensajeGrupoRequest req) {
+        MensajeGrupo saved = grupoService.enviarMensaje(id, req.tipo(), req.contenido(), req.mediaUrl());
+        return ResponseEntity.status(HttpStatus.CREATED).body(MensajeGrupoResponse.from(saved));
     }
 
     @PostMapping("/importar")

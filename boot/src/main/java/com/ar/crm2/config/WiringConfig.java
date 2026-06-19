@@ -1088,6 +1088,14 @@ public class WiringConfig {
         return new com.ar.crm2.whatsapp.application.canal.service.GetEstadoCanalService(adapter, adapter, evolutionAdapter);
     }
 
+    @Bean
+    public com.ar.crm2.whatsapp.application.canal.port.in.ReconfigurarWebhookUseCase reconfigurarWebhookUseCase(
+            com.ar.crm2.adapter.out.persistence.CanalWhatsappRepositoryAdapter adapter,
+            com.ar.crm2.adapter.out.evolution.EvolutionWhatsappAdapter evolutionAdapter
+    ) {
+        return new com.ar.crm2.whatsapp.application.canal.service.ReconfigurarWebhookService(adapter, evolutionAdapter);
+    }
+
 
     // ── WhatsApp Module: Conversacion UseCase Beans ─────────────────────────
 
@@ -1273,7 +1281,7 @@ public class WiringConfig {
             com.ar.crm2.adapter.out.persistence.CanalWhatsappRepositoryAdapter canalAdapter
     ) {
         return new com.ar.crm2.whatsapp.application.grupo.service.GrupoService(
-                grupoAdapter, grupoAdapter, notifyAdapter, evolutionAdapter, mediaStorage, canalAdapter);
+                grupoAdapter, grupoAdapter, notifyAdapter, evolutionAdapter, mediaStorage, canalAdapter, evolutionAdapter);
     }
 
 }

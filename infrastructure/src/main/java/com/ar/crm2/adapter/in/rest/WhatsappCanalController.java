@@ -16,6 +16,7 @@ import com.ar.crm2.whatsapp.application.canal.port.in.EditCanalUseCase;
 import com.ar.crm2.whatsapp.application.canal.port.in.GetAllCanalesUseCase;
 import com.ar.crm2.whatsapp.application.canal.port.in.GetCanalByIdUseCase;
 import com.ar.crm2.whatsapp.application.canal.port.in.GetEstadoCanalUseCase;
+import com.ar.crm2.whatsapp.application.canal.port.in.ReconfigurarWebhookUseCase;
 import com.ar.crm2.whatsapp.application.canal.port.in.SyncChatsUseCase;
 import com.ar.crm2.whatsapp.domain.entity.CanalWhatsapp;
 import com.ar.crm2.whatsapp.domain.enums.EstadoCanal;
@@ -44,6 +45,7 @@ public class WhatsappCanalController {
     private final ConectarCanalUseCase conectarUseCase;
     private final GetEstadoCanalUseCase getEstadoUseCase;
     private final SyncChatsUseCase syncChatsUseCase;
+    private final ReconfigurarWebhookUseCase reconfigurarWebhookUseCase;
 
     @Value("${crm2.wa.evolution.api-url:}")
     private String globalEvolutionApiUrl;
@@ -115,6 +117,14 @@ public class WhatsappCanalController {
     public ResponseEntity<Map<String, Integer>> syncChats(@RequestParam UUID canalId) {
         int imported = syncChatsUseCase.syncChats(canalId);
         return ResponseEntity.ok(Map.of("imported", imported));
+    }
+
+    // Re-registra el webhook de Evolution para un canal ya conectado (sin re-escanear QR).
+    // Usar tras configurar/cambiar WA_WEBHOOK_BASE_URL para que lleguen mensajes en vivo.
+    @PostMapping("/reconfigurar-webhook")
+    public ResponseEntity<Void> reconfigurarWebhook(@RequestParam UUID id) {
+        reconfigurarWebhookUseCase.reconfigurar(id);
+        return ResponseEntity.noContent().build();
     }
 
     private boolean notBlank(String s) {
