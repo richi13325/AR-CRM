@@ -42,6 +42,15 @@ public class ContactoUpsertAdapter implements UpsertContactoPort {
         }
     }
 
+    @Override
+    public void actualizarNombre(ContactoId contactoId, String nombre) {
+        if (contactoId == null || nombre == null || nombre.isBlank()) return;
+        repository.findById(contactoId.value().toString()).ifPresent(entity -> {
+            entity.setNombre(nombre);
+            repository.save(entity);
+        });
+    }
+
     private ContactoId crearContacto(EmpresaId empresaId, String telefono, String nombre) {
         Contacto nuevo = Contacto.create(
                 empresaId,

@@ -117,11 +117,15 @@ public class ReceiveMensajeService implements ReceiveMensajeUseCase {
         return saved;
     }
 
-    // Si llega un pushName real y la conversación tenía el número como nombre, la renombra.
+    // Solo COMPLETA el nombre cuando la conversación aún tiene el número (o nada) como nombre.
+    // No pisa un nombre ya "real" — así un rename manual no se revierte con el pushName entrante.
     private Conversacion actualizarNombreSiMejora(Conversacion conversacion, ReceiveMensajeCommand command) {
         String nombre = command.nombreContacto();
         if (nombre == null || nombre.isBlank() || nombre.matches("\\d+")) return conversacion;
-        if (nombre.equals(conversacion.getNombreContacto())) return conversacion;
+        String actual = conversacion.getNombreContacto();
+        boolean actualEsReal = actual != null && !actual.isBlank()
+                && !actual.matches("\\d+") && !actual.equals(command.numeroTelefono());
+        if (actualEsReal) return conversacion;
         return saveConversacionPort.save(conversacion.conNombre(nombre));
     }
 

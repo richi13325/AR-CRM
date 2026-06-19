@@ -17,4 +17,7 @@ public interface UpsertContactoPort {
      * @return el id del Contacto encontrado o creado, o null si telefono es null/blank.
      */
     ContactoId upsertPorTelefono(EmpresaId empresaId, String telefono, String nombre);
+
+    /** Renombra un Contacto existente (rename manual desde el chat). No-op si no existe. */
+    void actualizarNombre(ContactoId contactoId, String nombre);
 }

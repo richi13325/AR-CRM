@@ -1,6 +1,7 @@
 package com.ar.crm2.adapter.out.media;
 
 import com.ar.crm2.whatsapp.application.mensaje.port.out.MediaStoragePort;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -15,6 +16,7 @@ import java.util.Map;
  * Guarda el media en disco (volumen Docker en prod) y lo sirve por /api/media/<archivo>.
  * Espejo de AmbarCRM/.../lib/storage.ts.
  */
+@Slf4j
 public class LocalMediaStorageAdapter implements MediaStoragePort {
 
     private static final Map<String, String> MIME_EXT = Map.ofEntries(
@@ -39,16 +41,31 @@ public class LocalMediaStorageAdapter implements MediaStoragePort {
 
     @Override
     public String guardarBase64(String base64, String mime) {
+        if (base64 == null || base64.isBlank()) {
+            log.warn("guardarBase64: base64 vacío");
+            return null;
+        }
+        String limpio = base64.contains(",") ? base64.substring(base64.indexOf(',') + 1) : base64;
+        byte[] bytes;
+        try {
+            // getMimeDecoder tolera saltos de línea/espacios; getDecoder es estricto y falla con ellos.
+            bytes = Base64.getMimeDecoder().decode(limpio);
+        } catch (IllegalArgumentException e) {
+            log.warn("guardarBase64: base64 inválido (mime={}): {}", mime, e.getMessage());
+            return null;
+        }
         try {
             Files.createDirectories(dir);
-            String limpio = base64.contains(",") ? base64.substring(base64.indexOf(',') + 1) : base64;
-            byte[] bytes = Base64.getDecoder().decode(limpio);
             byte[] rnd = new byte[6];
             random.nextBytes(rnd);
             String nombre = System.currentTimeMillis() + "-" + HexFormat.of().formatHex(rnd) + "." + extDeMime(mime);
             Files.write(dir.resolve(nombre), bytes);
             return "/api/media/" + nombre;
-        } catch (IOException | IllegalArgumentException e) {
+        } catch (IOException e) {
+            // Causa típica: el directorio no existe / no es escribible. Configurar UPLOAD_DIR
+            // a un volumen persistente y escribible (ej. /app/uploads montado en EasyPanel).
+            log.warn("guardarBase64: no se pudo escribir en '{}' (UPLOAD_DIR): {}",
+                    dir.toAbsolutePath(), e.getMessage());
             return null;
         }
     }

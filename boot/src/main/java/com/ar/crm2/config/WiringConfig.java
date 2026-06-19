@@ -1142,6 +1142,15 @@ public class WiringConfig {
     }
 
     @Bean
+    public com.ar.crm2.whatsapp.application.conversacion.port.in.RenombrarConversacionUseCase renombrarConversacionUseCase(
+            com.ar.crm2.adapter.out.persistence.ConversacionRepositoryAdapter adapter,
+            com.ar.crm2.adapter.out.persistence.ContactoUpsertAdapter contactoUpsertAdapter
+    ) {
+        return new com.ar.crm2.whatsapp.application.conversacion.service.RenombrarConversacionService(
+                adapter, adapter, contactoUpsertAdapter);
+    }
+
+    @Bean
     public com.ar.crm2.whatsapp.application.conversacion.port.in.ReabrirConversacionUseCase reabrirConversacionUseCase(
             com.ar.crm2.adapter.out.persistence.ConversacionRepositoryAdapter adapter
     ) {

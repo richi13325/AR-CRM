@@ -1,6 +1,7 @@
 package com.ar.crm2.adapter.in.rest;
 
 import com.ar.crm2.adapter.in.rest.dto.request.AplicarLabelsWaRequest;
+import com.ar.crm2.adapter.in.rest.dto.request.RenombrarConversacionRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.SendMensajeWaRequest;
 import com.ar.crm2.adapter.in.rest.dto.response.ConversacionWaResponse;
 import com.ar.crm2.adapter.in.rest.dto.response.MensajeWaResponse;
@@ -12,6 +13,7 @@ import com.ar.crm2.whatsapp.application.conversacion.port.in.AsignarAgenteUseCas
 import com.ar.crm2.whatsapp.application.conversacion.port.in.CerrarConversacionUseCase;
 import com.ar.crm2.whatsapp.application.conversacion.port.in.GetAllConversacionesUseCase;
 import com.ar.crm2.whatsapp.application.conversacion.port.in.GetConversacionByIdUseCase;
+import com.ar.crm2.whatsapp.application.conversacion.port.in.RenombrarConversacionUseCase;
 import com.ar.crm2.whatsapp.application.mensaje.command.SendMensajeCommand;
 import com.ar.crm2.whatsapp.application.mensaje.port.in.GetMensajesByConversacionUseCase;
 import com.ar.crm2.whatsapp.application.mensaje.port.in.SendMensajeUseCase;
@@ -41,6 +43,7 @@ public class WhatsappConversacionController {
     private final com.ar.crm2.whatsapp.application.conversacion.port.in.MarcarConversacionLeidaUseCase marcarLeidaUseCase;
     private final com.ar.crm2.whatsapp.application.conversacion.port.in.ReabrirConversacionUseCase reabrirUseCase;
     private final AplicarLabelsUseCase aplicarLabelsUseCase;
+    private final RenombrarConversacionUseCase renombrarUseCase;
 
     @GetMapping("/api/wa/conversaciones/get-all")
     public ResponseEntity<List<ConversacionWaResponse>> getAll(@RequestParam UUID empresaId) {
@@ -102,6 +105,14 @@ public class WhatsappConversacionController {
     @PutMapping("/api/wa/conversaciones/marcar-leido")
     public ResponseEntity<ConversacionWaResponse> marcarLeido(@RequestParam UUID id) {
         Conversacion c = marcarLeidaUseCase.marcarLeida(id);
+        return ResponseEntity.ok(ConversacionWaResponse.fromDomain(c));
+    }
+
+    // Renombra manualmente al contacto de la conversación (y el Contacto del CRM vinculado).
+    @PutMapping("/api/wa/conversaciones/nombre")
+    public ResponseEntity<ConversacionWaResponse> renombrar(
+            @RequestParam UUID id, @Valid @RequestBody RenombrarConversacionRequest request) {
+        Conversacion c = renombrarUseCase.renombrar(id, request.nombre());
         return ResponseEntity.ok(ConversacionWaResponse.fromDomain(c));
     }
 
