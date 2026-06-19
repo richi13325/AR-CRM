@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/wa/webhook")
 @RequiredArgsConstructor
@@ -77,12 +79,16 @@ public class WhatsappWebhookController {
                 ? (List<Map<String, Object>>) l
                 : data instanceof Map<?, ?> m ? List.of((Map<String, Object>) m) : List.of();
 
+        log.info("Webhook Evolution canal={} event={} items={}", canalId, event, items.size());
+
         // Acuses de estado (enviado/entregado/leído) de mensajes salientes.
         if (event.contains("MESSAGES_UPDATE")) {
             for (Map<String, Object> it : items) {
                 try {
                     procesarActualizacionEstado(it);
-                } catch (Exception ignored) {}
+                } catch (Exception e) {
+                    log.warn("Error procesando MESSAGES_UPDATE: {}", e.getMessage());
+                }
             }
             return ResponseEntity.ok().build();
         }
@@ -95,10 +101,10 @@ public class WhatsappWebhookController {
             try {
                 if (esGrupo(msg)) procesarGrupoEntrante(canalId, msg);
                 else procesarMensajeEntrante(canalId, msg);
-            } catch (IllegalStateException ignored) {
-                // ya procesado (idempotencia por waMessageId)
-            } catch (Exception ignored) {
-                // payload inesperado de este mensaje puntual: no tumbar el resto del batch
+            } catch (IllegalStateException e) {
+                log.debug("Mensaje ya procesado (idempotencia): {}", e.getMessage());
+            } catch (Exception e) {
+                log.warn("Error procesando mensaje de MESSAGES_UPSERT (canal={}): {}", canalId, e.getMessage(), e);
             }
         }
 
@@ -123,7 +129,10 @@ public class WhatsappWebhookController {
     @SuppressWarnings("unchecked")
     private void procesarMensajeEntrante(UUID canalId, Map<String, Object> msg) {
         Map<String, Object> key = (Map<String, Object>) msg.get("key");
-        if (key == null) return;
+        if (key == null) {
+            log.debug("Mensaje sin 'key', se descarta: {}", msg);
+            return;
+        }
 
         // fromMe = el dueño lo mandó desde su propio celular → se guarda como SALIENTE.
         // (Si lo mandó desde el CRM, la idempotencia por waMessageId evita duplicarlo.)
@@ -132,10 +141,17 @@ public class WhatsappWebhookController {
         String remoteJid = (String) key.get("remoteJid");
         // Bandeja individual: solo personas (@s.whatsapp.net). Grupos (@g.us) y alias @lid
         // (sin teléfono resoluble) quedan fuera por ahora; los grupos tendrán su bandeja.
-        if (remoteJid == null || com.ar.crm2.whatsapp.application.shared.JidUtils.limpiarTelefono(remoteJid) == null) return;
+        if (remoteJid == null || com.ar.crm2.whatsapp.application.shared.JidUtils.limpiarTelefono(remoteJid) == null) {
+            log.info("Mensaje descartado por remoteJid no resoluble: fromMe={} remoteJid={}", esSaliente, remoteJid);
+            return;
+        }
 
         String waMessageId = (String) key.get("id");
-        if (waMessageId == null || waMessageId.isBlank()) return;
+        if (waMessageId == null || waMessageId.isBlank()) {
+            log.debug("Mensaje sin id, se descarta: key={}", key);
+            return;
+        }
+        log.info("Procesando mensaje fromMe={} remoteJid={} waMessageId={}", esSaliente, remoteJid, waMessageId);
 
         String nombreContacto = (String) msg.get("pushName");
         TipoMensaje tipo = inferirTipo(msg);
