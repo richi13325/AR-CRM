@@ -75,7 +75,10 @@ public class ReceiveMensajeService implements ReceiveMensajeUseCase {
         if (!command.esSaliente()) conversacion = actualizarNombreSiMejora(conversacion, command);
 
         String mediaUrl = resolverMedia(command, canal);
-        String preview = previewDe(command.tipo(), command.contenido());
+        // La columna contenido es VARCHAR(4096); textos extendidos de WhatsApp
+        // (citas largas, etc.) pueden excederlo y tumbar el insert.
+        String contenido = truncar(command.contenido(), 4000);
+        String preview = previewDe(command.tipo(), contenido);
 
         // Mensajes que el dueño manda desde su propio celular llegan con fromMe=true:
         // se guardan como SALIENTES para que también se vean en el CRM.
@@ -84,7 +87,7 @@ public class ReceiveMensajeService implements ReceiveMensajeUseCase {
             Mensaje mensaje = Mensaje.reconstitute(
                     com.ar.crm2.whatsapp.domain.vo.MensajeId.create(), conversacion.getId(),
                     command.waMessageId(), command.tipo(), DireccionMensaje.SALIENTE,
-                    command.contenido(), mediaUrl, StatusMensaje.ENVIADO, null, creadoEn);
+                    contenido, mediaUrl, StatusMensaje.ENVIADO, null, creadoEn);
             Mensaje saved = saveMensajePort.save(mensaje);
             notifyPort.notify(saved);
             saveConversacionPort.save(conversacion.registrarMensajeSaliente(preview, saved.getCreadoEn()));
@@ -97,7 +100,7 @@ public class ReceiveMensajeService implements ReceiveMensajeUseCase {
                 conversacion.getId(),
                 command.waMessageId(),
                 command.tipo(),
-                command.contenido(),
+                contenido,
                 mediaUrl,
                 command.timestamp()
         );
@@ -120,6 +123,10 @@ public class ReceiveMensajeService implements ReceiveMensajeUseCase {
         if (nombre == null || nombre.isBlank() || nombre.matches("\\d+")) return conversacion;
         if (nombre.equals(conversacion.getNombreContacto())) return conversacion;
         return saveConversacionPort.save(conversacion.conNombre(nombre));
+    }
+
+    private String truncar(String texto, int max) {
+        return texto != null && texto.length() > max ? texto.substring(0, max) : texto;
     }
 
     private String previewDe(TipoMensaje tipo, String contenido) {

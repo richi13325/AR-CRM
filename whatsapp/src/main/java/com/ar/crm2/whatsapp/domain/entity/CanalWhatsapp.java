@@ -106,10 +106,11 @@ public class CanalWhatsapp {
                 .build();
     }
 
+    // apiUrl/apiKey vacíos = "no cambiar" — el front nunca recibe la apiKey real
+    // del backend (no se expone por seguridad), así que no puede reenviarla tal
+    // cual al editar solo el nombre del canal.
     public CanalWhatsapp editar(String nombre, String apiUrl, String apiKey) {
         DomainAssert.notBlank(nombre, "nombre");
-        DomainAssert.notBlank(apiUrl, "apiUrl");
-        DomainAssert.notBlank(apiKey, "apiKey");
         return CanalWhatsapp.builder()
                 .id(this.id)
                 .empresaId(this.empresaId)
@@ -117,8 +118,8 @@ public class CanalWhatsapp {
                 .instanceName(this.instanceName)
                 .proveedor(this.proveedor)
                 .estado(this.estado)
-                .apiUrl(apiUrl)
-                .apiKey(apiKey)
+                .apiUrl(apiUrl != null && !apiUrl.isBlank() ? apiUrl : this.apiUrl)
+                .apiKey(apiKey != null && !apiKey.isBlank() ? apiKey : this.apiKey)
                 .creadoEn(this.creadoEn)
                 .actualizadoEn(LocalDateTime.now())
                 .build();

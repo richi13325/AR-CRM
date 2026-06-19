@@ -303,15 +303,18 @@ public class EvolutionWhatsappAdapter implements SendWhatsappMessagePort, Evolut
         return extractMessageId(response);
     }
 
+    // wa_message_id es UNIQUE NOT NULL: un literal fijo como "unknown" rompe el
+    // insert del segundo mensaje que caiga en este caso (respuesta sin key.id).
     @SuppressWarnings("unchecked")
     private String extractMessageId(Map<?, ?> response) {
-        if (response == null) return "unknown";
-        Object key = response.get("key");
-        if (key instanceof Map<?, ?> keyMap) {
-            Object id = keyMap.get("id");
-            if (id != null) return id.toString();
+        if (response != null) {
+            Object key = response.get("key");
+            if (key instanceof Map<?, ?> keyMap) {
+                Object id = keyMap.get("id");
+                if (id != null) return id.toString();
+            }
         }
-        return "unknown";
+        return "sin-id-" + UUID.randomUUID();
     }
 
     private String capitalize(String s) {
