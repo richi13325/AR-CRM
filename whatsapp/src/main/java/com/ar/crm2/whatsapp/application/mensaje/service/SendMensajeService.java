@@ -31,16 +31,21 @@ public class SendMensajeService implements SendMensajeUseCase {
         Conversacion conversacion = findConversacionPort.findById(ConversacionId.from(command.conversacionId()))
                 .orElseThrow(() -> new IllegalArgumentException("Conversación no encontrada: " + command.conversacionId()));
 
-        CanalWhatsapp canal = findCanalPort.findById(CanalWhatsappId.from(conversacion.getCanalId().value()))
-                .orElseThrow(() -> new IllegalArgumentException("Canal no encontrado: " + conversacion.getCanalId()));
-
-        String waMessageId = sendWhatsappPort.send(
-                canal,
-                conversacion.getNumeroTelefono(),
-                command.tipo(),
-                command.contenido(),
-                command.mediaUrl()
-        );
+        String waMessageId;
+        if (command.interna()) {
+            // Nota interna: NO se envía a WhatsApp, solo queda en el hilo del CRM.
+            waMessageId = "nota-" + java.util.UUID.randomUUID();
+        } else {
+            CanalWhatsapp canal = findCanalPort.findById(CanalWhatsappId.from(conversacion.getCanalId().value()))
+                    .orElseThrow(() -> new IllegalArgumentException("Canal no encontrado: " + conversacion.getCanalId()));
+            waMessageId = sendWhatsappPort.send(
+                    canal,
+                    conversacion.getNumeroTelefono(),
+                    command.tipo(),
+                    command.contenido(),
+                    command.mediaUrl()
+            );
+        }
 
         Mensaje mensaje = Mensaje.createSaliente(
                 ConversacionId.from(command.conversacionId()),
@@ -48,15 +53,17 @@ public class SendMensajeService implements SendMensajeUseCase {
                 command.tipo(),
                 command.contenido(),
                 command.mediaUrl(),
-                UsuarioId.from(command.enviadoPor())
+                UsuarioId.from(command.enviadoPor()),
+                command.interna()
         );
 
         Mensaje saved = saveMensajePort.save(mensaje);
         notifyPort.notify(saved);
 
         // El agente respondió: actualiza preview/orden y marca la conversación como leída.
-        String preview = command.contenido() != null && !command.contenido().isBlank()
+        String base = command.contenido() != null && !command.contenido().isBlank()
                 ? command.contenido() : "📎 Adjunto";
+        String preview = command.interna() ? "📝 Nota: " + base : base;
         saveConversacionPort.save(
                 conversacion.registrarMensajeSaliente(preview, saved.getCreadoEn()).marcarLeido());
         return saved;

@@ -34,6 +34,7 @@ public class Mensaje {
     private final String mediaUrl;          // nullable — solo para mensajes de media
     private final StatusMensaje status;
     private final UsuarioId enviadoPor;     // nullable — null en mensajes ENTRANTES
+    private final boolean interna;          // true = nota interna (no se envía a WhatsApp)
     private final LocalDateTime creadoEn;
 
     public static Mensaje createEntrante(
@@ -58,6 +59,7 @@ public class Mensaje {
                 .mediaUrl(mediaUrl)
                 .status(StatusMensaje.ENTREGADO)
                 .enviadoPor(null)
+                .interna(false)
                 .creadoEn(creadoEn != null ? creadoEn : LocalDateTime.now())
                 .build();
     }
@@ -69,6 +71,18 @@ public class Mensaje {
             String contenido,
             String mediaUrl,
             UsuarioId enviadoPor
+    ) {
+        return createSaliente(conversacionId, waMessageId, tipo, contenido, mediaUrl, enviadoPor, false);
+    }
+
+    public static Mensaje createSaliente(
+            ConversacionId conversacionId,
+            String waMessageId,
+            TipoMensaje tipo,
+            String contenido,
+            String mediaUrl,
+            UsuarioId enviadoPor,
+            boolean interna
     ) {
         DomainAssert.notNull(conversacionId, "conversacionId");
         DomainAssert.notBlank(waMessageId, "waMessageId");
@@ -85,6 +99,7 @@ public class Mensaje {
                 .mediaUrl(mediaUrl)
                 .status(StatusMensaje.ENVIADO)
                 .enviadoPor(enviadoPor)
+                .interna(interna)
                 .creadoEn(LocalDateTime.now())
                 .build();
     }
@@ -101,6 +116,23 @@ public class Mensaje {
             UsuarioId enviadoPor,
             LocalDateTime creadoEn
     ) {
+        return reconstitute(id, conversacionId, waMessageId, tipo, direccion, contenido,
+                mediaUrl, status, enviadoPor, false, creadoEn);
+    }
+
+    public static Mensaje reconstitute(
+            MensajeId id,
+            ConversacionId conversacionId,
+            String waMessageId,
+            TipoMensaje tipo,
+            DireccionMensaje direccion,
+            String contenido,
+            String mediaUrl,
+            StatusMensaje status,
+            UsuarioId enviadoPor,
+            boolean interna,
+            LocalDateTime creadoEn
+    ) {
         return Mensaje.builder()
                 .id(id)
                 .conversacionId(conversacionId)
@@ -111,6 +143,7 @@ public class Mensaje {
                 .mediaUrl(mediaUrl)
                 .status(status)
                 .enviadoPor(enviadoPor)
+                .interna(interna)
                 .creadoEn(creadoEn)
                 .build();
     }
@@ -127,6 +160,7 @@ public class Mensaje {
                 .mediaUrl(this.mediaUrl)
                 .status(nuevoStatus)
                 .enviadoPor(this.enviadoPor)
+                .interna(this.interna)
                 .creadoEn(this.creadoEn)
                 .build();
     }

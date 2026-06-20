@@ -80,7 +80,8 @@ public class WhatsappConversacionController {
                 actor.usuarioId().orElseThrow(),
                 request.tipo(),
                 request.contenido(),
-                request.mediaUrl()
+                request.mediaUrl(),
+                request.interna()
         );
         Mensaje mensaje = sendMensajeUseCase.send(command);
         return ResponseEntity.status(HttpStatus.CREATED).body(MensajeWaResponse.fromDomain(mensaje));

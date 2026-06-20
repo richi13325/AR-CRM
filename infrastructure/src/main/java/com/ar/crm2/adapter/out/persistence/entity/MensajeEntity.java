@@ -51,6 +51,9 @@ public class MensajeEntity {
     @Column(name = "enviado_por")
     private String enviadoPor;
 
+    @Column(name = "interna", nullable = false)
+    private boolean interna;
+
     @Column(name = "creado_en", nullable = false)
     private LocalDateTime creadoEn;
 }

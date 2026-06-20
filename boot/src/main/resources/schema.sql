@@ -117,10 +117,13 @@ CREATE TABLE IF NOT EXISTS wa_mensaje (
     media_url       VARCHAR(1000),
     status          VARCHAR(20)  NOT NULL,
     enviado_por     VARCHAR(36),
+    interna         BOOLEAN      NOT NULL DEFAULT FALSE,
     creado_en       TIMESTAMP    NOT NULL,
     CONSTRAINT pk_wa_mensaje PRIMARY KEY (id),
     CONSTRAINT uk_wa_mensaje_wa_message_id UNIQUE (wa_message_id)
 );
+
+ALTER TABLE wa_mensaje ADD COLUMN IF NOT EXISTS interna BOOLEAN NOT NULL DEFAULT FALSE;
 
 CREATE INDEX IF NOT EXISTS idx_wa_mensaje_conversacion
     ON wa_mensaje (conversacion_id, creado_en);

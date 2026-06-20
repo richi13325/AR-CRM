@@ -6,7 +6,8 @@ import jakarta.validation.constraints.NotNull;
 public record SendMensajeWaRequest(
         @NotNull TipoMensaje tipo,
         String contenido,
-        String mediaUrl
+        String mediaUrl,
+        boolean interna
 ) {
     // contenido puede venir vacío cuando se manda solo un adjunto (imagen sin caption),
     // pero al menos uno de los dos (texto o media) debe estar presente.

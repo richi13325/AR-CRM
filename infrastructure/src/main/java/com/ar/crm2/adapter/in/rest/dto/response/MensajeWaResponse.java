@@ -18,6 +18,7 @@ public record MensajeWaResponse(
         String mediaUrl,
         StatusMensaje status,
         UUID enviadoPor,
+        boolean interna,
         LocalDateTime creadoEn
 ) {
     public static MensajeWaResponse fromDomain(Mensaje m) {
@@ -31,6 +32,7 @@ public record MensajeWaResponse(
                 m.getMediaUrl(),
                 m.getStatus(),
                 m.getEnviadoPor() != null ? m.getEnviadoPor().value() : null,
+                m.isInterna(),
                 m.getCreadoEn()
         );
     }

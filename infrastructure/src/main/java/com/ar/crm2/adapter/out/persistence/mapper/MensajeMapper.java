@@ -23,6 +23,7 @@ public final class MensajeMapper {
                 .mediaUrl(domain.getMediaUrl())
                 .status(domain.getStatus())
                 .enviadoPor(domain.getEnviadoPor() != null ? domain.getEnviadoPor().value().toString() : null)
+                .interna(domain.isInterna())
                 .creadoEn(domain.getCreadoEn())
                 .build();
     }
@@ -38,6 +39,7 @@ public final class MensajeMapper {
                 entity.getMediaUrl(),
                 entity.getStatus(),
                 entity.getEnviadoPor() != null ? UsuarioId.from(UUID.fromString(entity.getEnviadoPor())) : null,
+                entity.isInterna(),
                 entity.getCreadoEn()
         );
     }
