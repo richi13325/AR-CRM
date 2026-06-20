@@ -28,6 +28,7 @@ public final class TratoMapper {
             .probabilidad(domain.getProbabilidad())
             .fechaCierreEsperada(domain.getFechaCierreEsperada())
             .tipoContrato(domain.getTipoContrato())
+            .estado(domain.getEstado())
             .motivoPerdida(domain.getMotivoPerdida())
             .creadoEn(domain.getCreadoEn())
             .actualizadoEn(domain.getActualizadoEn())
@@ -50,6 +51,7 @@ public final class TratoMapper {
             entity.getProbabilidad(),
             entity.getFechaCierreEsperada(),
             entity.getTipoContrato(),
+            entity.getEstado(),
             entity.getMotivoPerdida(),
             entity.getCreadoEn(),
             entity.getActualizadoEn()

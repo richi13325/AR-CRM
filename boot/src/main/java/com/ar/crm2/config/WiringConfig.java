@@ -509,6 +509,12 @@ public class WiringConfig {
     }
 
     @Bean
+    public com.ar.crm2.application.trato.port.in.CambiarEstadoTratoUseCase cambiarEstadoTratoUseCase(
+            TratoRepositoryAdapter findPort, TratoRepositoryAdapter savePort) {
+        return new com.ar.crm2.application.trato.service.CambiarEstadoTratoService(findPort, savePort);
+    }
+
+    @Bean
     public DeleteTratoUseCase deleteTratoUseCase(
             TratoRepositoryAdapter findPort,
             TratoRepositoryAdapter deletePort

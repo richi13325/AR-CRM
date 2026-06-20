@@ -8,6 +8,7 @@ import com.ar.crm2.application.trato.command.CreateTratoCommand;
 import com.ar.crm2.application.trato.command.DeleteTratoCommand;
 import com.ar.crm2.application.trato.command.EditTratoCommand;
 import com.ar.crm2.application.trato.command.GetTratoByIdCommand;
+import com.ar.crm2.application.trato.port.in.CambiarEstadoTratoUseCase;
 import com.ar.crm2.application.trato.port.in.CreateTratoUseCase;
 import com.ar.crm2.application.trato.port.in.DeleteTratoUseCase;
 import com.ar.crm2.application.trato.port.in.EditTratoUseCase;
@@ -44,6 +45,9 @@ public class TratoController {
     private final GetTratoByIdUseCase getByIdUseCase;
     private final EditTratoUseCase editUseCase;
     private final DeleteTratoUseCase deleteUseCase;
+    private final CambiarEstadoTratoUseCase cambiarEstadoUseCase;
+
+    public record PerderTratoRequest(@jakarta.validation.constraints.NotBlank String motivo) {}
 
     /**
      * Creates a new Trato.
@@ -83,6 +87,18 @@ public class TratoController {
         EditTratoCommand command = TratoCommandMapper.toCommand(id, request);
         Trato trato = editUseCase.edit(command);
         return ResponseEntity.ok(TratoResponse.fromDomain(trato));
+    }
+
+    /** Marca la oportunidad como ganada. */
+    @PutMapping("/ganar")
+    public ResponseEntity<TratoResponse> ganar(@RequestParam UUID id) {
+        return ResponseEntity.ok(TratoResponse.fromDomain(cambiarEstadoUseCase.ganar(id)));
+    }
+
+    /** Marca la oportunidad como perdida, con motivo. */
+    @PutMapping("/perder")
+    public ResponseEntity<TratoResponse> perder(@RequestParam UUID id, @Valid @RequestBody PerderTratoRequest request) {
+        return ResponseEntity.ok(TratoResponse.fromDomain(cambiarEstadoUseCase.perder(id, request.motivo())));
     }
 
     /**

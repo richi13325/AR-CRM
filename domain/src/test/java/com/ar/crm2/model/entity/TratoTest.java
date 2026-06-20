@@ -102,6 +102,7 @@ class TratoTest {
                     75,
                     LocalDate.now().plusDays(30),
                     TipoContrato.LICENCIA,
+                    com.ar.crm2.model.enums.EstadoTrato.ABIERTO,
                     null,
                     haceUnaSemana,
                     haceUnaSemana
@@ -123,6 +124,7 @@ class TratoTest {
                     75,
                     LocalDate.now().plusDays(30),
                     TipoContrato.LICENCIA,
+                    com.ar.crm2.model.enums.EstadoTrato.ABIERTO,
                     null,
                     haceUnaSemana,
                     haceUnaSemana
@@ -146,6 +148,7 @@ class TratoTest {
                     75,
                     LocalDate.now().plusDays(30),
                     TipoContrato.LICENCIA,
+                    com.ar.crm2.model.enums.EstadoTrato.ABIERTO,
                     null,
                     haceUnaSemana,
                     haceUnaSemana

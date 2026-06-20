@@ -1,5 +1,6 @@
 package com.ar.crm2.model.entity;
 
+import com.ar.crm2.model.enums.EstadoTrato;
 import com.ar.crm2.model.enums.TipoContrato;
 import com.ar.crm2.model.vo.ContactoId;
 import com.ar.crm2.model.vo.TratoId;
@@ -39,6 +40,7 @@ public class Trato {
     private final Integer probabilidad;
     private final LocalDate fechaCierreEsperada;
     private final TipoContrato tipoContrato;
+    private final EstadoTrato estado;
     private final String motivoPerdida;
     private final LocalDateTime creadoEn;
     private final LocalDateTime actualizadoEn;
@@ -68,10 +70,24 @@ public class Trato {
             probabilidad,
             fechaCierreEsperada,
             tipoContrato,
+            EstadoTrato.ABIERTO,
             null,
             LocalDateTime.now(),
             null
         );
+    }
+
+    /** Marca la oportunidad como ganada. */
+    public Trato ganar() {
+        return new Trato(id, contactoId, responsableId, nombre, valorEstimado, probabilidad,
+            fechaCierreEsperada, tipoContrato, EstadoTrato.GANADO, null, creadoEn, LocalDateTime.now());
+    }
+
+    /** Marca la oportunidad como perdida, con el motivo. */
+    public Trato perder(String motivo) {
+        return new Trato(id, contactoId, responsableId, nombre, valorEstimado, probabilidad,
+            fechaCierreEsperada, tipoContrato, EstadoTrato.PERDIDO,
+            DomainAssert.lengthBetween(motivo, "motivo", 1, 500), creadoEn, LocalDateTime.now());
     }
 
     /**
@@ -86,6 +102,7 @@ public static Trato reconstitute(
         Integer probabilidad,
         LocalDate fechaCierreEsperada,
         TipoContrato tipoContrato,
+        EstadoTrato estado,
         String motivoPerdida,
         LocalDateTime creadoEn,
         LocalDateTime actualizadoEn
@@ -99,6 +116,7 @@ public static Trato reconstitute(
             probabilidad,
             fechaCierreEsperada,
             tipoContrato,
+            estado != null ? estado : EstadoTrato.ABIERTO,
             motivoPerdida,
             DomainAssert.notNull(creadoEn, "creadoEn"),
             actualizadoEn

@@ -1,6 +1,7 @@
 package com.ar.crm2.adapter.in.rest.dto.response;
 
 import com.ar.crm2.model.entity.Trato;
+import com.ar.crm2.model.enums.EstadoTrato;
 import com.ar.crm2.model.enums.TipoContrato;
 
 import java.math.BigDecimal;
@@ -21,6 +22,7 @@ public record TratoResponse(
     Integer probabilidad,
     LocalDate fechaCierreEsperada,
     TipoContrato tipoContrato,
+    EstadoTrato estado,
     String motivoPerdida,
     LocalDateTime creadoEn,
     LocalDateTime actualizadoEn
@@ -38,6 +40,7 @@ public record TratoResponse(
             trato.getProbabilidad(),
             trato.getFechaCierreEsperada(),
             trato.getTipoContrato(),
+            trato.getEstado(),
             trato.getMotivoPerdida(),
             trato.getCreadoEn(),
             trato.getActualizadoEn()

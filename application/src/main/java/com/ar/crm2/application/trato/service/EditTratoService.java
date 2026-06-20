@@ -39,6 +39,7 @@ public class EditTratoService implements EditTratoUseCase {
                 command.probabilidad(),
                 command.fechaCierreEsperada(),
                 command.tipoContrato(),
+                existing.getEstado(),
                 existing.getMotivoPerdida(),
                 existing.getCreadoEn(),
                 LocalDateTime.now()

@@ -1,5 +1,6 @@
 package com.ar.crm2.adapter.out.persistence.entity;
 
+import com.ar.crm2.model.enums.EstadoTrato;
 import com.ar.crm2.model.enums.TipoContrato;
 import jakarta.persistence.*;
 import lombok.*;
@@ -47,6 +48,12 @@ public class TratoEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_contrato", length = 50)
     private TipoContrato tipoContrato;
+
+    // Nullable a propósito: con ddl-auto=update, una columna NOT NULL nueva rompería en
+    // una tabla con datos. El dominio trata null como ABIERTO (ver Trato.reconstitute).
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado", length = 20)
+    private EstadoTrato estado;
 
     @Column(name = "motivo_perdida", length = 500)
     private String motivoPerdida;
