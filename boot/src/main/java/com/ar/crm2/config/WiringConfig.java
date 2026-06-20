@@ -509,9 +509,29 @@ public class WiringConfig {
     }
 
     @Bean
+    public com.ar.crm2.adapter.out.persistence.NotaTratoRepositoryAdapter notaTratoRepositoryAdapter(
+            com.ar.crm2.adapter.out.persistence.repository.NotaTratoRepository repository) {
+        return new com.ar.crm2.adapter.out.persistence.NotaTratoRepositoryAdapter(repository);
+    }
+
+    @Bean
     public com.ar.crm2.application.trato.port.in.CambiarEstadoTratoUseCase cambiarEstadoTratoUseCase(
-            TratoRepositoryAdapter findPort, TratoRepositoryAdapter savePort) {
-        return new com.ar.crm2.application.trato.service.CambiarEstadoTratoService(findPort, savePort);
+            TratoRepositoryAdapter findPort, TratoRepositoryAdapter savePort,
+            com.ar.crm2.adapter.out.persistence.NotaTratoRepositoryAdapter notaPort) {
+        return new com.ar.crm2.application.trato.service.CambiarEstadoTratoService(findPort, savePort, notaPort);
+    }
+
+    @Bean
+    public com.ar.crm2.application.notatrato.port.in.CrearNotaTratoUseCase crearNotaTratoUseCase(
+            TratoRepositoryAdapter findTratoPort,
+            com.ar.crm2.adapter.out.persistence.NotaTratoRepositoryAdapter notaPort) {
+        return new com.ar.crm2.application.notatrato.service.CrearNotaTratoService(findTratoPort, notaPort);
+    }
+
+    @Bean
+    public com.ar.crm2.application.notatrato.port.in.GetNotasByTratoUseCase getNotasByTratoUseCase(
+            com.ar.crm2.adapter.out.persistence.NotaTratoRepositoryAdapter notaPort) {
+        return new com.ar.crm2.application.notatrato.service.GetNotasByTratoService(notaPort);
     }
 
     @Bean

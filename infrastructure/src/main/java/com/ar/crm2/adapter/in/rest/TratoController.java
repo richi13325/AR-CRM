@@ -8,6 +8,11 @@ import com.ar.crm2.application.trato.command.CreateTratoCommand;
 import com.ar.crm2.application.trato.command.DeleteTratoCommand;
 import com.ar.crm2.application.trato.command.EditTratoCommand;
 import com.ar.crm2.application.trato.command.GetTratoByIdCommand;
+import com.ar.crm2.application.notatrato.port.in.CrearNotaTratoUseCase;
+import com.ar.crm2.application.notatrato.port.in.GetNotasByTratoUseCase;
+import com.ar.crm2.application.security.ActorContext;
+import com.ar.crm2.security.ActorContextRequestAttributeFilter;
+import com.ar.crm2.adapter.in.rest.dto.response.NotaTratoResponse;
 import com.ar.crm2.application.trato.port.in.CambiarEstadoTratoUseCase;
 import com.ar.crm2.application.trato.port.in.CreateTratoUseCase;
 import com.ar.crm2.application.trato.port.in.DeleteTratoUseCase;
@@ -15,6 +20,7 @@ import com.ar.crm2.application.trato.port.in.EditTratoUseCase;
 import com.ar.crm2.application.trato.port.in.GetAllTratosUseCase;
 import com.ar.crm2.application.trato.port.in.GetTratoByIdUseCase;
 import com.ar.crm2.model.entity.Trato;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -46,8 +52,11 @@ public class TratoController {
     private final EditTratoUseCase editUseCase;
     private final DeleteTratoUseCase deleteUseCase;
     private final CambiarEstadoTratoUseCase cambiarEstadoUseCase;
+    private final CrearNotaTratoUseCase crearNotaUseCase;
+    private final GetNotasByTratoUseCase getNotasUseCase;
 
     public record PerderTratoRequest(@jakarta.validation.constraints.NotBlank String motivo) {}
+    public record CrearNotaRequest(@jakarta.validation.constraints.NotBlank String contenido) {}
 
     /**
      * Creates a new Trato.
@@ -99,6 +108,25 @@ public class TratoController {
     @PutMapping("/perder")
     public ResponseEntity<TratoResponse> perder(@RequestParam UUID id, @Valid @RequestBody PerderTratoRequest request) {
         return ResponseEntity.ok(TratoResponse.fromDomain(cambiarEstadoUseCase.perder(id, request.motivo())));
+    }
+
+    /** Lista las notas/eventos del timeline de un trato (más recientes primero). */
+    @GetMapping("/notas/get-all")
+    public ResponseEntity<List<NotaTratoResponse>> getNotas(@RequestParam UUID tratoId) {
+        return ResponseEntity.ok(
+            getNotasUseCase.getByTrato(tratoId).stream().map(NotaTratoResponse::fromDomain).toList());
+    }
+
+    /** Crea una nota manual en el trato (autor = usuario del JWT). */
+    @PostMapping("/notas/create")
+    public ResponseEntity<NotaTratoResponse> crearNota(
+            HttpServletRequest httpRequest,
+            @RequestParam UUID tratoId,
+            @Valid @RequestBody CrearNotaRequest request) {
+        ActorContext actor = (ActorContext) httpRequest.getAttribute(
+                ActorContextRequestAttributeFilter.ACTOR_CONTEXT_ATTRIBUTE);
+        var nota = crearNotaUseCase.crear(tratoId, actor.usuarioId().orElseThrow(), request.contenido());
+        return ResponseEntity.status(HttpStatus.CREATED).body(NotaTratoResponse.fromDomain(nota));
     }
 
     /**
