@@ -29,6 +29,9 @@ public final class ConversacionMapper {
                 .ultimoMensajeTexto(domain.getUltimoMensajeTexto())
                 .labels(String.join(",", domain.getLabels()))
                 .botActivo(domain.isBotActivo())
+                .csatScore(domain.getCsatScore())
+                .csatEnviadoEn(domain.getCsatEnviadoEn())
+                .avisoFueraEn(domain.getAvisoFueraEn())
                 .creadoEn(domain.getCreadoEn())
                 .actualizadoEn(domain.getActualizadoEn())
                 .build();
@@ -48,6 +51,9 @@ public final class ConversacionMapper {
                 entity.getUltimoMensajeTexto(),
                 parseLabels(entity.getLabels()),
                 entity.isBotActivo(),
+                entity.getCsatScore(),
+                entity.getCsatEnviadoEn(),
+                entity.getAvisoFueraEn(),
                 entity.getCreadoEn(),
                 entity.getActualizadoEn()
         );

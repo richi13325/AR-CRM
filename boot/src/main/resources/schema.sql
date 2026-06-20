@@ -93,6 +93,9 @@ CREATE TABLE IF NOT EXISTS wa_conversacion (
 
 ALTER TABLE wa_conversacion ADD COLUMN IF NOT EXISTS labels VARCHAR(500);
 ALTER TABLE wa_conversacion ADD COLUMN IF NOT EXISTS bot_activo BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE wa_conversacion ADD COLUMN IF NOT EXISTS csat_score INT;
+ALTER TABLE wa_conversacion ADD COLUMN IF NOT EXISTS csat_enviado_en TIMESTAMP;
+ALTER TABLE wa_conversacion ADD COLUMN IF NOT EXISTS aviso_fuera_en TIMESTAMP;
 
 CREATE INDEX IF NOT EXISTS idx_wa_conversacion_canal
     ON wa_conversacion (canal_id);

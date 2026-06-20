@@ -110,11 +110,50 @@ public class ReceiveMensajeService implements ReceiveMensajeUseCase {
 
         // Mueve la conversación al tope de la bandeja y sube el contador de no leídos.
         Conversacion actualizada = conversacion.registrarMensajeEntrante(preview, saved.getCreadoEn());
+
+        // CSAT: si esperábamos la calificación y el contacto respondió 1-5, la capturamos
+        // y NO seguimos con bienvenida/horario/bot (la conversación ya está cerrada).
+        Integer score = parseCsat(contenido);
+        if (conversacion.esperandoCsat() && score != null) {
+            saveConversacionPort.save(actualizada.registrarCsat(score));
+            return saved;
+        }
+
         saveConversacionPort.save(actualizada);
 
         enviarBienvenidaSiAplica(canal, conversacion, conversacionNueva);
-        if (actualizada.isBotActivo()) notifyBotPort.notificarMensajeEntrante(actualizada, saved, canal);
+        // Autocontestador de fuera de horario (con throttle), solo si no hay bot que responda.
+        if (actualizada.isBotActivo()) {
+            notifyBotPort.notificarMensajeEntrante(actualizada, saved, canal);
+        } else {
+            responderFueraDeHorarioSiAplica(canal, conversacion);
+        }
         return saved;
+    }
+
+    // Acepta "5", "  4 ", etc. Devuelve null si no es un entero 1-5.
+    private Integer parseCsat(String contenido) {
+        if (contenido == null) return null;
+        String t = contenido.trim();
+        if (!t.matches("[1-5]")) return null;
+        return Integer.parseInt(t);
+    }
+
+    // Si el horario de atención está activo y el mensaje llegó fuera de horario, manda el
+    // texto configurado. Throttle: máximo un aviso cada 4 horas por conversación.
+    private void responderFueraDeHorarioSiAplica(CanalWhatsapp canal, Conversacion conversacion) {
+        if (canal == null) return;
+        AjustesWa aj = ajustesPort.get();
+        if (!aj.horarioActivo() || aj.fueraHorarioTexto() == null || aj.fueraHorarioTexto().isBlank()) return;
+        if (com.ar.crm2.whatsapp.application.shared.HorarioUtils.dentroDeHorario(
+                java.time.LocalDateTime.now(), aj.horarioInicio(), aj.horarioFin(), aj.horarioDias())) return;
+        LocalDateTime ultimoAviso = conversacion.getAvisoFueraEn();
+        if (ultimoAviso != null && ultimoAviso.isAfter(LocalDateTime.now().minusHours(4))) return;
+
+        try {
+            sendWhatsappPort.send(canal, conversacion.getNumeroTelefono(), TipoMensaje.TEXTO, aj.fueraHorarioTexto(), null);
+            saveConversacionPort.save(conversacion.marcarAvisoFuera());
+        } catch (Exception ignored) {}
     }
 
     // Solo COMPLETA el nombre cuando la conversación aún tiene el número (o nada) como nombre.

@@ -1155,9 +1155,13 @@ public class WiringConfig {
 
     @Bean
     public com.ar.crm2.whatsapp.application.conversacion.port.in.CerrarConversacionUseCase cerrarConversacionUseCase(
-            com.ar.crm2.adapter.out.persistence.ConversacionRepositoryAdapter adapter
+            com.ar.crm2.adapter.out.persistence.ConversacionRepositoryAdapter adapter,
+            com.ar.crm2.adapter.out.persistence.AjustesWaAdapter ajustesAdapter,
+            com.ar.crm2.adapter.out.persistence.CanalWhatsappRepositoryAdapter canalAdapter,
+            com.ar.crm2.adapter.out.evolution.EvolutionWhatsappAdapter evolutionAdapter
     ) {
-        return new com.ar.crm2.whatsapp.application.conversacion.service.CerrarConversacionService(adapter, adapter);
+        return new com.ar.crm2.whatsapp.application.conversacion.service.CerrarConversacionService(
+                adapter, adapter, ajustesAdapter, canalAdapter, evolutionAdapter);
     }
 
     @Bean

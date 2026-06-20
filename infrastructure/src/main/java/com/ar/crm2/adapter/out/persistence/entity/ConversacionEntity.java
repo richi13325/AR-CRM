@@ -53,6 +53,15 @@ public class ConversacionEntity {
     @Column(name = "bot_activo", nullable = false)
     private boolean botActivo;
 
+    @Column(name = "csat_score")
+    private Integer csatScore;
+
+    @Column(name = "csat_enviado_en")
+    private LocalDateTime csatEnviadoEn;
+
+    @Column(name = "aviso_fuera_en")
+    private LocalDateTime avisoFueraEn;
+
     @Column(name = "creado_en", nullable = false)
     private LocalDateTime creadoEn;
 

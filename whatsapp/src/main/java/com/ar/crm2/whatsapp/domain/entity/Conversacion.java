@@ -40,6 +40,9 @@ public class Conversacion {
     private final String ultimoMensajeTexto;      // preview del último mensaje
     private final Set<String> labels;             // labels tipo Chatwoot (ej. "escalado_humano")
     private final boolean botActivo;              // false tras handoff a humano
+    private final Integer csatScore;              // nullable — calificación 1-5 del contacto
+    private final LocalDateTime csatEnviadoEn;    // nullable — cuándo se mandó la encuesta CSAT
+    private final LocalDateTime avisoFueraEn;     // nullable — último aviso de fuera de horario (throttle)
     private final LocalDateTime creadoEn;
     private final LocalDateTime actualizadoEn;
 
@@ -65,6 +68,9 @@ public class Conversacion {
                 .ultimoMensajeTexto(null)
                 .labels(Set.of())
                 .botActivo(true)
+                .csatScore(null)
+                .csatEnviadoEn(null)
+                .avisoFueraEn(null)
                 .creadoEn(now)
                 .actualizadoEn(now)
                 .build();
@@ -83,6 +89,9 @@ public class Conversacion {
             String ultimoMensajeTexto,
             Set<String> labels,
             boolean botActivo,
+            Integer csatScore,
+            LocalDateTime csatEnviadoEn,
+            LocalDateTime avisoFueraEn,
             LocalDateTime creadoEn,
             LocalDateTime actualizadoEn
     ) {
@@ -93,6 +102,7 @@ public class Conversacion {
                 .noLeidos(noLeidos).ultimoMensajeAt(ultimoMensajeAt).ultimoMensajeTexto(ultimoMensajeTexto)
                 .labels(labels != null ? Set.copyOf(labels) : Set.of())
                 .botActivo(botActivo)
+                .csatScore(csatScore).csatEnviadoEn(csatEnviadoEn).avisoFueraEn(avisoFueraEn)
                 .creadoEn(creadoEn).actualizadoEn(actualizadoEn)
                 .build();
     }
@@ -162,6 +172,26 @@ public class Conversacion {
         return Conversacion.builder();
     }
 
+    /** Marca que se envió la encuesta CSAT (se espera la respuesta del contacto). */
+    public Conversacion marcarCsatEnviado() {
+        return toBuilder().csatEnviadoEn(LocalDateTime.now()).actualizadoEn(LocalDateTime.now()).build();
+    }
+
+    /** Registra la calificación CSAT (1-5) respondida por el contacto. */
+    public Conversacion registrarCsat(int score) {
+        return toBuilder().csatScore(score).actualizadoEn(LocalDateTime.now()).build();
+    }
+
+    /** True si se mandó la encuesta y aún no hay calificación. */
+    public boolean esperandoCsat() {
+        return csatEnviadoEn != null && csatScore == null;
+    }
+
+    /** Registra que se envió un aviso de fuera de horario (para throttle). */
+    public Conversacion marcarAvisoFuera() {
+        return toBuilder().avisoFueraEn(LocalDateTime.now()).build();
+    }
+
     private ConversacionBuilder toBuilder() {
         return Conversacion.builder()
                 .id(this.id).canalId(this.canalId).contactoId(this.contactoId)
@@ -169,6 +199,7 @@ public class Conversacion {
                 .estado(this.estado).asignadoA(this.asignadoA)
                 .noLeidos(this.noLeidos).ultimoMensajeAt(this.ultimoMensajeAt).ultimoMensajeTexto(this.ultimoMensajeTexto)
                 .labels(this.labels).botActivo(this.botActivo)
+                .csatScore(this.csatScore).csatEnviadoEn(this.csatEnviadoEn).avisoFueraEn(this.avisoFueraEn)
                 .creadoEn(this.creadoEn).actualizadoEn(this.actualizadoEn);
     }
 
