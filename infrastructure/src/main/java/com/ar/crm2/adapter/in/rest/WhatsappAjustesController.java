@@ -15,15 +15,17 @@ public class WhatsappAjustesController {
 
     public record AjustesDto(boolean autoAsignar, boolean bienvenidaActiva, String bienvenidaTexto,
                              boolean horarioActivo, String horarioInicio, String horarioFin,
-                             String horarioDias, String fueraHorarioTexto, boolean csatActivo) {
+                             String horarioDias, String fueraHorarioTexto, boolean csatActivo,
+                             String csatTexto) {
         static AjustesDto from(AjustesWa a) {
             return new AjustesDto(a.autoAsignar(), a.bienvenidaActiva(), a.bienvenidaTexto(),
                     a.horarioActivo(), a.horarioInicio(), a.horarioFin(), a.horarioDias(),
-                    a.fueraHorarioTexto(), a.csatActivo());
+                    a.fueraHorarioTexto(), a.csatActivo(), a.csatTexto());
         }
         AjustesWa toDomain() {
             return new AjustesWa(autoAsignar, bienvenidaActiva, bienvenidaTexto,
-                    horarioActivo, horarioInicio, horarioFin, horarioDias, fueraHorarioTexto, csatActivo);
+                    horarioActivo, horarioInicio, horarioFin, horarioDias, fueraHorarioTexto, csatActivo,
+                    csatTexto);
         }
     }
 

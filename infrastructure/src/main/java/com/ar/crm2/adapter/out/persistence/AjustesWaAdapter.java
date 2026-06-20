@@ -31,6 +31,7 @@ public class AjustesWaAdapter implements AjustesWaPort {
                 .horarioDias(a.horarioDias())
                 .fueraHorarioTexto(a.fueraHorarioTexto())
                 .csatActivo(a.csatActivo())
+                .csatTexto(a.csatTexto())
                 .build();
         return toDomain(repository.save(entity));
     }
@@ -39,6 +40,7 @@ public class AjustesWaAdapter implements AjustesWaPort {
         return new AjustesWa(
                 e.isAutoAsignar(), e.isBienvenidaActiva(), e.getBienvenidaTexto(),
                 e.isHorarioActivo(), e.getHorarioInicio(), e.getHorarioFin(), e.getHorarioDias(),
-                e.getFueraHorarioTexto(), e.isCsatActivo());
+                e.getFueraHorarioTexto(), e.isCsatActivo(),
+                e.getCsatTexto() != null ? e.getCsatTexto() : AjustesWa.defaults().csatTexto());
     }
 }

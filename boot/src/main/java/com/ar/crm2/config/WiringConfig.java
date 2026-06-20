@@ -1182,6 +1182,13 @@ public class WiringConfig {
     }
 
     @Bean
+    public com.ar.crm2.whatsapp.application.conversacion.port.in.GetCsatResumenUseCase getCsatResumenUseCase(
+            com.ar.crm2.adapter.out.persistence.ConversacionRepositoryAdapter adapter
+    ) {
+        return new com.ar.crm2.whatsapp.application.conversacion.service.GetCsatResumenService(adapter);
+    }
+
+    @Bean
     public com.ar.crm2.whatsapp.application.conversacion.port.in.MarcarConversacionLeidaUseCase marcarConversacionLeidaUseCase(
             com.ar.crm2.adapter.out.persistence.ConversacionRepositoryAdapter adapter
     ) {

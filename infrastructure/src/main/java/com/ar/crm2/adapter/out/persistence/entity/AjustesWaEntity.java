@@ -42,4 +42,7 @@ public class AjustesWaEntity {
 
     @Column(name = "csat_activo", nullable = false)
     private boolean csatActivo;
+
+    @Column(name = "csat_texto", length = 2000)
+    private String csatTexto;
 }

@@ -14,6 +14,7 @@ import com.ar.crm2.whatsapp.application.conversacion.port.in.CerrarConversacionU
 import com.ar.crm2.whatsapp.application.conversacion.port.in.GetAllConversacionesUseCase;
 import com.ar.crm2.whatsapp.application.conversacion.port.in.GetConversacionByIdUseCase;
 import com.ar.crm2.whatsapp.application.conversacion.port.in.RenombrarConversacionUseCase;
+import com.ar.crm2.whatsapp.application.conversacion.port.in.GetCsatResumenUseCase;
 import com.ar.crm2.whatsapp.application.ia.port.in.SugerirRespuestaUseCase;
 import com.ar.crm2.whatsapp.application.mensaje.command.SendMensajeCommand;
 import com.ar.crm2.whatsapp.application.mensaje.port.in.GetMensajesByConversacionUseCase;
@@ -46,6 +47,13 @@ public class WhatsappConversacionController {
     private final AplicarLabelsUseCase aplicarLabelsUseCase;
     private final RenombrarConversacionUseCase renombrarUseCase;
     private final SugerirRespuestaUseCase sugerirUseCase;
+    private final GetCsatResumenUseCase csatResumenUseCase;
+
+    /** Resumen global de CSAT (promedio y total de calificaciones) para el dashboard. */
+    @GetMapping("/api/wa/conversaciones/csat-resumen")
+    public ResponseEntity<com.ar.crm2.whatsapp.application.conversacion.port.out.CsatResumenPort.CsatResumen> csatResumen() {
+        return ResponseEntity.ok(csatResumenUseCase.get());
+    }
 
     @GetMapping("/api/wa/conversaciones/get-all")
     public ResponseEntity<List<ConversacionWaResponse>> getAll(@RequestParam UUID empresaId) {

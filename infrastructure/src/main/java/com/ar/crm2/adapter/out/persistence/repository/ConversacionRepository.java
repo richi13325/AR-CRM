@@ -22,4 +22,9 @@ public interface ConversacionRepository extends JpaRepository<ConversacionEntity
 
     @Query("SELECT c FROM ConversacionEntity c WHERE c.estado <> 'CERRADA' AND c.ultimoMensajeAt < :limite")
     List<ConversacionEntity> findInactivasDesde(@Param("limite") LocalDateTime limite);
+
+    @Query("SELECT AVG(c.csatScore) FROM ConversacionEntity c WHERE c.csatScore IS NOT NULL")
+    Double avgCsatScore();
+
+    long countByCsatScoreIsNotNull();
 }

@@ -3,6 +3,7 @@ package com.ar.crm2.adapter.out.persistence;
 import com.ar.crm2.adapter.out.persistence.mapper.ConversacionMapper;
 import com.ar.crm2.adapter.out.persistence.repository.ConversacionRepository;
 import com.ar.crm2.model.vo.EmpresaId;
+import com.ar.crm2.whatsapp.application.conversacion.port.out.CsatResumenPort;
 import com.ar.crm2.whatsapp.application.conversacion.port.out.FindAllConversacionesByEmpresaPort;
 import com.ar.crm2.whatsapp.application.conversacion.port.out.FindConversacionByIdPort;
 import com.ar.crm2.whatsapp.application.conversacion.port.out.FindConversacionByTelefonoYCanalPort;
@@ -21,7 +22,7 @@ import java.util.Optional;
 public class ConversacionRepositoryAdapter
         implements SaveConversacionPort, FindConversacionByIdPort,
                    FindConversacionByTelefonoYCanalPort, FindAllConversacionesByEmpresaPort,
-                   FindConversacionesInactivasPort {
+                   FindConversacionesInactivasPort, CsatResumenPort {
 
     private final ConversacionRepository repository;
 
@@ -53,5 +54,10 @@ public class ConversacionRepositoryAdapter
         return repository.findInactivasDesde(limite).stream()
                 .map(ConversacionMapper::toDomain)
                 .toList();
+    }
+
+    @Override
+    public CsatResumen obtener() {
+        return new CsatResumen(repository.avgCsatScore(), repository.countByCsatScoreIsNotNull());
     }
 }

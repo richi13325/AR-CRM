@@ -19,8 +19,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CerrarConversacionService implements CerrarConversacionUseCase {
 
-    // Texto fijo de la encuesta (AjustesWa no lo configura aún; mismo wording que AmbarCRM).
-    private static final String CSAT_TEXTO =
+    // Fallback si el texto configurado viene vacío.
+    private static final String CSAT_TEXTO_DEFAULT =
             "¿Cómo calificarías nuestra atención del 1 (mala) al 5 (excelente)?";
 
     private final FindConversacionByIdPort findPort;
@@ -41,8 +41,10 @@ public class CerrarConversacionService implements CerrarConversacionUseCase {
         if (aj.csatActivo() && cerrada.getCsatEnviadoEn() == null && cerrada.getCsatScore() == null) {
             CanalWhatsapp canal = findCanalPort.findById(cerrada.getCanalId()).orElse(null);
             if (canal != null) {
+                String texto = aj.csatTexto() != null && !aj.csatTexto().isBlank()
+                        ? aj.csatTexto() : CSAT_TEXTO_DEFAULT;
                 try {
-                    sendWhatsappPort.send(canal, cerrada.getNumeroTelefono(), TipoMensaje.TEXTO, CSAT_TEXTO, null);
+                    sendWhatsappPort.send(canal, cerrada.getNumeroTelefono(), TipoMensaje.TEXTO, texto, null);
                     cerrada = cerrada.marcarCsatEnviado();
                 } catch (Exception ignored) {
                     // No bloquear el cierre por un fallo de envío de la encuesta.
