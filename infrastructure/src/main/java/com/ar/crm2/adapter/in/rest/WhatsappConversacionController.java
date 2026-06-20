@@ -14,6 +14,7 @@ import com.ar.crm2.whatsapp.application.conversacion.port.in.CerrarConversacionU
 import com.ar.crm2.whatsapp.application.conversacion.port.in.GetAllConversacionesUseCase;
 import com.ar.crm2.whatsapp.application.conversacion.port.in.GetConversacionByIdUseCase;
 import com.ar.crm2.whatsapp.application.conversacion.port.in.RenombrarConversacionUseCase;
+import com.ar.crm2.whatsapp.application.ia.port.in.SugerirRespuestaUseCase;
 import com.ar.crm2.whatsapp.application.mensaje.command.SendMensajeCommand;
 import com.ar.crm2.whatsapp.application.mensaje.port.in.GetMensajesByConversacionUseCase;
 import com.ar.crm2.whatsapp.application.mensaje.port.in.SendMensajeUseCase;
@@ -44,6 +45,7 @@ public class WhatsappConversacionController {
     private final com.ar.crm2.whatsapp.application.conversacion.port.in.ReabrirConversacionUseCase reabrirUseCase;
     private final AplicarLabelsUseCase aplicarLabelsUseCase;
     private final RenombrarConversacionUseCase renombrarUseCase;
+    private final SugerirRespuestaUseCase sugerirUseCase;
 
     @GetMapping("/api/wa/conversaciones/get-all")
     public ResponseEntity<List<ConversacionWaResponse>> getAll(@RequestParam UUID empresaId) {
@@ -110,6 +112,12 @@ public class WhatsappConversacionController {
     }
 
     // Renombra manualmente al contacto de la conversación (y el Contacto del CRM vinculado).
+    /** Sugiere una respuesta con IA a partir del historial reciente de la conversación. */
+    @PostMapping("/api/wa/conversaciones/{id}/sugerir")
+    public ResponseEntity<java.util.Map<String, String>> sugerir(@PathVariable UUID id) {
+        return ResponseEntity.ok(java.util.Map.of("sugerencia", sugerirUseCase.sugerir(id)));
+    }
+
     @PutMapping("/api/wa/conversaciones/nombre")
     public ResponseEntity<ConversacionWaResponse> renombrar(
             @RequestParam UUID id, @Valid @RequestBody RenombrarConversacionRequest request) {

@@ -962,6 +962,23 @@ public class WiringConfig {
     }
 
     @Bean
+    public com.ar.crm2.adapter.out.ia.AnthropicSugerenciaAdapter anthropicSugerenciaAdapter(
+            org.springframework.web.reactive.function.client.WebClient.Builder webClientBuilder,
+            @org.springframework.beans.factory.annotation.Value("${anthropic.api-key:}") String apiKey,
+            @org.springframework.beans.factory.annotation.Value("${anthropic.model:claude-haiku-4-5-20251001}") String model
+    ) {
+        return new com.ar.crm2.adapter.out.ia.AnthropicSugerenciaAdapter(webClientBuilder, apiKey, model);
+    }
+
+    @Bean
+    public com.ar.crm2.whatsapp.application.ia.port.in.SugerirRespuestaUseCase sugerirRespuestaUseCase(
+            com.ar.crm2.adapter.out.persistence.MensajeRepositoryAdapter mensajeAdapter,
+            com.ar.crm2.adapter.out.ia.AnthropicSugerenciaAdapter iaAdapter
+    ) {
+        return new com.ar.crm2.whatsapp.application.ia.service.SugerirRespuestaService(mensajeAdapter, iaAdapter);
+    }
+
+    @Bean
     public com.ar.crm2.adapter.out.media.LocalMediaStorageAdapter localMediaStorageAdapter() {
         return new com.ar.crm2.adapter.out.media.LocalMediaStorageAdapter();
     }
