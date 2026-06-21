@@ -29,4 +29,7 @@ public interface EvolutionConectarPort {
      * pública configurada (ej. dev local sin túnel expuesto).
      */
     void configurarWebhook(String apiUrl, String apiKey, String instanceName, UUID canalId);
+
+    /** URL pública de la foto de perfil de WhatsApp del contacto. null si no tiene o Evolution falla. */
+    String fetchFotoPerfil(String apiUrl, String apiKey, String instanceName, String numero);
 }

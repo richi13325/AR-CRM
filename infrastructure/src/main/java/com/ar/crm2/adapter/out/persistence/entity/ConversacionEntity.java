@@ -62,6 +62,9 @@ public class ConversacionEntity {
     @Column(name = "aviso_fuera_en")
     private LocalDateTime avisoFueraEn;
 
+    @Column(name = "foto_url", length = 500)
+    private String fotoUrl;
+
     @Column(name = "creado_en", nullable = false)
     private LocalDateTime creadoEn;
 

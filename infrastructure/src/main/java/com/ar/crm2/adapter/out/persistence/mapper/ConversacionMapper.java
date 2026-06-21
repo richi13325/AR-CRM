@@ -32,6 +32,7 @@ public final class ConversacionMapper {
                 .csatScore(domain.getCsatScore())
                 .csatEnviadoEn(domain.getCsatEnviadoEn())
                 .avisoFueraEn(domain.getAvisoFueraEn())
+                .fotoUrl(domain.getFotoUrl())
                 .creadoEn(domain.getCreadoEn())
                 .actualizadoEn(domain.getActualizadoEn())
                 .build();
@@ -54,6 +55,7 @@ public final class ConversacionMapper {
                 entity.getCsatScore(),
                 entity.getCsatEnviadoEn(),
                 entity.getAvisoFueraEn(),
+                entity.getFotoUrl(),
                 entity.getCreadoEn(),
                 entity.getActualizadoEn()
         );

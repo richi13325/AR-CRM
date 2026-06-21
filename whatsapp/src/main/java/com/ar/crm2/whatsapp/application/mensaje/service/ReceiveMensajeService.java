@@ -69,6 +69,8 @@ public class ReceiveMensajeService implements ReceiveMensajeUseCase {
         // ¿Primer mensaje de esta conversación? (antes de guardar)
         boolean conversacionNueva = findMensajesPort.findByConversacionId(conversacion.getId()).isEmpty();
 
+        if (conversacionNueva) conversacion = obtenerFotoPerfilSiAplica(conversacion, canal);
+
         conversacion = vincularContactoSiFalta(conversacion, command, canal);
         // El pushName solo identifica al contacto en mensajes ENTRANTES (en los salientes
         // es el nombre del propio dueño), así que solo renombramos con entrantes.
@@ -226,6 +228,19 @@ public class ReceiveMensajeService implements ReceiveMensajeUseCase {
                 canal.getApiUrl(), canal.getApiKey(), canal.getInstanceName(), command.rawMensaje());
         if (media == null) return null;
         return mediaStoragePort.guardarBase64(media.base64(), media.mime());
+    }
+
+    // Best-effort, solo para conversaciones nuevas (evita una llamada a Evolution por mensaje).
+    private Conversacion obtenerFotoPerfilSiAplica(Conversacion conversacion, CanalWhatsapp canal) {
+        if (canal == null) return conversacion;
+        try {
+            String url = evolutionPort.fetchFotoPerfil(
+                    canal.getApiUrl(), canal.getApiKey(), canal.getInstanceName(), conversacion.getNumeroTelefono());
+            if (url == null) return conversacion;
+            return saveConversacionPort.save(conversacion.conFoto(url));
+        } catch (Exception e) {
+            return conversacion;
+        }
     }
 
     // Igual que en SyncChatsService: cada conversación queda vinculada a un

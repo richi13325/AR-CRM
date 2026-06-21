@@ -285,7 +285,7 @@ public class EvolutionWhatsappAdapter implements SendWhatsappMessagePort, Evolut
                                     "Content-Type", "application/json"),
                             "byEvents", false,
                             "base64", false,
-                            "events", List.of("MESSAGES_UPSERT", "MESSAGES_UPDATE")
+                            "events", List.of("MESSAGES_UPSERT", "MESSAGES_UPDATE", "PRESENCE_UPDATE")
                     )))
                     .retrieve()
                     .bodyToMono(Map.class)
@@ -295,6 +295,25 @@ public class EvolutionWhatsappAdapter implements SendWhatsappMessagePort, Evolut
             // funcionando con sync manual; no bloqueamos la conexión por esto.
             log.warn("Evolution configurarWebhook fallo (instance={}): {} — el canal seguira sin push en vivo",
                     instanceName, e.getMessage());
+        }
+    }
+
+    @Override
+    public String fetchFotoPerfil(String apiUrl, String apiKey, String instanceName, String numero) {
+        WebClient client = buildClient(apiUrl, apiKey);
+        try {
+            Map<?, ?> response = client.post()
+                    .uri("/chat/fetchProfilePictureUrl/{instance}", instanceName)
+                    .bodyValue(Map.of("number", numero))
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
+            if (response == null) return null;
+            Object url = response.get("profilePictureUrl");
+            return url != null && !url.toString().isBlank() ? url.toString() : null;
+        } catch (Exception e) {
+            log.warn("Evolution fetchFotoPerfil fallo (instance={}, numero={}): {}", instanceName, numero, e.getMessage());
+            return null;
         }
     }
 

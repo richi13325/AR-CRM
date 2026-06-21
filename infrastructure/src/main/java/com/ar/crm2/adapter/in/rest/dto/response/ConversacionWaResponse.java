@@ -21,6 +21,7 @@ public record ConversacionWaResponse(
         Set<String> labels,
         boolean botActivo,
         Integer csatScore,
+        String fotoUrl,
         LocalDateTime creadoEn,
         LocalDateTime actualizadoEn
 ) {
@@ -39,6 +40,7 @@ public record ConversacionWaResponse(
                 c.getLabels(),
                 c.isBotActivo(),
                 c.getCsatScore(),
+                c.getFotoUrl(),
                 c.getCreadoEn(),
                 c.getActualizadoEn()
         );

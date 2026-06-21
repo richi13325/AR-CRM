@@ -96,6 +96,7 @@ ALTER TABLE wa_conversacion ADD COLUMN IF NOT EXISTS bot_activo BOOLEAN NOT NULL
 ALTER TABLE wa_conversacion ADD COLUMN IF NOT EXISTS csat_score INT;
 ALTER TABLE wa_conversacion ADD COLUMN IF NOT EXISTS csat_enviado_en TIMESTAMP;
 ALTER TABLE wa_conversacion ADD COLUMN IF NOT EXISTS aviso_fuera_en TIMESTAMP;
+ALTER TABLE wa_conversacion ADD COLUMN IF NOT EXISTS foto_url VARCHAR(500);
 
 CREATE INDEX IF NOT EXISTS idx_wa_conversacion_canal
     ON wa_conversacion (canal_id);

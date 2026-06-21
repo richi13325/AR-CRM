@@ -43,6 +43,7 @@ public class Conversacion {
     private final Integer csatScore;              // nullable — calificación 1-5 del contacto
     private final LocalDateTime csatEnviadoEn;    // nullable — cuándo se mandó la encuesta CSAT
     private final LocalDateTime avisoFueraEn;     // nullable — último aviso de fuera de horario (throttle)
+    private final String fotoUrl;                 // nullable — foto de perfil de WhatsApp del contacto
     private final LocalDateTime creadoEn;
     private final LocalDateTime actualizadoEn;
 
@@ -71,6 +72,7 @@ public class Conversacion {
                 .csatScore(null)
                 .csatEnviadoEn(null)
                 .avisoFueraEn(null)
+                .fotoUrl(null)
                 .creadoEn(now)
                 .actualizadoEn(now)
                 .build();
@@ -92,6 +94,7 @@ public class Conversacion {
             Integer csatScore,
             LocalDateTime csatEnviadoEn,
             LocalDateTime avisoFueraEn,
+            String fotoUrl,
             LocalDateTime creadoEn,
             LocalDateTime actualizadoEn
     ) {
@@ -103,6 +106,7 @@ public class Conversacion {
                 .labels(labels != null ? Set.copyOf(labels) : Set.of())
                 .botActivo(botActivo)
                 .csatScore(csatScore).csatEnviadoEn(csatEnviadoEn).avisoFueraEn(avisoFueraEn)
+                .fotoUrl(fotoUrl)
                 .creadoEn(creadoEn).actualizadoEn(actualizadoEn)
                 .build();
     }
@@ -192,6 +196,12 @@ public class Conversacion {
         return toBuilder().avisoFueraEn(LocalDateTime.now()).build();
     }
 
+    /** Guarda la foto de perfil de WhatsApp del contacto (best-effort, puede ser null). */
+    public Conversacion conFoto(String url) {
+        if (url == null || url.isBlank()) return this;
+        return toBuilder().fotoUrl(url).build();
+    }
+
     private ConversacionBuilder toBuilder() {
         return Conversacion.builder()
                 .id(this.id).canalId(this.canalId).contactoId(this.contactoId)
@@ -200,6 +210,7 @@ public class Conversacion {
                 .noLeidos(this.noLeidos).ultimoMensajeAt(this.ultimoMensajeAt).ultimoMensajeTexto(this.ultimoMensajeTexto)
                 .labels(this.labels).botActivo(this.botActivo)
                 .csatScore(this.csatScore).csatEnviadoEn(this.csatEnviadoEn).avisoFueraEn(this.avisoFueraEn)
+                .fotoUrl(this.fotoUrl)
                 .creadoEn(this.creadoEn).actualizadoEn(this.actualizadoEn);
     }
 

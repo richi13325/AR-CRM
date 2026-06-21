@@ -1,10 +1,12 @@
 package com.ar.crm2.adapter.out.sse;
 
+import com.ar.crm2.whatsapp.application.conversacion.port.out.NotifyEscribiendoPort;
 import com.ar.crm2.whatsapp.application.grupo.port.out.NotifyMensajeGrupoPort;
 import com.ar.crm2.whatsapp.application.mensaje.port.out.NotifyEstadoMensajePort;
 import com.ar.crm2.whatsapp.application.mensaje.port.out.NotifyNewMensajePort;
 import com.ar.crm2.whatsapp.domain.entity.Mensaje;
 import com.ar.crm2.whatsapp.domain.entity.MensajeGrupo;
+import com.ar.crm2.whatsapp.domain.vo.ConversacionId;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -13,9 +15,16 @@ import java.util.Map;
 
 @Slf4j
 @RequiredArgsConstructor
-public class SseMensajeNotifyAdapter implements NotifyNewMensajePort, NotifyMensajeGrupoPort, NotifyEstadoMensajePort {
+public class SseMensajeNotifyAdapter implements NotifyNewMensajePort, NotifyMensajeGrupoPort, NotifyEstadoMensajePort, NotifyEscribiendoPort {
 
     private final SseEmitterRegistry registry;
+
+    @Override
+    public void notificarEscribiendo(ConversacionId conversacionId) {
+        broadcast(SseEmitter.event()
+                .name("escribiendo")
+                .data(Map.of("conversacionId", conversacionId.value().toString())));
+    }
 
     @Override
     public void notifyEstado(Mensaje mensaje) {

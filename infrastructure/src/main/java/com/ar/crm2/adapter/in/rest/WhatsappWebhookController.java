@@ -2,11 +2,14 @@ package com.ar.crm2.adapter.in.rest;
 
 import com.ar.crm2.adapter.in.rest.dto.request.ReceiveWebhookRequest;
 import com.ar.crm2.adapter.in.rest.dto.response.MensajeWaResponse;
+import com.ar.crm2.whatsapp.application.conversacion.port.out.FindConversacionByTelefonoYCanalPort;
+import com.ar.crm2.whatsapp.application.conversacion.port.out.NotifyEscribiendoPort;
 import com.ar.crm2.whatsapp.application.grupo.service.GrupoService;
 import com.ar.crm2.whatsapp.application.mensaje.command.ReceiveMensajeCommand;
 import com.ar.crm2.whatsapp.application.mensaje.port.in.ReceiveMensajeUseCase;
 import com.ar.crm2.whatsapp.domain.entity.Mensaje;
 import com.ar.crm2.whatsapp.domain.enums.TipoMensaje;
+import com.ar.crm2.whatsapp.domain.vo.CanalWhatsappId;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -37,6 +40,8 @@ public class WhatsappWebhookController {
     private final ReceiveMensajeUseCase receiveMensajeUseCase;
     private final GrupoService grupoService;
     private final com.ar.crm2.whatsapp.application.mensaje.service.ActualizarStatusMensajeService actualizarStatusMensajeService;
+    private final FindConversacionByTelefonoYCanalPort findConversacionPort;
+    private final NotifyEscribiendoPort notifyEscribiendoPort;
 
     @PostMapping
     public ResponseEntity<?> receive(@Valid @RequestBody ReceiveWebhookRequest request) {
@@ -81,6 +86,16 @@ public class WhatsappWebhookController {
 
         log.info("Webhook Evolution canal={} event={} items={}", canalId, event, items.size());
 
+        // Indicador "escribiendo" (best-effort, no se persiste nada).
+        if (event.contains("PRESENCE_UPDATE")) {
+            try {
+                procesarPresenceUpdate(canalId, payload);
+            } catch (Exception e) {
+                log.debug("Error procesando PRESENCE_UPDATE: {}", e.getMessage());
+            }
+            return ResponseEntity.ok().build();
+        }
+
         // Acuses de estado (enviado/entregado/leído) de mensajes salientes.
         if (event.contains("MESSAGES_UPDATE")) {
             for (Map<String, Object> it : items) {
@@ -109,6 +124,27 @@ public class WhatsappWebhookController {
         }
 
         return ResponseEntity.ok().build();
+    }
+
+    // Payload de Evolution: data = {id: remoteJid, presences: {jid: {lastKnownPresence: "composing"}}}.
+    @SuppressWarnings("unchecked")
+    private void procesarPresenceUpdate(UUID canalId, Map<String, Object> payload) {
+        Object data = payload.get("data");
+        if (!(data instanceof Map<?, ?> d)) return;
+
+        Object presences = d.get("presences");
+        if (!(presences instanceof Map<?, ?> p)) return;
+
+        boolean escribiendo = p.values().stream().anyMatch(v ->
+                v instanceof Map<?, ?> pv && "composing".equals(pv.get("lastKnownPresence")));
+        if (!escribiendo) return;
+
+        String remoteJid = (String) d.get("id");
+        String telefono = com.ar.crm2.whatsapp.application.shared.JidUtils.limpiarTelefono(remoteJid);
+        if (telefono == null) return;
+
+        findConversacionPort.findByTelefonoAndCanal(telefono, CanalWhatsappId.from(canalId))
+                .ifPresent(conv -> notifyEscribiendoPort.notificarEscribiendo(conv.getId()));
     }
 
     @SuppressWarnings("unchecked")
