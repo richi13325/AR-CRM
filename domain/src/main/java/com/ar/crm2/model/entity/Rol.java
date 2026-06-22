@@ -40,9 +40,10 @@ public class Rol {
         String nombre,
         String descripcion
     ) {
+        DomainAssert.lengthBetween(nombre, "nombre", 1, 80);
         return Rol.builder()
             .id(RolId.create())
-            .nombre(DomainAssert.lengthBetween(nombre, "nombre", 1, 80))
+            .nombre(nombre.trim())
             .descripcion(descripcion)
             .activo(true)
             .build();
@@ -57,9 +58,12 @@ public class Rol {
         String descripcion,
         boolean activo
     ) {
+        DomainAssert.notNull(id, "id");
+        DomainAssert.lengthBetween(nombre, "nombre", 1, 80);
+
         return Rol.builder()
-            .id(DomainAssert.notNull(id, "id"))
-            .nombre(DomainAssert.lengthBetween(nombre, "nombre", 1, 80))
+            .id(id)
+            .nombre(nombre.trim())
             .descripcion(descripcion)
             .activo(activo)
             .build();

@@ -2,13 +2,13 @@ package com.ar.crm2.application.columna.service;
 
 import com.ar.crm2.application.columna.command.DeleteColumnaCommand;
 import com.ar.crm2.application.columna.exception.ColumnaHasAssociatedFichasException;
-import com.ar.crm2.exception.ColumnaEnUsoNoPuedeEliminarseException;
 import com.ar.crm2.application.columna.exception.ColumnaNotFoundException;
 import com.ar.crm2.application.columna.port.in.DeleteColumnaUseCase;
 import com.ar.crm2.application.columna.port.out.DeleteColumnaByIdPort;
 import com.ar.crm2.application.columna.port.out.ExistsColumnaAsignadaPort;
-import com.ar.crm2.application.columna.port.out.ExistsFichasByColumnaIdPort;
 import com.ar.crm2.application.columna.port.out.FindColumnaByIdPort;
+import com.ar.crm2.application.ficha.port.out.ExistsFichasByColumnaIdPort;
+import com.ar.crm2.exception.ColumnaEnUsoNoPuedeEliminarseException;
 import com.ar.crm2.model.vo.ColumnaId;
 import lombok.RequiredArgsConstructor;
 

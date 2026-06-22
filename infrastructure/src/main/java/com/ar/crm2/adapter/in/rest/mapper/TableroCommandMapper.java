@@ -30,8 +30,8 @@ public final class TableroCommandMapper {
      * (token-provided) rather than the request body — eliminating the spoofable field.
      *
      * <p>Authorization: any authenticated actor may create a Tablero. The mapper
-     * prefers {@code superUsuarioId} (preserves superusuario path) and falls back
-     * to {@code usuarioId} (allows a normal usuario to create). Throws
+     * resolves a generic authenticated actor id by preferring
+     * {@code superUsuarioId} and falling back to {@code usuarioId}. Throws
      * {@link AuthenticatedUsuarioRequiredException} if the actor context is
      * missing or carries neither id claim.
      */

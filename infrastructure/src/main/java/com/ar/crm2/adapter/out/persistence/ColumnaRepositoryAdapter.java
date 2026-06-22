@@ -3,7 +3,9 @@ package com.ar.crm2.adapter.out.persistence;
 import com.ar.crm2.adapter.out.persistence.entity.ColumnaEntity;
 import com.ar.crm2.adapter.out.persistence.mapper.ColumnaMapper;
 import com.ar.crm2.adapter.out.persistence.repository.ColumnaRepository;
+import com.ar.crm2.adapter.out.persistence.repository.TableroRepository;
 import com.ar.crm2.application.columna.port.out.DeleteColumnaByIdPort;
+import com.ar.crm2.application.columna.port.out.ExistsColumnaAsignadaPort;
 import com.ar.crm2.application.columna.port.out.FindAllColumnasPort;
 import com.ar.crm2.application.columna.port.out.FindColumnaByIdPort;
 import com.ar.crm2.application.columna.port.out.SaveColumnaPort;
@@ -14,10 +16,19 @@ import lombok.RequiredArgsConstructor;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Adapter that fulfills every Columna outbound port. Also satisfies
+ * {@link ExistsColumnaAsignadaPort} by delegating to the board-side query on
+ * {@link TableroRepository}; the {@code TableroRepository} is an infrastructure
+ * detail and does not leak across the port boundary.
+ */
 @RequiredArgsConstructor
-public class ColumnaRepositoryAdapter implements SaveColumnaPort, FindAllColumnasPort, FindColumnaByIdPort, DeleteColumnaByIdPort {
+public class ColumnaRepositoryAdapter
+        implements SaveColumnaPort, FindAllColumnasPort, FindColumnaByIdPort, DeleteColumnaByIdPort,
+                   ExistsColumnaAsignadaPort {
 
     private final ColumnaRepository repository;
+    private final TableroRepository tableroRepository;
 
     @Override
     public Columna save(Columna columna) {
@@ -42,5 +53,10 @@ public class ColumnaRepositoryAdapter implements SaveColumnaPort, FindAllColumna
     @Override
     public void deleteById(ColumnaId id) {
         repository.deleteById(id.value().toString());
+    }
+
+    @Override
+    public boolean existsByColumnaId(ColumnaId columnaId) {
+        return tableroRepository.existsByColumnasTableroColumnaId(columnaId.value().toString());
     }
 }

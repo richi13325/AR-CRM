@@ -14,6 +14,8 @@ import lombok.ToString;
 import com.ar.crm2.model.enums.TipoColumna;
 import com.ar.crm2.model.enums.TipoTablero;
 
+import java.util.List;
+
 /**
  * Domain entity for Columna.
  *
@@ -43,11 +45,11 @@ public class Columna {
     /**
      * Creates a new Columna.
      *
-     * <p>Authorization rules:
-     * <ul>
-     *   <li>Si tipoColumna == PREDETERMINADA: superUsuarioId es obligatorio.</li>
-     *   <li>Si tipoColumna == PERSONALIZADA: superUsuarioId es opcional (nullable).</li>
-     * </ul>
+     * <p>Authorization rules are intentionally NOT enforced in the domain
+     * entity. Whether a caller may create a PREDETERMINADA or PERSONALIZADA
+     * catalog column is an application/security concern. The legacy
+     * {@code superUsuarioId} parameter is accepted for caller compatibility
+     * but is not part of this entity's invariants.
      *
      * <p>Validation:
      * <ul>
@@ -61,7 +63,7 @@ public class Columna {
      *   <li>color null -> "#FFFFFF"</li>
      * </ul>
      *
-     * @param superUsuarioId optional for PERSONALIZADA, mandatory for PREDETERMINADA
+     * @param superUsuarioId legacy caller context; ignored by domain invariants
      * @param nombre          mandatory - column name, 1-80 chars
      * @param tipoTablero     mandatory - type of board (TAREAS or TRATOS)
      * @param tipoColumna     mandatory - type of column (PREDETERMINADA or PERSONALIZADA)
@@ -80,17 +82,13 @@ public class Columna {
         DomainAssert.notNull(tipoColumna, "tipoColumna");
         String normalizedNombre = validarNombre(nombre, existeOtraColumnaConMismoNombre);
 
-        if (TipoColumna.PREDETERMINADA.equals(tipoColumna)) {
-            DomainAssert.notNull(superUsuarioId, "superUsuarioId");
-        }
-
         String normalizedColor = (color == null) ? "#FFFFFF" : color;
         DomainAssert.lengthBetween(normalizedColor, "color", 1, 7);
 
         return new Columna(
             ColumnaId.create(),
             normalizedNombre,
-            normalizedColor,
+            normalizedColor.trim(),
             tipoTablero,
             tipoColumna
         );
@@ -115,13 +113,17 @@ public class Columna {
         boolean existeOtraColumnaConMismoNombre
     ) {
         String normalizedColor = (color == null) ? "#FFFFFF" : color;
+        DomainAssert.notNull(id, "id");
+        DomainAssert.notNull(tipoTablero, "tipoTablero");
+        DomainAssert.notNull(tipoColumna, "tipoColumna");
+        DomainAssert.lengthBetween(normalizedColor, "color", 1, 7);
 
         return new Columna(
-            DomainAssert.notNull(id, "id"),
+            id,
             validarNombre(nombre, existeOtraColumnaConMismoNombre),
-            DomainAssert.lengthBetween(normalizedColor, "color", 1, 7),
-            DomainAssert.notNull(tipoTablero, "tipoTablero"),
-            DomainAssert.notNull(tipoColumna, "tipoColumna")
+            normalizedColor.trim(),
+            tipoTablero,
+            tipoColumna
         );
     }
 
@@ -136,15 +138,113 @@ public class Columna {
      *   <li>Duplicate guard — throws {@link NombreColumnaYaExisteException} if flag is true</li>
      * </ol>
      *
-     * @return the normalized (already-trimmed) name returned by DomainAssert.lengthBetween
+     * @return the normalized (trimmed) name
      * @throws NombreColumnaYaExisteException if existeOtraColumnaConMismoNombre is true
      */
     private static String validarNombre(String nombre, boolean existeOtraColumnaConMismoNombre) {
-        String normalized = DomainAssert.lengthBetween(nombre, "nombre", 1, 80);
+        DomainAssert.lengthBetween(nombre, "nombre", 1, 80);
         if (existeOtraColumnaConMismoNombre) {
             throw new NombreColumnaYaExisteException();
         }
-        return normalized;
+        return nombre.trim();
+    }
+
+    // ── Catalog naming helpers (domain-owned) ─────────────────────────
+
+    /**
+     * Normalizes a column name for duplicate-scope evaluation. Validates the
+     * length range 1-80 via {@link DomainAssert#lengthBetween} and returns
+     * the trimmed name.
+     *
+     * @param nombre the raw column name
+     * @return the normalized (trimmed, length-checked) name
+     * @throws com.ar.crm2.exception.InvariantViolationException if nombre is null, blank, or out of range
+     */
+    public static String normalize(String nombre) {
+        DomainAssert.lengthBetween(nombre, "nombre", 1, 80);
+        return nombre.trim();
+    }
+
+    /**
+     * Evaluates whether a new column with the given (tipoTablero, normalized nombre)
+     * would collide with any existing catalog column for the same {@link TipoTablero}.
+     *
+     * <p>Used by application services that previously delegated to the now-removed
+     * {@code ColumnaNamePolicy} helper. The duplicate check is a domain responsibility
+     * because the catalog identity (tipoTablero + normalized name) lives here.
+     *
+     * @param columnas     the existing catalog (used to scan for collisions)
+     * @param tipoTablero  the board type the new column belongs to
+     * @param nombre       the proposed name (will be normalized internally)
+     * @return true if any existing column for the same tipoTablero has the same normalized name
+     */
+    public static boolean hasDuplicateForCreate(
+        List<Columna> columnas,
+        TipoTablero tipoTablero,
+        String nombre
+    ) {
+        DomainAssert.notNull(columnas, "columnas");
+        DomainAssert.notNull(tipoTablero, "tipoTablero");
+        String normalizedNombre = normalize(nombre);
+        return columnas.stream()
+            .filter(columna -> columna.getTipoTablero() == tipoTablero)
+            .anyMatch(columna -> normalize(columna.getColumnanombre()).equals(normalizedNombre));
+    }
+
+    /**
+     * Evaluates whether editing the given column to the new (tipoTablero, normalized nombre)
+     * would collide with any OTHER existing catalog column for the same {@link TipoTablero}.
+     *
+     * <p>The column identified by {@code self} is excluded from the comparison so that
+     * editing a column to its own current name does not report a false duplicate.
+     *
+     * @param columnas     the existing catalog
+     * @param self         the id of the column being edited (excluded from comparison)
+     * @param tipoTablero  the board type of the edited column
+     * @param nombre       the proposed new name
+     * @return true if any OTHER existing column for the same tipoTablero has the same normalized name
+     */
+    public static boolean hasDuplicateForEdit(
+        List<Columna> columnas,
+        ColumnaId self,
+        TipoTablero tipoTablero,
+        String nombre
+    ) {
+        DomainAssert.notNull(columnas, "columnas");
+        DomainAssert.notNull(self, "self");
+        DomainAssert.notNull(tipoTablero, "tipoTablero");
+        String normalizedNombre = normalize(nombre);
+        return columnas.stream()
+            .filter(columna -> columna.getTipoTablero() == tipoTablero)
+            .filter(columna -> !columna.getId().equals(self))
+            .anyMatch(columna -> normalize(columna.getColumnanombre()).equals(normalizedNombre));
+    }
+
+    /**
+     * Determines whether this column matches the requested default catalog slot.
+     *
+     * <p>A column matches a default catalog slot when it:
+     * <ul>
+     *   <li>Belongs to the given {@link TipoTablero}</li>
+     *   <li>Has {@link TipoColumna#PREDETERMINADA} type</li>
+     *   <li>Has a name that normalizes to the requested default name</li>
+     * </ul>
+     *
+     * <p>Used by the application service to reuse existing PREDETERMINADA catalog
+     * entries when assembling a new board's default column shape. The default
+     * catalog matching semantics is a domain responsibility because the column
+     * identity rules live here.
+     *
+     * @param tipoTablero  the board type being assembled
+     * @param nombre       the default column name being looked up (will be normalized)
+     * @return true if this column matches the requested default catalog slot
+     */
+    public boolean matchesDefaultCatalog(TipoTablero tipoTablero, String nombre) {
+        DomainAssert.notNull(tipoTablero, "tipoTablero");
+        String normalizedNombre = normalize(nombre);
+        return this.tipoTablero == tipoTablero
+            && this.tipoColumna == TipoColumna.PREDETERMINADA
+            && normalize(this.columnanombre).equals(normalizedNombre);
     }
 
     // ── Domain helpers ─────────────────────────────────────────────

@@ -66,15 +66,22 @@ public class Empresa {
         UsuarioId creadoPor,
         String notas
     ) {
+        DomainAssert.lengthBetween(nombre, "nombre", 1, 200);
+
+        String normalizedPaginaWeb = normalizeOptionalLink(paginaWeb, "paginaWeb");
+        String normalizedFacebook = normalizeOptionalLink(facebook, "facebook");
+        String normalizedInstagram = normalizeOptionalLink(instagram, "instagram");
+        String normalizedTwitter = normalizeOptionalLink(twitter, "twitter");
+
         return Empresa.builder()
             .id(EmpresaId.create())
-            .nombre(DomainAssert.lengthBetween(nombre, "nombre", 1, 200))
+            .nombre(nombre.trim())
             .sector(sector)
             .telefono(telefono)
-            .paginaWeb(paginaWeb == null || paginaWeb.isBlank() ? null : DomainAssert.link(paginaWeb, "paginaWeb"))
-            .facebook(facebook == null || facebook.isBlank() ? null : DomainAssert.link(facebook, "facebook"))
-            .instagram(instagram == null || instagram.isBlank() ? null : DomainAssert.link(instagram, "instagram"))
-            .twitter(twitter == null || twitter.isBlank() ? null : DomainAssert.link(twitter, "twitter"))
+            .paginaWeb(normalizedPaginaWeb)
+            .facebook(normalizedFacebook)
+            .instagram(normalizedInstagram)
+            .twitter(normalizedTwitter)
             .estadoRelacion(estadoRelacion)
             .responsableId(responsableId)
             .creadoPor(creadoPor)
@@ -102,20 +109,29 @@ public class Empresa {
         LocalDateTime creadoEn,
         LocalDateTime actualizadoEn
     ) {
+        DomainAssert.notNull(id, "id");
+        DomainAssert.notNull(creadoEn, "creadoEn");
+        DomainAssert.lengthBetween(nombre, "nombre", 1, 200);
+
+        String normalizedPaginaWeb = normalizeOptionalLink(paginaWeb, "paginaWeb");
+        String normalizedFacebook = normalizeOptionalLink(facebook, "facebook");
+        String normalizedInstagram = normalizeOptionalLink(instagram, "instagram");
+        String normalizedTwitter = normalizeOptionalLink(twitter, "twitter");
+
         return Empresa.builder()
-            .id(DomainAssert.notNull(id, "id"))
-            .nombre(DomainAssert.lengthBetween(nombre, "nombre", 1, 200))
+            .id(id)
+            .nombre(nombre.trim())
             .sector(sector)
             .telefono(telefono)
-            .paginaWeb(paginaWeb == null || paginaWeb.isBlank() ? null : DomainAssert.link(paginaWeb, "paginaWeb"))
-            .facebook(facebook == null || facebook.isBlank() ? null : DomainAssert.link(facebook, "facebook"))
-            .instagram(instagram == null || instagram.isBlank() ? null : DomainAssert.link(instagram, "instagram"))
-            .twitter(twitter == null || twitter.isBlank() ? null : DomainAssert.link(twitter, "twitter"))
+            .paginaWeb(normalizedPaginaWeb)
+            .facebook(normalizedFacebook)
+            .instagram(normalizedInstagram)
+            .twitter(normalizedTwitter)
             .estadoRelacion(estadoRelacion)
             .responsableId(responsableId)
             .creadoPor(creadoPor)
             .notas(notas)
-            .creadoEn(DomainAssert.notNull(creadoEn, "creadoEn"))
+            .creadoEn(creadoEn)
             .actualizadoEn(actualizadoEn)
             .build();
     }
@@ -173,6 +189,20 @@ public class Empresa {
                 .creadoEn(this.creadoEn)
                 .actualizadoEn(LocalDateTime.now())
                 .build();
+    }
+
+    // ── Internal helpers ──────────────────────────────────────────
+
+    /**
+     * Normalizes an optional URL/social-link field: null/blank → null,
+     * otherwise validates the link format and trims the value.
+     */
+    private static String normalizeOptionalLink(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        DomainAssert.link(value, fieldName);
+        return value.trim();
     }
 
     }

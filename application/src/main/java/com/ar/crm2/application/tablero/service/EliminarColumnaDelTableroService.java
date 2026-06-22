@@ -2,8 +2,8 @@ package com.ar.crm2.application.tablero.service;
 
 import com.ar.crm2.application.tablero.command.EliminarColumnaDelTableroCommand;
 import com.ar.crm2.application.tablero.exception.TableroNotFoundException;
+import com.ar.crm2.application.ficha.port.out.ExistsFichasByColumnaIdPort;
 import com.ar.crm2.application.tablero.port.in.EliminarColumnaDelTableroUseCase;
-import com.ar.crm2.application.tablero.port.out.ExistsFichasByColumnaIdPort;
 import com.ar.crm2.application.tablero.port.out.FindTableroByIdPort;
 import com.ar.crm2.application.tablero.port.out.SaveTableroPort;
 import com.ar.crm2.model.entity.Tablero;

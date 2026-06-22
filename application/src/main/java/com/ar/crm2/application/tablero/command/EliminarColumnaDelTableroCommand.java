@@ -5,7 +5,7 @@ import java.util.UUID;
 /**
  * Command to remove a column from an existing Tablero.
  *
- * <p>The application layer queries {@link com.ar.crm2.application.tablero.port.out.ExistsFichasByColumnaIdPort}
+ * <p>The application layer queries {@link com.ar.crm2.application.ficha.port.out.ExistsFichasByColumnaIdPort}
  * before calling the domain behavior, passing the result as {@code tieneFichas} to
  * {@link com.ar.crm2.model.entity.Tablero#eliminarColumnaDelTablero}.
  */

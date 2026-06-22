@@ -64,16 +64,17 @@ public final class ColumnaTablero {
     ) {
         DomainAssert.notNull(columnaId, "columnaId");
         DomainAssert.notNull(tipoTablero, "tipoTablero");
-        DomainAssert.notNull(limiteWip, "limiteWip");
-        DomainAssert.notNull(totalValorEstimado, "totalValorEstimado");
-
-        String normalizedNota = nota == null || nota.isBlank()
-            ? null
-            : DomainAssert.lengthBetween(nota, "nota", 1, 500);
         validarLimiteWip(limiteWip);
         validarTotalValorEstimado(totalValorEstimado, tipoTablero);
+        String resolvedNota = normalizeOptionalNota(nota);
 
-        return new ColumnaTablero(columnaId, tipoTablero, limiteWip, normalizedNota, totalValorEstimado);
+        return new ColumnaTablero(
+            columnaId,
+            tipoTablero,
+            limiteWip,
+            resolvedNota,
+            totalValorEstimado
+        );
     }
 
     /**
@@ -98,60 +99,59 @@ public final class ColumnaTablero {
     ) {
         DomainAssert.notNull(columnaId, "columnaId");
         DomainAssert.notNull(tipoTablero, "tipoTablero");
-        DomainAssert.notNull(limiteWip, "limiteWip");
-        DomainAssert.notNull(totalValorEstimado, "totalValorEstimado");
-
-        String normalizedNota = nota == null || nota.isBlank()
-            ? null
-            : DomainAssert.lengthBetween(nota, "nota", 1, 500);
         validarLimiteWip(limiteWip);
         validarTotalValorEstimado(totalValorEstimado, tipoTablero);
+        String resolvedNota = normalizeOptionalNota(nota);
 
-        return new ColumnaTablero(columnaId, tipoTablero, limiteWip, normalizedNota, totalValorEstimado);
+        return new ColumnaTablero(
+            columnaId,
+            tipoTablero,
+            limiteWip,
+            resolvedNota,
+            totalValorEstimado
+        );
     }
 
     // ── Semantic validation ──────────────────────────────────────
 
     private static void validarLimiteWip(Integer limiteWip) {
-        if (limiteWip <= 0) {
-            throw new com.ar.crm2.exception.InvariantViolationException(
-                "limiteWip debe ser mayor que cero."
-            );
-        }
+        DomainAssert.positive(limiteWip, "limiteWip", "limiteWip debe ser mayor que cero.");
     }
 
     private static void validarTotalValorEstimado(BigDecimal total, TipoTablero tipo) {
-        if (total.compareTo(BigDecimal.ZERO) < 0) {
-            throw new com.ar.crm2.exception.InvariantViolationException(
-                "totalValorEstimado no puede ser negativo."
-            );
-        }
+        DomainAssert.nonNegative(
+            total,
+            "totalValorEstimado",
+            "totalValorEstimado no puede ser negativo."
+        );
         if (tipo == TipoTablero.TAREAS && total.compareTo(BigDecimal.ZERO) != 0) {
-            throw new com.ar.crm2.exception.InvariantViolationException(
+            DomainAssert.zero(
+                total,
+                "totalValorEstimado",
                 "Las columnas TAREAS deben tener totalValorEstimado igual a cero."
             );
         }
     }
 
     private static void validarValorEstimado(BigDecimal valor) {
-        if (valor == null) {
-            throw new com.ar.crm2.exception.InvariantViolationException(
-                "El valor estimado no puede ser null."
-            );
-        }
-        if (valor.compareTo(BigDecimal.ZERO) < 0) {
-            throw new com.ar.crm2.exception.InvariantViolationException(
-                "El valor estimado no puede ser negativo."
-            );
-        }
+        DomainAssert.notNull(valor, "El valor estimado no puede ser null.", true);
+        DomainAssert.nonNegative(valor, "valor", "El valor estimado no puede ser negativo.");
     }
 
     private static void validarCantidadActualFichas(int cantidad) {
-        if (cantidad < 0) {
-            throw new com.ar.crm2.exception.InvariantViolationException(
-                "La cantidad actual de fichas no puede ser negativa."
-            );
+        DomainAssert.nonNegative(cantidad, "La cantidad actual de fichas no puede ser negativa.");
+    }
+
+    /**
+     * Normalizes the optional contextual note: null/blank becomes null,
+     * otherwise validates the length (max 500) and returns the trimmed value.
+     */
+    private static String normalizeOptionalNota(String nota) {
+        if (nota == null || nota.isBlank()) {
+            return null;
         }
+        DomainAssert.optionalLength(nota, 500, "nota");
+        return nota.trim();
     }
 
     // ── Domain helpers ────────────────────────────────────────────
@@ -190,14 +190,14 @@ public final class ColumnaTablero {
      */
     public ColumnaTablero quitarValorEstimado(BigDecimal valor) {
         validarValorEstimado(valor);
-        BigDecimal nuevoTotal = totalValorEstimado.subtract(valor);
-        if (nuevoTotal.compareTo(BigDecimal.ZERO) < 0) {
-            throw new com.ar.crm2.exception.InvariantViolationException(
-                "El valor no puede dejar el total negativo."
-            );
-        }
+        BigDecimal subtracted = totalValorEstimado.subtract(valor);
+        DomainAssert.nonNegative(
+            subtracted,
+            "totalValorEstimado",
+            "El valor no puede dejar el total negativo."
+        );
         return new ColumnaTablero(
-            columnaId, tipoTablero, limiteWip, nota, nuevoTotal
+            columnaId, tipoTablero, limiteWip, nota, subtracted
         );
     }
 

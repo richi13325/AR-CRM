@@ -12,8 +12,21 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Application service implementing EditColumnaUseCase.
- * Orchestrates loading the aggregate, applying the immutable domain update via reconstitute,
- * and saving. Preserves all existing fields; only nombre/color/tipoTablero/tipoColumna are updated.
+ *
+ * <p>Coordination responsibility only:
+ * <ol>
+ *   <li>Load the existing Columna via {@link FindColumnaByIdPort}.</li>
+ *   <li>Scan the catalog through {@link FindAllColumnasPort}.</li>
+ *   <li>Delegate duplicate-scope evaluation to
+ *       {@link Columna#hasDuplicateForEdit(java.util.List, ColumnaId, com.ar.crm2.model.enums.TipoTablero, String)}.</li>
+ *   <li>Delegate the update to {@link Columna#reconstitute}.</li>
+ *   <li>Persist via {@link SaveColumnaPort}.</li>
+ * </ol>
+ *
+ * <p>The previous implementation delegated duplicate evaluation to the
+ * now-removed {@code ColumnaNamePolicy} application helper. Duplicate
+ * detection is a domain rule (the catalog identity lives in
+ * {@link Columna}) and now lives in {@link Columna#hasDuplicateForEdit}.
  */
 @RequiredArgsConstructor
 public class EditColumnaService implements EditColumnaUseCase {
@@ -29,7 +42,7 @@ public class EditColumnaService implements EditColumnaUseCase {
         Columna existing = findPort.findById(columnaId)
                 .orElseThrow(() -> ColumnaNotFoundException.forId(command.id()));
 
-        boolean existeDuplicado = ColumnaNamePolicy.hasDuplicateForEdit(
+        boolean existeDuplicado = Columna.hasDuplicateForEdit(
             findAllPort.findAll(),
             columnaId,
             command.tipoTablero(),

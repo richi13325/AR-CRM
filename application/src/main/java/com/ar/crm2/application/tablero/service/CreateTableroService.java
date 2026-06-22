@@ -3,7 +3,6 @@ package com.ar.crm2.application.tablero.service;
 import com.ar.crm2.application.columna.command.CreateColumnaCommand;
 import com.ar.crm2.application.columna.port.in.CreateColumnaUseCase;
 import com.ar.crm2.application.columna.port.out.FindAllColumnasPort;
-import com.ar.crm2.application.columna.service.ColumnaNamePolicy;
 import com.ar.crm2.application.tablero.command.CreateTableroCommand;
 import com.ar.crm2.application.tablero.port.out.SaveTableroPort;
 import com.ar.crm2.application.tablero.port.in.CreateTableroUseCase;
@@ -12,7 +11,6 @@ import com.ar.crm2.model.entity.ColumnaTablero;
 import com.ar.crm2.model.entity.Tablero;
 import com.ar.crm2.model.enums.TipoColumna;
 import com.ar.crm2.model.enums.TipoTablero;
-import com.ar.crm2.model.vo.SuperUsuarioId;
 import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
@@ -22,8 +20,28 @@ import java.util.Optional;
 
 /**
  * Application service implementing CreateTableroUseCase.
- * Orchestrates domain entity creation and outbound persistence via SaveTableroPort.
- * No Spring annotations — constructor injection via Lombok.
+ *
+ * <p>Coordination responsibility only:
+ * <ol>
+ *   <li>Resolve the default board shape from {@link Tablero#requiredDefaultColumns(TipoTablero)}.</li>
+ *   <li>For each default column, look up the existing PREDETERMINADA catalog
+ *       entry through {@link Columna#matchesDefaultCatalog(TipoTablero, String)}
+ *       or create one through {@link CreateColumnaUseCase}.</li>
+ *   <li>Build the {@link ColumnaTablero} list with the catalog id and the
+ *       contextual WIP from the spec.</li>
+ *   <li>Delegate aggregate creation to {@link Tablero#create(String, String, TipoTablero, List)}.</li>
+ *   <li>Persist via {@link SaveTableroPort}.</li>
+ * </ol>
+ *
+ * <p>Business invariants (column identity, duplicate rules, default catalog
+ * matching, board shape) are owned by the domain. Authorization (which
+ * authenticated actor may create a board) is owned by the application/security
+     * layer; this service receives the resolved actor id via the command for
+     * logging/audit purposes only. Default catalog creation does not pretend
+     * a normal user id is a {@code SuperUsuarioId}; catalog authorization is
+     * outside the Tablero aggregate creation invariant.
+ *
+ * <p>No Spring annotations — constructor injection via Lombok.
  */
 @RequiredArgsConstructor
 public class CreateTableroService implements CreateTableroUseCase {
@@ -34,34 +52,28 @@ public class CreateTableroService implements CreateTableroUseCase {
 
     @Override
     public Tablero create(CreateTableroCommand command) {
-        // Catalog Columna rows must be persisted BEFORE saving the Tablero.
-        // ColumnaTablero holds a ColumnaId reference; the read path in
-        // TableroMapper.toColumnaTableroDomain() re-hydrates the catalog Columna
-        // for each child. Saving the Tablero first would create dangling
-        // columna_id references in columnas_tablero and crash on read.
+
         List<ColumnaTablero> columnasPredeterminadas = buildDefaultColumns(command);
 
         Tablero tablero = Tablero.create(
             command.nombre(),
             command.descripcion(),
             command.tipoTablero(),
-            columnasPredeterminadas,
-            SuperUsuarioId.from(command.superUsuarioId())
+            columnasPredeterminadas
         );
 
         return savePort.save(tablero);
     }
 
     /**
-     * Builds exactly 4 default PREDETERMINADA columns for the given Tablero type.
-     * Each column is a catalog entry board-independent; the ColumnaTablero
-     * contextualizes it within the board context.
+     * Builds the default {@link ColumnaTablero} list for the given board type.
      *
-     * <p>Default columns:
-     * <ul>
-     *   <li>TAREAS: Pendiente, En Curso, Finalizada, Cancelada</li>
-     *   <li>TRATOS: Abierto, Ganado, Perdido, Archived</li>
-     * </ul>
+     * <p>Reads the canonical board shape (catalog name + default WIP) from
+     * {@link Tablero#requiredDefaultColumns(TipoTablero)}, resolves each name
+     * to an existing PREDETERMINADA catalog column via
+     * {@link Columna#matchesDefaultCatalog(TipoTablero, String)}, and creates
+     * a new catalog column via {@link CreateColumnaUseCase} if no match is
+     * found.
      *
      * @param command the board creation command
      * @return list of 4 default ColumnaTablero contextual wrappers
@@ -69,21 +81,11 @@ public class CreateTableroService implements CreateTableroUseCase {
     private List<ColumnaTablero> buildDefaultColumns(CreateTableroCommand command) {
         TipoTablero tipoTablero = command.tipoTablero();
         List<Columna> existingColumnas = findAllColumnasPort.findAll();
-        List<ColumnaTablero> columnas = new ArrayList<>(4);
+        List<Tablero.DefaultColumnSpec> specs = Tablero.requiredDefaultColumns(tipoTablero);
+        List<ColumnaTablero> columnas = new ArrayList<>(specs.size());
 
-        switch (tipoTablero) {
-            case TAREAS -> {
-                columnas.add(makeColumnaTablero(existingColumnas, command, "Pendiente", 5));
-                columnas.add(makeColumnaTablero(existingColumnas, command, "En Curso", 3));
-                columnas.add(makeColumnaTablero(existingColumnas, command, "Finalizada", 5));
-                columnas.add(makeColumnaTablero(existingColumnas, command, "Cancelada", 5));
-            }
-            case TRATOS -> {
-                columnas.add(makeColumnaTablero(existingColumnas, command, "Abierto", 10));
-                columnas.add(makeColumnaTablero(existingColumnas, command, "Ganado", 10));
-                columnas.add(makeColumnaTablero(existingColumnas, command, "Perdido", 10));
-                columnas.add(makeColumnaTablero(existingColumnas, command, "Archived", 10));
-            }
+        for (Tablero.DefaultColumnSpec spec : specs) {
+            columnas.add(makeColumnaTablero(existingColumnas, command, spec));
         }
 
         return columnas;
@@ -92,16 +94,15 @@ public class CreateTableroService implements CreateTableroUseCase {
     private ColumnaTablero makeColumnaTablero(
         List<Columna> existingColumnas,
         CreateTableroCommand command,
-        String nombre,
-        int limiteWip
+        Tablero.DefaultColumnSpec spec
     ) {
         TipoTablero tipoTablero = command.tipoTablero();
-        Columna persisted = resolveDefaultCatalogColumn(existingColumnas, command, nombre, tipoTablero);
+        Columna persisted = resolveDefaultCatalogColumn(existingColumnas, command, spec.name(), tipoTablero);
 
         return ColumnaTablero.create(
             persisted.getId(),
             tipoTablero,
-            limiteWip,
+            spec.defaultLimiteWip(),
             null,
             BigDecimal.ZERO
         );
@@ -113,17 +114,19 @@ public class CreateTableroService implements CreateTableroUseCase {
         String nombre,
         TipoTablero tipoTablero
     ) {
-        Optional<Columna> existing = ColumnaNamePolicy.findDefaultCatalogColumn(existingColumnas, tipoTablero, nombre);
-        if (existing.isPresent()) {
-            return existing.get();
+        for (Columna candidata : existingColumnas) {
+            if (candidata.matchesDefaultCatalog(tipoTablero, nombre)) {
+                return candidata;
+            }
         }
 
         return createColumnaUseCase.create(new CreateColumnaCommand(
-            Optional.of(command.superUsuarioId()),
+            Optional.empty(),
             nombre,
             "#FFFFFF",
             tipoTablero,
-            TipoColumna.PREDETERMINADA
+            TipoColumna.PREDETERMINADA,
+            true
         ));
     }
 }

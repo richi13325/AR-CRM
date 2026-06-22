@@ -1,14 +1,11 @@
 package com.ar.crm2.config;
 
-import com.ar.crm2.adapter.out.persistence.ColumnaExistsFichasByColumnaIdAdapter;
 import com.ar.crm2.adapter.out.persistence.ColumnaRepositoryAdapter;
 import com.ar.crm2.adapter.out.persistence.repository.ColumnaRepository;
 import com.ar.crm2.adapter.out.persistence.repository.ContactoRepository;
 import com.ar.crm2.adapter.out.persistence.ContactoRepositoryAdapter;
 import com.ar.crm2.adapter.out.persistence.EmpresaRepositoryAdapter;
 import com.ar.crm2.adapter.out.persistence.repository.EmpresaRepository;
-import com.ar.crm2.adapter.out.persistence.ExistsColumnaAsignadaAdapter;
-import com.ar.crm2.adapter.out.persistence.ExistsFichasByColumnaIdAdapter;
 import com.ar.crm2.adapter.out.persistence.repository.FichaRepository;
 import com.ar.crm2.adapter.out.persistence.FichaRepositoryAdapter;
 import com.ar.crm2.adapter.out.persistence.repository.RolRepository;
@@ -32,7 +29,6 @@ import com.ar.crm2.application.columna.port.in.EditColumnaUseCase;
 import com.ar.crm2.application.columna.port.in.GetAllColumnasUseCase;
 import com.ar.crm2.application.columna.port.in.GetColumnaByIdUseCase;
 import com.ar.crm2.application.columna.port.out.DeleteColumnaByIdPort;
-import com.ar.crm2.application.columna.port.out.ExistsColumnaAsignadaPort;
 import com.ar.crm2.application.columna.port.out.FindAllColumnasPort;
 import com.ar.crm2.application.columna.port.out.FindColumnaByIdPort;
 import com.ar.crm2.application.columna.port.out.SaveColumnaPort;
@@ -187,6 +183,7 @@ import com.ar.crm2.application.ficha.port.in.GetAllFichasUseCase;
 import com.ar.crm2.application.ficha.port.in.GetFichaByIdUseCase;
 import com.ar.crm2.application.ficha.port.in.MoverColumnaFichaUseCase;
 import com.ar.crm2.application.ficha.port.out.DeleteFichaByIdPort;
+import com.ar.crm2.application.ficha.port.out.ExistsFichasByColumnaIdPort;
 import com.ar.crm2.application.ficha.port.out.FindAllFichasPort;
 import com.ar.crm2.application.ficha.port.out.FindFichaByIdPort;
 import com.ar.crm2.application.ficha.port.out.SaveFichaPort;
@@ -205,7 +202,6 @@ import com.ar.crm2.application.tablero.port.in.GetAllTablerosUseCase;
 import com.ar.crm2.application.tablero.port.in.GetTableroByIdUseCase;
 import com.ar.crm2.application.tablero.port.in.ReordenarColumnasUseCase;
 import com.ar.crm2.application.tablero.port.out.DeleteTableroByIdPort;
-import com.ar.crm2.application.tablero.port.out.ExistsFichasByColumnaIdPort;
 import com.ar.crm2.application.tablero.port.out.FindAllTablerosPort;
 import com.ar.crm2.application.tablero.port.out.FindTableroByIdPort;
 import com.ar.crm2.application.tablero.port.out.SaveTableroPort;
@@ -291,8 +287,8 @@ public class WiringConfig {
     }
 
     @Bean
-    public ColumnaRepositoryAdapter columnaRepositoryAdapter(ColumnaRepository repository) {
-        return new ColumnaRepositoryAdapter(repository);
+    public ColumnaRepositoryAdapter columnaRepositoryAdapter(ColumnaRepository repository, TableroRepository tableroRepository) {
+        return new ColumnaRepositoryAdapter(repository, tableroRepository);
     }
 
     @Bean
@@ -303,21 +299,6 @@ public class WiringConfig {
     @Bean
     public SuperUsuarioRepositoryAdapter superUsuarioRepositoryAdapter(SuperUsuarioRepository repository) {
         return new SuperUsuarioRepositoryAdapter(repository);
-    }
-
-    @Bean
-    public ExistsFichasByColumnaIdAdapter existsFichasByColumnaIdAdapter(FichaRepository fichaRepository) {
-        return new ExistsFichasByColumnaIdAdapter(fichaRepository);
-    }
-
-    @Bean
-    public ColumnaExistsFichasByColumnaIdAdapter columnaExistsFichasByColumnaIdAdapter(FichaRepository fichaRepository) {
-        return new ColumnaExistsFichasByColumnaIdAdapter(fichaRepository);
-    }
-
-    @Bean
-    public ExistsColumnaAsignadaAdapter existsColumnaAsignadaAdapter(TableroRepository tableroRepository) {
-        return new ExistsColumnaAsignadaAdapter(tableroRepository);
     }
 
     @Bean
@@ -417,6 +398,13 @@ public class WiringConfig {
         return new TableroMapper(columnaRepository);
     }
 
+    @Bean
+    public com.ar.crm2.adapter.in.rest.mapper.TableroResponseAssembler tableroResponseAssembler(
+            ColumnaRepository columnaRepository
+    ) {
+        return new com.ar.crm2.adapter.in.rest.mapper.TableroResponseAssembler(columnaRepository);
+    }
+
 
 
     // ── Tablero UseCase Beans ──
@@ -466,7 +454,7 @@ public class WiringConfig {
     @Bean
     public EliminarColumnaDelTableroUseCase eliminarColumnaDelTableroUseCase(
             TableroRepositoryAdapter findPort,
-            ExistsFichasByColumnaIdAdapter existsFichasPort,
+            FichaRepositoryAdapter existsFichasPort,
             TableroRepositoryAdapter savePort
     ) {
         return new EliminarColumnaDelTableroService(findPort, existsFichasPort, savePort);
@@ -865,11 +853,11 @@ public class WiringConfig {
     @Bean
     public DeleteColumnaUseCase deleteColumnaUseCase(
             ColumnaRepositoryAdapter findPort,
-            ExistsColumnaAsignadaPort existsColumnaAsignadaPort,
-            com.ar.crm2.application.columna.port.out.ExistsFichasByColumnaIdPort columnaExistsFichasByColumnaIdPort,
+            ColumnaRepositoryAdapter existsColumnaAsignadaPort,
+            FichaRepositoryAdapter existsFichasByColumnaIdPort,
             ColumnaRepositoryAdapter deletePort
     ) {
-        return new DeleteColumnaService(findPort, existsColumnaAsignadaPort, columnaExistsFichasByColumnaIdPort, deletePort);
+        return new DeleteColumnaService(findPort, existsColumnaAsignadaPort, existsFichasByColumnaIdPort, deletePort);
     }
 
 

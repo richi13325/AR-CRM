@@ -6,7 +6,7 @@ import com.ar.crm2.adapter.in.rest.dto.request.EditTableroRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.ReordenarColumnasRequest;
 import com.ar.crm2.adapter.in.rest.dto.response.TableroResponse;
 import com.ar.crm2.adapter.in.rest.mapper.TableroCommandMapper;
-import com.ar.crm2.adapter.out.persistence.repository.ColumnaRepository;
+import com.ar.crm2.adapter.in.rest.mapper.TableroResponseAssembler;
 import com.ar.crm2.application.security.ActorContext;
 import com.ar.crm2.application.security.exception.AuthenticatedUsuarioRequiredException;
 import com.ar.crm2.application.tablero.command.AsignarColumnaTableroCommand;
@@ -77,7 +77,7 @@ class TableroControllerTest {
     private ReordenarColumnasUseCase reordenarColumnasUseCase;
 
     @Mock
-    private ColumnaRepository columnaRepository;
+    private TableroResponseAssembler responseAssembler;
 
     @InjectMocks
     private TableroController controller;
@@ -96,6 +96,24 @@ class TableroControllerTest {
         );
     }
 
+    /**
+     * Stubs the {@link TableroResponseAssembler} to return a deterministic
+     * {@link TableroResponse} mirroring the domain {@link Tablero}. Used by
+     * tests that assert on {@code response.getBody()}.
+     */
+    private TableroResponse stubAssembler(Tablero tablero) {
+        TableroResponse response = new TableroResponse(
+                tablero.getId().value(),
+                tablero.getNombre(),
+                tablero.getDescripcion(),
+                tablero.getTipoTablero(),
+                List.of(),
+                tablero.getCreadoEn()
+        );
+        lenient().when(responseAssembler.assemble(tablero)).thenReturn(response);
+        return response;
+    }
+
     // ── create ──────────────────────────────────────────────────────
 
     @Test
@@ -103,6 +121,7 @@ class TableroControllerTest {
         UUID id = UUID.randomUUID();
         UUID actorSuperUsuarioId = UUID.randomUUID();
         Tablero tablero = createDomainTablero(id, "Sprint Board");
+        TableroResponse expectedResponse = stubAssembler(tablero);
 
         when(createUseCase.create(any(CreateTableroCommand.class))).thenReturn(tablero);
 
@@ -130,14 +149,13 @@ class TableroControllerTest {
         ResponseEntity<TableroResponse> response = controller.create(mockRequest, request);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(id, response.getBody().id());
+        assertSame(expectedResponse, response.getBody());
         verify(createUseCase).create(any(CreateTableroCommand.class));
 
-        // Verify superUsuarioId comes from ActorContext, NOT request body
+        // Verify actorId comes from ActorContext (superUsuarioId claim), NOT request body
         ArgumentCaptor<CreateTableroCommand> cmdCaptor = ArgumentCaptor.forClass(CreateTableroCommand.class);
         verify(createUseCase).create(cmdCaptor.capture());
-        assertEquals(actorSuperUsuarioId, cmdCaptor.getValue().superUsuarioId());
+        assertEquals(actorSuperUsuarioId, cmdCaptor.getValue().actorId());
     }
 
     @Test
@@ -145,6 +163,7 @@ class TableroControllerTest {
         UUID id = UUID.randomUUID();
         UUID actorUsuarioId = UUID.randomUUID();
         Tablero tablero = createDomainTablero(id, "User Board");
+        stubAssembler(tablero);
 
         when(createUseCase.create(any(CreateTableroCommand.class))).thenReturn(tablero);
 
@@ -176,7 +195,7 @@ class TableroControllerTest {
         // Verify the command receives the actor's usuarioId (fallback path)
         ArgumentCaptor<CreateTableroCommand> cmdCaptor = ArgumentCaptor.forClass(CreateTableroCommand.class);
         verify(createUseCase).create(cmdCaptor.capture());
-        assertEquals(actorUsuarioId, cmdCaptor.getValue().superUsuarioId());
+        assertEquals(actorUsuarioId, cmdCaptor.getValue().actorId());
     }
 
     @Test
@@ -223,6 +242,8 @@ class TableroControllerTest {
     void getAll_shouldReturnOkWithListOfTableros() {
         Tablero t1 = createDomainTablero(UUID.randomUUID(), "Board 1");
         Tablero t2 = createDomainTablero(UUID.randomUUID(), "Board 2");
+        stubAssembler(t1);
+        stubAssembler(t2);
 
         when(getAllUseCase.getAll()).thenReturn(List.of(t1, t2));
 
@@ -240,13 +261,14 @@ class TableroControllerTest {
     void getById_shouldReturnOkWithTableroResponse() {
         UUID id = UUID.randomUUID();
         Tablero tablero = createDomainTablero(id, "Sprint Board");
+        TableroResponse expectedResponse = stubAssembler(tablero);
 
         when(getByIdUseCase.getById(any(GetTableroByIdCommand.class))).thenReturn(tablero);
 
         ResponseEntity<TableroResponse> response = controller.getById(id);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
+        assertSame(expectedResponse, response.getBody());
         assertEquals(id, response.getBody().id());
     }
 
@@ -270,6 +292,7 @@ class TableroControllerTest {
     void edit_shouldReturnOkWithUpdatedTableroResponse() {
         UUID id = UUID.randomUUID();
         Tablero tablero = createDomainTablero(id, "Updated Board");
+        TableroResponse expectedResponse = stubAssembler(tablero);
 
         when(editUseCase.edit(any(EditTableroCommand.class))).thenReturn(tablero);
 
@@ -278,7 +301,7 @@ class TableroControllerTest {
         ResponseEntity<TableroResponse> response = controller.edit(id, request);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
+        assertSame(expectedResponse, response.getBody());
         assertEquals(id, response.getBody().id());
     }
 
@@ -332,6 +355,7 @@ class TableroControllerTest {
         UUID tableroId = UUID.randomUUID();
         UUID columnaId = UUID.randomUUID();
         Tablero tablero = createDomainTablero(tableroId, "Board with assigned column");
+        TableroResponse expectedResponse = stubAssembler(tablero);
 
         when(asignarColumnaUseCase.asignarColumna(any(AsignarColumnaTableroCommand.class)))
                 .thenReturn(tablero);
@@ -346,7 +370,7 @@ class TableroControllerTest {
                 controller.asignarColumna(tableroId, columnaId, request);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertNotNull(response.getBody());
+        assertSame(expectedResponse, response.getBody());
         verify(asignarColumnaUseCase).asignarColumna(any(AsignarColumnaTableroCommand.class));
     }
 
@@ -383,6 +407,7 @@ class TableroControllerTest {
     void reordenarColumnas_shouldReturnOkWithReorderedTableroResponse() {
         UUID tableroId = UUID.randomUUID();
         Tablero tablero = createDomainTablero(tableroId, "Reordered Board");
+        TableroResponse expectedResponse = stubAssembler(tablero);
 
         when(reordenarColumnasUseCase.reordenar(any(ReordenarColumnasCommand.class)))
                 .thenReturn(tablero);
@@ -395,7 +420,7 @@ class TableroControllerTest {
                 controller.reordenarColumnas(tableroId, request);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
+        assertSame(expectedResponse, response.getBody());
 
         ArgumentCaptor<ReordenarColumnasCommand> captor =
                 ArgumentCaptor.forClass(ReordenarColumnasCommand.class);

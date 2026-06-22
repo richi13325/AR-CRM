@@ -54,12 +54,12 @@ public class Etiqueta {
      */
     public static Etiqueta create(String nombre, TipoEtiqueta tipoEtiqueta, String color) {
         DomainAssert.notNull(tipoEtiqueta, "tipoEtiqueta");
-        String normalizedNombre = DomainAssert.lengthBetween(nombre, "nombre", 1, 50);
+        DomainAssert.lengthBetween(nombre, "nombre", 1, 50);
         String normalizedColor = validarColor(color);
 
         return new Etiqueta(
             EtiquetaId.create(),
-            normalizedNombre,
+            nombre.trim(),
             tipoEtiqueta,
             normalizedColor,
             LocalDateTime.now()
@@ -80,10 +80,10 @@ public class Etiqueta {
         DomainAssert.notNull(id, "id");
         DomainAssert.notNull(tipoEtiqueta, "tipoEtiqueta");
         DomainAssert.notNull(creadoEn, "creadoEn");
-        String normalizedNombre = DomainAssert.lengthBetween(nombre, "nombre", 1, 50);
+        DomainAssert.lengthBetween(nombre, "nombre", 1, 50);
         String normalizedColor = validarColor(color);
 
-        return new Etiqueta(id, normalizedNombre, tipoEtiqueta, normalizedColor, creadoEn);
+        return new Etiqueta(id, nombre.trim(), tipoEtiqueta, normalizedColor, creadoEn);
     }
 
     // ── Domain Behavior ────────────────────────────────────────────
@@ -95,8 +95,8 @@ public class Etiqueta {
      * @return a new Etiqueta instance with the updated name
      */
     public Etiqueta rename(String nuevoNombre) {
-        String normalizedNombre = DomainAssert.lengthBetween(nuevoNombre, "nombre", 1, 50);
-        return new Etiqueta(this.id, normalizedNombre, this.tipoEtiqueta, this.color, this.creadoEn);
+        DomainAssert.lengthBetween(nuevoNombre, "nombre", 1, 50);
+        return new Etiqueta(this.id, nuevoNombre.trim(), this.tipoEtiqueta, this.color, this.creadoEn);
     }
 
     /**

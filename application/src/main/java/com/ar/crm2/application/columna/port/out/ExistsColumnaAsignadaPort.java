@@ -6,9 +6,10 @@ import com.ar.crm2.model.vo.ColumnaId;
  * Granular outbound port for checking whether a Columna is assigned to any Tablero.
  * Used as a delete guard before hard-deleting a catalog column.
  *
- * <p>Note: This is distinct from {@link ExistsFichasByColumnaIdPort} which guards
- * against deleting columns that have fichas. This port guards against deleting
- * catalog columns that are still assigned to boards.
+ * <p>Note: This is distinct from
+ * {@link com.ar.crm2.application.ficha.port.out.ExistsFichasByColumnaIdPort}
+ * which guards against deleting columns that have fichas. This port guards against
+ * deleting catalog columns that are still assigned to boards.
  */
 public interface ExistsColumnaAsignadaPort {
 

@@ -3,11 +3,9 @@ package com.ar.crm2.model.entity;
 import com.ar.crm2.exception.ColumnaConFichasNoPuedeEliminarseException;
 import com.ar.crm2.exception.ColumnaNoPerteneceAlTableroException;
 import com.ar.crm2.exception.ColumnaYaExisteEnTableroException;
-import com.ar.crm2.exception.InvalidDefaultColumnsException;
 import com.ar.crm2.exception.InvariantViolationException;
 import com.ar.crm2.exception.TipoTableroMismatchException;
 import com.ar.crm2.model.vo.ColumnaId;
-import com.ar.crm2.model.vo.SuperUsuarioId;
 import com.ar.crm2.model.vo.TableroId;
 import com.ar.crm2.shared.DomainAssert;
 import lombok.AccessLevel;
@@ -25,7 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Domain entity for Tablero.
@@ -36,6 +33,19 @@ import java.util.stream.Collectors;
  *
  * <p>Columns are stored as {@link ColumnaTablero} contextual wrappers that pair
  * each {@link Columna} with its board-specific {@code limiteWip}.
+ *
+ * <h2>Responsibility split</h2>
+ * <p>This aggregate owns the business rules for boards:
+ * <ul>
+ *   <li>The default board shape (which {@link ColumnaTablero} slots a board
+ *       starts with) and the contextual WIP limits for each slot are owned
+ *       here via {@link #requiredDefaultColumns(TipoTablero)}.</li>
+ *   <li>{@link ColumnaTablero} owns the per-board WIP invariant
+ *       ({@code limiteWip > 0}) and the total valor estimado semantics.</li>
+ *   <li>{@link Columna} owns the catalog data and naming/duplicate rules.</li>
+ * </ul>
+ * <p>Authorization (who may create a board) is an application/security
+ * concern and is NOT modeled here.
  */
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -52,30 +62,6 @@ public class Tablero {
     private final TipoTablero tipoTablero;
     private final LocalDateTime creadoEn;
 
-    // ── Compatibility accessor ───────────────────────────────────
-
-    /**
-     * Derived getter for backward compatibility with code expecting the old
-     * {@code List<Columna>} shape.
-     *
-     * <p>Note: This is a transitional helper. The authoritative column collection
-     * is {@link #getColumnasTablero()}. When all downstream consumers (mappers,
-     * controllers, tests) are updated, this method may be removed.
-     *
-     * <p>Implementation note: In the catalog model, ColumnaTablero no longer wraps
-     * a full Columna object — it only holds the ColumnaId. This method returns
-     * null placeholders for the columns list until the mapper hydrates full Columna
-     * objects from the catalog. This preserves API shape without maintaining
-     * ownership coupling.
-     *
-     * @return unmodifiable list of Columna values (placeholder nulls until hydrated)
-     */
-    public List<Columna> getColumnas() {
-        return columnasTablero.stream()
-            .map(ct -> (Columna) null) // placeholder — Columna hydration happens in infrastructure mapper
-            .collect(Collectors.toCollection(ArrayList::new));
-    }
-
     // ── Factory ──────────────────────────────────────────────────
 
     /**
@@ -88,14 +74,12 @@ public class Tablero {
      * Assignment is validated via tipoTablero match only.
      *
      * @param columnasTablero the column list to validate (must not be null, no null elements)
-     * @param tableroId      the expected TableroId (used to validate each column's tableroId)
      * @param tipoTablero    the expected TipoTablero (used to validate each column's tipoTablero)
      * @throws InvariantViolationException if any structural invariant is violated (nulls, duplicates, ownership)
      * @throws TipoTableroMismatchException if any column has incompatible tipoTablero
      */
     private static void validarColumnasDelTablero(
         List<ColumnaTablero> columnasTablero,
-        TableroId tableroId,
         TipoTablero tipoTablero
     ) {
         if (columnasTablero == null) {
@@ -126,58 +110,131 @@ public class Tablero {
         }
     }
 
+    private static void validarDefaultColumnSpecs(
+        List<ColumnaTablero> columnasTablero,
+        TipoTablero tipoTablero
+    ) {
+        List<DefaultColumnSpec> requiredSpecs = requiredDefaultColumns(tipoTablero);
+        if (columnasTablero.size() != requiredSpecs.size()) {
+            throw new InvariantViolationException(
+                "Un tablero debe crearse con exactamente " + requiredSpecs.size() + " columnas predeterminadas."
+            );
+        }
+        for (int i = 0; i < requiredSpecs.size(); i++) {
+            Integer actualWip = columnasTablero.get(i).getLimiteWip();
+            int expectedWip = requiredSpecs.get(i).defaultLimiteWip();
+            if (!Integer.valueOf(expectedWip).equals(actualWip)) {
+                throw new InvariantViolationException(
+                    "La columna predeterminada en posición " + i + " debe tener limiteWip " + expectedWip + "."
+                );
+            }
+        }
+    }
+
     /**
      * Creates a new Tablero.
      * Generates id and creadoEn internally.
-     * Only SuperUsuario may create a Tablero.
      *
-     * <p>Note: structural validation (no nulls, no duplicate IDs, tipoTablero match)
-     * is delegated to the centralized helper. Ownership validation against the
-     * generated TableroId cannot be performed here because columns are received
-     * already-constructed — changing this contract is out of scope for this change.
+     * <p>Authorization: any authenticated user may create a Tablero. Creation
+     * role semantics live in the application/security layer; the domain does
+     * not require a {@code SuperUsuarioId} for creation. The application
+     * service is responsible for resolving the actor from the authenticated
+     * context and for assembling the default {@link ColumnaTablero} list
+     * through the catalog ports.
      *
-     * @param nombre                       mandatory - board name
-     * @param descripcion                  mandatory - board description
-     * @param tipoTablero                  mandatory - type of board (TAREAS or TRATOS)
-     * @param columnasTableroPredeterminadas mandatory - exactly 4 default columns, all PREDETERMINADA, matching tipoTablero
-     * @param superUsuarioId               mandatory - the internal superuser creating the board
+     * <p>Note: structural validation (no nulls, no duplicate IDs, tipoTablero
+     * match) is delegated to the centralized helper.
+     *
+     * @param nombre       mandatory - board name
+     * @param descripcion  mandatory - board description
+     * @param tipoTablero  mandatory - type of board (TAREAS or TRATOS)
+     * @param columnasTablero mandatory - the contextual column assignments
+     *                                 for this board (catalog ColumnaId +
+     *                                 WIP context). May be empty only if the
+     *                                 caller explicitly accepts a board
+     *                                 without contextual columns (the existing
+     *                                 invariant still validates each entry).
      */
     public static Tablero create(
         String nombre,
         String descripcion,
         TipoTablero tipoTablero,
-        List<ColumnaTablero> columnasTableroPredeterminadas,
-        SuperUsuarioId superUsuarioId
+        List<ColumnaTablero> columnasTablero
     ) {
-        DomainAssert.notNull(superUsuarioId, "superUsuarioId");
-
-        DomainAssert.notNull(columnasTableroPredeterminadas, "columnasTableroPredeterminadas");
         DomainAssert.notNull(tipoTablero, "tipoTablero");
-
-        if (columnasTableroPredeterminadas.size() != 4) {
-            throw new InvalidDefaultColumnsException(4);
-        }
-
-        boolean todasPredeterminadas = columnasTableroPredeterminadas.stream()
-            .allMatch(ct -> ct != null && ct.getTipoTablero().equals(tipoTablero));
-        if (!todasPredeterminadas) {
-            throw new InvalidDefaultColumnsException();
-        }
-
-        boolean todasMismoTipo = columnasTableroPredeterminadas.stream()
-            .allMatch(ct -> tipoTablero.equals(ct.getTipoTablero()));
-        if (!todasMismoTipo) {
-            throw new TipoTableroMismatchException();
-        }
+        validarColumnasDelTablero(columnasTablero, tipoTablero);
+        validarDefaultColumnSpecs(columnasTablero, tipoTablero);
+        DomainAssert.lengthBetween(nombre, "nombre", 1, 100);
+        DomainAssert.notBlank(descripcion, "descripcion");
 
         return new Tablero(
             TableroId.create(),
-            DomainAssert.lengthBetween(nombre, "nombre", 1, 100),
-            DomainAssert.notBlank(descripcion, "descripcion"),
-            List.copyOf(columnasTableroPredeterminadas),
+            nombre.trim(),
+            descripcion.trim(),
+            List.copyOf(columnasTablero),
             tipoTablero,
             LocalDateTime.now()
         );
+    }
+
+    /**
+     * Returns the list of default column specifications for the given board
+     * type. The list is the canonical board shape for {@link TipoTablero#TAREAS}
+     * and {@link TipoTablero#TRATOS} boards.
+     *
+     * <p>Each specification carries the catalog column name and the default
+     * WIP limit that the board shape assigns. The application service
+     * resolves each name to an existing PREDETERMINADA catalog column
+     * (or creates one if missing) and pairs it with the WIP limit from
+     * the spec to build a {@link ColumnaTablero} entry.
+     *
+     * <p>Default board shape:
+     * <ul>
+     *   <li>TAREAS: Pendiente (WIP 5), En Curso (WIP 3), Finalizada (WIP 5), Cancelada (WIP 5)</li>
+     *   <li>TRATOS: Abierto (WIP 10), Ganado (WIP 10), Perdido (WIP 10), Archived (WIP 10)</li>
+     * </ul>
+     *
+     * <p>This is a domain behavior because the board shape (which columns a
+     * board must have by default and their contextual WIP limits) is a
+     * business rule, not a transport/orchestration concern.
+     *
+     * @param tipo the board type
+     * @return immutable list of 4 default column specifications for the type
+     * @throws com.ar.crm2.exception.InvariantViolationException if tipo is null
+     */
+    public static List<DefaultColumnSpec> requiredDefaultColumns(TipoTablero tipo) {
+        DomainAssert.notNull(tipo, "tipo");
+        return switch (tipo) {
+            case TAREAS -> List.of(
+                new DefaultColumnSpec("Pendiente", 5),
+                new DefaultColumnSpec("En Curso", 3),
+                new DefaultColumnSpec("Finalizada", 5),
+                new DefaultColumnSpec("Cancelada", 5)
+            );
+            case TRATOS -> List.of(
+                new DefaultColumnSpec("Abierto", 10),
+                new DefaultColumnSpec("Ganado", 10),
+                new DefaultColumnSpec("Perdido", 10),
+                new DefaultColumnSpec("Archived", 10)
+            );
+        };
+    }
+
+    /**
+     * Default column specification owned by the {@link Tablero} aggregate.
+     * Carries the catalog column name and the contextual WIP limit that the
+     * board shape assigns to that column.
+     *
+     * <p>This is a value object, not a persisted entity.
+     */
+    public record DefaultColumnSpec(String name, int defaultLimiteWip) {
+        public DefaultColumnSpec {
+            DomainAssert.lengthBetween(name, "name", 1, 80);
+            name = name.trim();
+            if (defaultLimiteWip <= 0) {
+                throw new InvariantViolationException("defaultLimiteWip debe ser mayor que cero.");
+            }
+        }
     }
 
     /**
@@ -191,26 +248,60 @@ public class Tablero {
         TipoTablero tipoTablero,
         LocalDateTime creadoEn
     ) {
-        TableroId resolvedId = DomainAssert.notNull(id, "id");
-        String resolvedNombre = DomainAssert.lengthBetween(nombre, "nombre", 1, 100);
-        String resolvedDescripcion = DomainAssert.notBlank(descripcion, "descripcion");
-        List<ColumnaTablero> resolvedColumnasTablero = List.copyOf(DomainAssert.notNull(columnasTablero, "columnasTablero"));
-        TipoTablero resolvedTipoTablero = DomainAssert.notNull(tipoTablero, "tipoTablero");
+        DomainAssert.notNull(id, "id");
+        DomainAssert.lengthBetween(nombre, "nombre", 1, 100);
+        DomainAssert.notBlank(descripcion, "descripcion");
+        DomainAssert.notNull(columnasTablero, "columnasTablero");
+        List<ColumnaTablero> resolvedColumnasTablero = List.copyOf(columnasTablero);
+        DomainAssert.notNull(tipoTablero, "tipoTablero");
         DomainAssert.notNull(creadoEn, "creadoEn");
 
-        validarColumnasDelTablero(resolvedColumnasTablero, resolvedId, resolvedTipoTablero);
+        validarColumnasDelTablero(resolvedColumnasTablero, tipoTablero);
 
         return new Tablero(
-            resolvedId,
-            resolvedNombre,
-            resolvedDescripcion,
+            id,
+            nombre.trim(),
+            descripcion.trim(),
             resolvedColumnasTablero,
-            resolvedTipoTablero,
+            tipoTablero,
             creadoEn
         );
     }
 
     // ── Domain Behavior ────────────────────────────────────────────
+
+    /**
+     * Updates the editable fields (nombre, descripcion) of this Tablero and
+     * returns a new immutable Tablero with the change applied.
+     *
+     * <p>All other fields (id, columnasTablero, tipoTablero, creadoEn) are
+     * preserved exactly. Validation mirrors the field rules used in
+     * {@link #create(String, String, TipoTablero, List)}: nombre 1-100 chars,
+     * descripcion non-blank.
+     *
+     * <p>This is the domain edit behavior. The application service should
+     * call this method instead of {@link #reconstitute(...)} to apply edits;
+     * {@code reconstitute} is reserved for persistence hydration, not edit
+     * orchestration.
+     *
+     * @param nuevoNombre      the new board name, 1-100 chars
+     * @param nuevaDescripcion the new board description, non-blank
+     * @return a new Tablero instance with the updated editable fields
+     * @throws com.ar.crm2.exception.InvariantViolationException if the
+     *         nombre/descripcion validation fails
+     */
+    public Tablero editarDatos(String nuevoNombre, String nuevaDescripcion) {
+        DomainAssert.lengthBetween(nuevoNombre, "nombre", 1, 100);
+        DomainAssert.notBlank(nuevaDescripcion, "descripcion");
+        return new Tablero(
+            this.id,
+            nuevoNombre.trim(),
+            nuevaDescripcion.trim(),
+            this.columnasTablero,
+            this.tipoTablero,
+            this.creadoEn
+        );
+    }
 
     /**
      * Adds a column to this board.
@@ -246,7 +337,7 @@ public class Tablero {
         List<ColumnaTablero> nuevasColumnas = new ArrayList<>(columnasTablero);
         nuevasColumnas.add(columnaTablero);
 
-        validarColumnasDelTablero(nuevasColumnas, this.id, this.tipoTablero);
+        validarColumnasDelTablero(nuevasColumnas, this.tipoTablero);
 
         return new Tablero(
             this.id,

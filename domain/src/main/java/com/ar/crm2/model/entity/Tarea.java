@@ -59,15 +59,22 @@ public class Tarea {
     ) {
         LocalDateTime now = LocalDateTime.now();
 
+        DomainAssert.notNull(tratoId, "tratoId");
+        DomainAssert.notNull(responsableId, "responsableId");
+        DomainAssert.notNull(tipo, "tipo");
+        DomainAssert.notNull(prioridad, "prioridad");
+        DomainAssert.notNull(fechaLimite, "fechaLimite");
+        DomainAssert.lengthBetween(titulo, "titulo", 1, 200);
+
         return new Tarea(
             TareaId.create(),
-            DomainAssert.notNull(tratoId, "tratoId"),
-            DomainAssert.notNull(responsableId, "responsableId"),
-            DomainAssert.lengthBetween(titulo, "titulo", 1, 200),
+            tratoId,
+            responsableId,
+            titulo.trim(),
             descripcion, // nullable
-            DomainAssert.notNull(tipo, "tipo"),
-            DomainAssert.notNull(prioridad, "prioridad"),
-            DomainAssert.notNull(fechaLimite, "fechaLimite"),
+            tipo,
+            prioridad,
+            fechaLimite,
             null, // fechaCompletada — nullable, set when task is completed
             now,
             now
@@ -90,18 +97,28 @@ public class Tarea {
         LocalDateTime creadoEn,
         LocalDateTime actualizadoEn
     ) {
+        DomainAssert.notNull(id, "id");
+        DomainAssert.notNull(tratoId, "tratoId");
+        DomainAssert.notNull(responsableId, "responsableId");
+        DomainAssert.notNull(tipo, "tipo");
+        DomainAssert.notNull(prioridad, "prioridad");
+        DomainAssert.notNull(fechaLimite, "fechaLimite");
+        DomainAssert.notNull(creadoEn, "creadoEn");
+        DomainAssert.notNull(actualizadoEn, "actualizadoEn");
+        DomainAssert.lengthBetween(titulo, "titulo", 1, 200);
+
         return new Tarea(
-            DomainAssert.notNull(id, "id"),
-            DomainAssert.notNull(tratoId, "tratoId"),
-            DomainAssert.notNull(responsableId, "responsableId"),
-            DomainAssert.lengthBetween(titulo, "titulo", 1, 200),
+            id,
+            tratoId,
+            responsableId,
+            titulo.trim(),
             descripcion, // nullable
-            DomainAssert.notNull(tipo, "tipo"),
-            DomainAssert.notNull(prioridad, "prioridad"),
-            DomainAssert.notNull(fechaLimite, "fechaLimite"),
+            tipo,
+            prioridad,
+            fechaLimite,
             fechaCompletada, // nullable
-            DomainAssert.notNull(creadoEn, "creadoEn"),
-            DomainAssert.notNull(actualizadoEn, "actualizadoEn")
+            creadoEn,
+            actualizadoEn
         );
     }
 

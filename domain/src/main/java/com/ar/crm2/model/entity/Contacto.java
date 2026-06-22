@@ -64,12 +64,23 @@ public class Contacto {
         String cargo,
         String comoNosConocio
     ) {
+        DomainAssert.notNull(empresaId, "empresaId");
+        DomainAssert.notNull(estadoRelacion, "estadoRelacion");
+        DomainAssert.lengthBetween(nombre, "nombre", 1, 150);
+
+        String normalizedCorreo = null;
+        if (correo != null && !correo.isBlank()) {
+            String stripped = correo.strip();
+            DomainAssert.email(stripped, "correo");
+            normalizedCorreo = stripped.trim();
+        }
+
         return Contacto.builder()
             .id(ContactoId.create())
-            .empresaId(DomainAssert.notNull(empresaId, "empresaId"))
-            .nombre(DomainAssert.lengthBetween(nombre, "nombre", 1, 150))
-            .correo(correo == null || correo.isBlank() ? null : DomainAssert.email(correo.strip(), "correo"))
-            .estadoRelacion(DomainAssert.notNull(estadoRelacion, "estadoRelacion"))
+            .empresaId(empresaId)
+            .nombre(nombre.trim())
+            .correo(normalizedCorreo)
+            .estadoRelacion(estadoRelacion)
             .responsableId(responsableId)
             .creadoPor(creadoPor)
             .telefono(telefono)
@@ -97,19 +108,32 @@ public class Contacto {
         LocalDateTime actualizadoEn,
         EstadoRelacion estadoRelacion
     ) {
+        DomainAssert.notNull(id, "id");
+        DomainAssert.notNull(empresaId, "empresaId");
+        DomainAssert.notNull(creadoEn, "creadoEn");
+        DomainAssert.notNull(estadoRelacion, "estadoRelacion");
+        DomainAssert.lengthBetween(nombre, "nombre", 1, 150);
+
+        String normalizedCorreo = null;
+        if (correo != null && !correo.isBlank()) {
+            String stripped = correo.strip();
+            DomainAssert.email(stripped, "correo");
+            normalizedCorreo = stripped.trim();
+        }
+
         return Contacto.builder()
-            .id(DomainAssert.notNull(id, "id"))
-            .empresaId(DomainAssert.notNull(empresaId, "empresaId"))
-            .nombre(DomainAssert.lengthBetween(nombre, "nombre", 1, 150))
-            .correo(correo == null || correo.isBlank() ? null : DomainAssert.email(correo.strip(), "correo"))
+            .id(id)
+            .empresaId(empresaId)
+            .nombre(nombre.trim())
+            .correo(normalizedCorreo)
             .responsableId(responsableId)
             .creadoPor(creadoPor)
             .telefono(telefono)
             .cargo(cargo)
             .comoNosConocio(comoNosConocio)
-            .creadoEn(DomainAssert.notNull(creadoEn, "creadoEn"))
+            .creadoEn(creadoEn)
             .actualizadoEn(actualizadoEn)
-            .estadoRelacion(DomainAssert.notNull(estadoRelacion, "estadoRelacion"))
+            .estadoRelacion(estadoRelacion)
             .build();
     }
 

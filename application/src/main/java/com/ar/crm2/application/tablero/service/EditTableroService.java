@@ -11,7 +11,19 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Application service implementing EditTableroUseCase.
- * Orchestrates loading the aggregate, applying the immutable domain update, and saving.
+ *
+ * <p>Coordination responsibility only:
+ * <ol>
+ *   <li>Load the existing Tablero aggregate via {@link FindTableroByIdPort}.</li>
+ *   <li>Delegate the edit to the domain via {@link Tablero#editarDatos(String, String)}.</li>
+ *   <li>Persist the updated aggregate via {@link SaveTableroPort}.</li>
+ * </ol>
+ *
+ * <p>The previous implementation reconstructed the aggregate through
+ * {@code Tablero.reconstitute(...)} for edits, conflating persistence
+ * hydration with edit semantics. The new flow uses the domain's explicit
+ * edit behavior so that {@code reconstitute} is reserved for the persistence
+ * layer only.
  */
 @RequiredArgsConstructor
 public class EditTableroService implements EditTableroUseCase {
@@ -26,14 +38,7 @@ public class EditTableroService implements EditTableroUseCase {
         Tablero existing = findPort.findById(tableroId)
                 .orElseThrow(() -> TableroNotFoundException.forId(command.id()));
 
-        Tablero updated = Tablero.reconstitute(
-                existing.getId(),
-                command.nombre(),
-                command.descripcion(),
-                existing.getColumnasTablero(),
-                existing.getTipoTablero(),
-                existing.getCreadoEn()
-        );
+        Tablero updated = existing.editarDatos(command.nombre(), command.descripcion());
 
         return savePort.save(updated);
     }

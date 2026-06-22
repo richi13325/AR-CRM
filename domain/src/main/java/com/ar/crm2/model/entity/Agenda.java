@@ -75,19 +75,29 @@ public class Agenda {
             }
         }
 
+        DomainAssert.notNull(tipo, "tipo");
+        DomainAssert.notNull(fecha, "fecha");
+        DomainAssert.notNull(horaInicio, "horaInicio");
+        DomainAssert.notNull(creadoPor, "creadoPor");
+        DomainAssert.lengthBetween(asunto, "asunto", 1, 200);
+
+        String resolvedDescripcion = normalizeOptionalText(descripcion, 1000, "descripcion");
+        String resolvedUbicacion = normalizeOptionalText(ubicacion, 200, "ubicacion");
+        String resolvedLinkVideollamada = normalizeOptionalText(linkVideollamada, 500, "linkVideollamada");
+
         return new Agenda(
             AgendaId.create(),
-            DomainAssert.notNull(tipo, "tipo"),
-            DomainAssert.lengthBetween(asunto, "asunto", 1, 200),
-            DomainAssert.optionalLength(descripcion, 1000, "descripcion"),
-            DomainAssert.notNull(fecha, "fecha"),
-            DomainAssert.notNull(horaInicio, "horaInicio"),
+            tipo,
+            asunto.trim(),
+            resolvedDescripcion,
+            fecha,
+            horaInicio,
             horaFin,
             tareaId,
             tratoId,
-            DomainAssert.optionalLength(ubicacion, 200, "ubicacion"),
-            DomainAssert.optionalLength(linkVideollamada, 500, "linkVideollamada"),
-            DomainAssert.notNull(creadoPor, "creadoPor"),
+            resolvedUbicacion,
+            resolvedLinkVideollamada,
+            creadoPor,
             now,
             now,
             recordatorioHabilitado,
@@ -130,21 +140,34 @@ public class Agenda {
             }
         }
 
+        DomainAssert.notNull(id, "id");
+        DomainAssert.notNull(tipo, "tipo");
+        DomainAssert.notNull(fecha, "fecha");
+        DomainAssert.notNull(horaInicio, "horaInicio");
+        DomainAssert.notNull(creadoPor, "creadoPor");
+        DomainAssert.notNull(creadoEn, "creadoEn");
+        DomainAssert.notNull(actualizadoEn, "actualizadoEn");
+        DomainAssert.lengthBetween(asunto, "asunto", 1, 200);
+
+        String resolvedDescripcion = normalizeOptionalText(descripcion, 1000, "descripcion");
+        String resolvedUbicacion = normalizeOptionalText(ubicacion, 200, "ubicacion");
+        String resolvedLinkVideollamada = normalizeOptionalText(linkVideollamada, 500, "linkVideollamada");
+
         return new Agenda(
-            DomainAssert.notNull(id, "id"),
-            DomainAssert.notNull(tipo, "tipo"),
-            DomainAssert.lengthBetween(asunto, "asunto", 1, 200),
-            DomainAssert.optionalLength(descripcion, 1000, "descripcion"),
-            DomainAssert.notNull(fecha, "fecha"),
-            DomainAssert.notNull(horaInicio, "horaInicio"),
+            id,
+            tipo,
+            asunto.trim(),
+            resolvedDescripcion,
+            fecha,
+            horaInicio,
             horaFin,
             tareaId,
             tratoId,
-            DomainAssert.optionalLength(ubicacion, 200, "ubicacion"),
-            DomainAssert.optionalLength(linkVideollamada, 500, "linkVideollamada"),
-            DomainAssert.notNull(creadoPor, "creadoPor"),
-            DomainAssert.notNull(creadoEn, "creadoEn"),
-            DomainAssert.notNull(actualizadoEn, "actualizadoEn"),
+            resolvedUbicacion,
+            resolvedLinkVideollamada,
+            creadoPor,
+            creadoEn,
+            actualizadoEn,
             recordatorioHabilitado,
             recordatorioHabilitado ? minutosAntes : null,
             recordatorioHabilitado ? recordatorioEstado : null,
@@ -200,5 +223,19 @@ public class Agenda {
             recordatorioHabilitado, minutosAntes, RecordatorioEstado.FALLIDO,
             recordatorioEnviadoEn, now
         );
+    }
+
+    // ── Internal normalization helpers ──────────────────────────────
+
+    /**
+     * Normalizes an optional text field: null/blank becomes null,
+     * otherwise validates the length (max 500 by default) and returns the trimmed value.
+     */
+    private static String normalizeOptionalText(String value, int maxLen, String fieldName) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        DomainAssert.optionalLength(value, maxLen, fieldName);
+        return value.trim();
     }
 }

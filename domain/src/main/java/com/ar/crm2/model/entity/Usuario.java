@@ -51,14 +51,23 @@ public class Usuario {
         RolId rolId,
         String keycloakId
     ) {
+        DomainAssert.notNull(rolId, "rolId");
+        DomainAssert.lengthBetween(nombre, "nombre", 1, 100);
+        DomainAssert.email(correo, "correo");
+
+        String normalizedKeycloakId = (keycloakId == null || keycloakId.isBlank())
+            ? null
+            : keycloakId.trim();
+        DomainAssert.optionalLength(normalizedKeycloakId, 255, "keycloakId");
+
         return new Usuario(
             UsuarioId.create(),
-            DomainAssert.lengthBetween(nombre, "nombre", 1, 100),
-            DomainAssert.email(correo, "correo"),
-            DomainAssert.notNull(rolId, "rolId"),
+            nombre.trim(),
+            correo.trim(),
+            rolId,
             LocalDateTime.now(),
             true,
-            DomainAssert.optionalLength(keycloakId, 255, "keycloakId")
+            normalizedKeycloakId
         );
     }
 
@@ -74,14 +83,25 @@ public class Usuario {
         boolean activo,
         String keycloakId
     ) {
+        DomainAssert.notNull(id, "id");
+        DomainAssert.notNull(rolId, "rolId");
+        DomainAssert.notNull(creadoEn, "creadoEn");
+        DomainAssert.lengthBetween(nombre, "nombre", 1, 100);
+        DomainAssert.email(correo, "correo");
+
+        String normalizedKeycloakId = (keycloakId == null || keycloakId.isBlank())
+            ? null
+            : keycloakId.trim();
+        DomainAssert.optionalLength(normalizedKeycloakId, 255, "keycloakId");
+
         return new Usuario(
-            DomainAssert.notNull(id, "id"),
-            DomainAssert.lengthBetween(nombre, "nombre", 1, 100),
-            DomainAssert.email(correo, "correo"),
-            DomainAssert.notNull(rolId, "rolId"),
-            DomainAssert.notNull(creadoEn, "creadoEn"),
+            id,
+            nombre.trim(),
+            correo.trim(),
+            rolId,
+            creadoEn,
             activo,
-            DomainAssert.optionalLength(keycloakId, 255, "keycloakId")
+            normalizedKeycloakId
         );
     }
 
@@ -94,6 +114,10 @@ public class Usuario {
      * Allows external systems to set the Keycloak linkage without exposing a public setter.
      */
     public Usuario withKeycloakId(String keycloakId) {
+        String normalizedKeycloakId = (keycloakId == null || keycloakId.isBlank())
+            ? null
+            : keycloakId.trim();
+        DomainAssert.optionalLength(normalizedKeycloakId, 255, "keycloakId");
         return new Usuario(
             this.id,
             this.nombre,
@@ -101,7 +125,7 @@ public class Usuario {
             this.rolId,
             this.creadoEn,
             this.activo,
-            DomainAssert.optionalLength(keycloakId, 255, "keycloakId")
+            normalizedKeycloakId
         );
     }
 

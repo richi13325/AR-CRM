@@ -73,15 +73,13 @@ public class EtiquetaRepositoryAdapter implements
         return EtiquetaMapper.toDomain(saved);
     }
 
-    // ── FindEtiquetaByIdPort ──────────────────────────────────────
-
     @Override
     public Optional<Etiqueta> findById(EtiquetaId id) {
         return etiquetaRepository.findById(id.value().toString())
             .map(EtiquetaMapper::toDomain);
     }
 
-    // ── FindAllEtiquetasPort ──────────────────────────────────────
+
 
     @Override
     public List<Etiqueta> findAll(Optional<TipoEtiqueta> tipoEtiqueta) {

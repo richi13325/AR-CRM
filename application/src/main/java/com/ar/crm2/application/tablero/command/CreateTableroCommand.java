@@ -8,15 +8,29 @@ import java.util.UUID;
  * Command to create a new Tablero.
  * Required fields validated at construction time.
  *
- * <p>The command carries the 4 default columns data so the application layer
- * can assemble the ColumnaTablero list before calling {@link com.ar.crm2.model.entity.Tablero#create}.
+ * <p><strong>Authorization:</strong> any authenticated user may create a Tablero.
+ * The application layer is responsible for resolving the actor from the
+ * authenticated context; the domain does NOT require a {@code SuperUsuarioId}
+ * for creation.
+ *
+ * <p>Field semantics:
+ * <ul>
+ *   <li>{@code actorId} — orchestration context only. The mapper populates it
+ *       from the authenticated actor (superusuario or normal usuario). The
+ *       domain ignores it; it is kept on the command for legacy traceability
+ *       and audit until the replacement contract fully retires the field.</li>
+ *   <li>{@code columnasPredeterminadas} — legacy flag preserved for
+ *       backwards API compatibility. The application service always
+ *       assembles the 4 default columns regardless of this flag because
+ *       the board shape is a domain rule.</li>
+ * </ul>
  */
 public record CreateTableroCommand(
     String nombre,
     String descripcion,
     TipoTablero tipoTablero,
     boolean columnasPredeterminadas,
-    UUID superUsuarioId
+    UUID actorId
 ) {
 
     public CreateTableroCommand {
@@ -29,8 +43,8 @@ public record CreateTableroCommand(
         if (tipoTablero == null) {
             throw new IllegalArgumentException("tipoTablero is required");
         }
-        if (superUsuarioId == null) {
-            throw new IllegalArgumentException("superUsuarioId is required");
+        if (actorId == null) {
+            throw new IllegalArgumentException("actorId is required");
         }
     }
 }

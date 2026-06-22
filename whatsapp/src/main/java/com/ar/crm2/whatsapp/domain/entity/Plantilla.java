@@ -9,10 +9,12 @@ import java.util.UUID;
 public record Plantilla(UUID id, String titulo, String contenido, LocalDateTime creadoEn) {
 
     public static Plantilla create(String titulo, String contenido) {
+        DomainAssert.lengthBetween(titulo, "titulo", 1, 120);
+        DomainAssert.notBlank(contenido, "contenido");
         return new Plantilla(
                 UUID.randomUUID(),
-                DomainAssert.lengthBetween(titulo, "titulo", 1, 120),
-                DomainAssert.notBlank(contenido, "contenido"),
+                titulo.trim(),
+                contenido.trim(),
                 LocalDateTime.now());
     }
 }

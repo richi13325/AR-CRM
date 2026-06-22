@@ -8,7 +8,7 @@ import com.ar.crm2.model.entity.Tablero;
  * UseCase suffix per project rules.
  *
  * <p>Guard: before calling domain behavior, the service queries
- * {@link com.ar.crm2.application.tablero.port.out.ExistsFichasByColumnaIdPort}
+ * {@link com.ar.crm2.application.ficha.port.out.ExistsFichasByColumnaIdPort}
  * to determine if the column contains fichas.
  */
 public interface EliminarColumnaDelTableroUseCase {

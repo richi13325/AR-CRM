@@ -4,6 +4,7 @@ import com.ar.crm2.adapter.in.rest.dto.request.AsignarColumnaRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.CreateTableroRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.EditTableroRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.ReordenarColumnasRequest;
+import com.ar.crm2.adapter.in.rest.mapper.TableroResponseAssembler;
 import com.ar.crm2.adapter.out.persistence.repository.ColumnaRepository;
 import com.ar.crm2.application.security.ActorContext;
 import com.ar.crm2.application.tablero.command.AsignarColumnaTableroCommand;
@@ -26,10 +27,13 @@ import com.ar.crm2.model.enums.TipoTablero;
 import com.ar.crm2.model.vo.ColumnaId;
 import com.ar.crm2.model.vo.TableroId;
 import com.ar.crm2.security.KeycloakJwtActorContextMapper;
+import com.ar.crm2.security.WaProperties;
+import com.ar.crm2.whatsapp.application.bot.port.in.FindBotByTokenUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -70,6 +74,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * expected by {@code TableroController.create} is always populated.
  */
 @WebMvcTest(controllers = {TableroController.class, GlobalExceptionHandler.class})
+@Import(TableroResponseAssembler.class)
 @WithMockUser
 class TableroControllerIT {
 
@@ -105,6 +110,12 @@ class TableroControllerIT {
 
     @MockitoBean
     private KeycloakJwtActorContextMapper actorContextMapper;
+
+    @MockitoBean
+    private FindBotByTokenUseCase findBotByTokenUseCase;
+
+    @MockitoBean
+    private WaProperties waProperties;
 
     // ── Setup ───────────────────────────────────────────────────────
 

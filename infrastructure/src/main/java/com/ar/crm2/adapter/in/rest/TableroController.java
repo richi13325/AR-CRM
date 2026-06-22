@@ -6,7 +6,7 @@ import com.ar.crm2.adapter.in.rest.dto.request.EditTableroRequest;
 import com.ar.crm2.adapter.in.rest.dto.request.ReordenarColumnasRequest;
 import com.ar.crm2.adapter.in.rest.dto.response.TableroResponse;
 import com.ar.crm2.adapter.in.rest.mapper.TableroCommandMapper;
-import com.ar.crm2.adapter.out.persistence.repository.ColumnaRepository;
+import com.ar.crm2.adapter.in.rest.mapper.TableroResponseAssembler;
 import com.ar.crm2.application.tablero.command.CreateTableroCommand;
 import com.ar.crm2.application.tablero.command.DeleteTableroCommand;
 import com.ar.crm2.application.tablero.command.EditTableroCommand;
@@ -26,7 +26,6 @@ import com.ar.crm2.model.entity.Tablero;
 import com.ar.crm2.security.ActorContextRequestAttributeFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -44,10 +43,13 @@ import java.util.UUID;
 /**
  * REST controller for Tablero operations (CRUD + column management).
  * Implements inbound adapter pattern, delegates to application UseCase contracts.
+ *
+ * <p><strong>Response assembly:</strong> catalog column hydration and DTO
+ * assembly are delegated to the {@link TableroResponseAssembler}. The
+ * controller itself does not depend on persistence repositories.
  */
 @RestController
 @RequestMapping("/api/tableros")
-@RequiredArgsConstructor
 public class TableroController {
 
     private final CreateTableroUseCase createUseCase;
@@ -58,7 +60,29 @@ public class TableroController {
     private final AsignarColumnaTableroUseCase asignarColumnaUseCase;
     private final EliminarColumnaDelTableroUseCase eliminarColumnaUseCase;
     private final ReordenarColumnasUseCase reordenarColumnasUseCase;
-    private final ColumnaRepository columnaRepository;
+    private final TableroResponseAssembler responseAssembler;
+
+    public TableroController(
+            CreateTableroUseCase createUseCase,
+            GetAllTablerosUseCase getAllUseCase,
+            GetTableroByIdUseCase getByIdUseCase,
+            EditTableroUseCase editUseCase,
+            DeleteTableroUseCase deleteUseCase,
+            AsignarColumnaTableroUseCase asignarColumnaUseCase,
+            EliminarColumnaDelTableroUseCase eliminarColumnaUseCase,
+            ReordenarColumnasUseCase reordenarColumnasUseCase,
+            TableroResponseAssembler responseAssembler
+    ) {
+        this.createUseCase = createUseCase;
+        this.getAllUseCase = getAllUseCase;
+        this.getByIdUseCase = getByIdUseCase;
+        this.editUseCase = editUseCase;
+        this.deleteUseCase = deleteUseCase;
+        this.asignarColumnaUseCase = asignarColumnaUseCase;
+        this.eliminarColumnaUseCase = eliminarColumnaUseCase;
+        this.reordenarColumnasUseCase = reordenarColumnasUseCase;
+        this.responseAssembler = responseAssembler;
+    }
 
     // ── Tablero CRUD ────────────────────────────────────────────────
 
@@ -67,7 +91,7 @@ public class TableroController {
      * The actor id is derived from the authenticated actor context (JWT),
      * not from the request body — eliminating the spoofable field for this endpoint.
      * Any authenticated actor (superusuario or normal usuario) may create a Tablero;
-     * the mapper prefers {@code superUsuarioId} and falls back to {@code usuarioId}.
+     * the mapper resolves a generic actor id from the token context.
      */
     @PostMapping("/create")
     public ResponseEntity<TableroResponse> create(
@@ -78,7 +102,7 @@ public class TableroController {
                 ActorContextRequestAttributeFilter.ACTOR_CONTEXT_ATTRIBUTE);
         CreateTableroCommand command = TableroCommandMapper.toCommand(request, actorContext);
         Tablero tablero = createUseCase.create(command);
-        return ResponseEntity.status(HttpStatus.CREATED).body(TableroResponse.fromDomain(tablero, columnaRepository));
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseAssembler.assemble(tablero));
     }
 
     /**
@@ -88,7 +112,7 @@ public class TableroController {
     public ResponseEntity<List<TableroResponse>> getAll() {
         List<Tablero> tableros = getAllUseCase.getAll();
         List<TableroResponse> responses = tableros.stream()
-            .map(t -> TableroResponse.fromDomain(t, columnaRepository))
+            .map(responseAssembler::assemble)
             .toList();
         return ResponseEntity.ok(responses);
     }
@@ -100,7 +124,7 @@ public class TableroController {
     public ResponseEntity<TableroResponse> getById(@RequestParam UUID id) {
         GetTableroByIdCommand command = TableroCommandMapper.toGetByIdCommand(id);
         Tablero tablero = getByIdUseCase.getById(command);
-        return ResponseEntity.ok(TableroResponse.fromDomain(tablero, columnaRepository));
+        return ResponseEntity.ok(responseAssembler.assemble(tablero));
     }
 
     /**
@@ -110,7 +134,7 @@ public class TableroController {
     public ResponseEntity<TableroResponse> edit(@RequestParam UUID id, @Valid @RequestBody EditTableroRequest request) {
         EditTableroCommand command = TableroCommandMapper.toCommand(id, request);
         Tablero tablero = editUseCase.edit(command);
-        return ResponseEntity.ok(TableroResponse.fromDomain(tablero, columnaRepository));
+        return ResponseEntity.ok(responseAssembler.assemble(tablero));
     }
 
     /**
@@ -152,7 +176,7 @@ public class TableroController {
         Tablero tablero = asignarColumnaUseCase.asignarColumna(
                 TableroCommandMapper.toAsignarCommand(id, columnaId, request)
         );
-        return ResponseEntity.status(HttpStatus.CREATED).body(TableroResponse.fromDomain(tablero, columnaRepository));
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseAssembler.assemble(tablero));
     }
 
     /**
@@ -165,6 +189,6 @@ public class TableroController {
     ) {
         ReordenarColumnasCommand command = TableroCommandMapper.toCommand(id, request);
         Tablero tablero = reordenarColumnasUseCase.reordenar(command);
-        return ResponseEntity.ok(TableroResponse.fromDomain(tablero, columnaRepository));
+        return ResponseEntity.ok(responseAssembler.assemble(tablero));
     }
 }

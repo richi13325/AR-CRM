@@ -61,11 +61,15 @@ public class Trato {
         LocalDate fechaCierreEsperada,
         TipoContrato tipoContrato
     ) {
+        DomainAssert.notNull(contactoId, "contactoId");
+        DomainAssert.notNull(responsableId, "responsableId");
+        DomainAssert.lengthBetween(nombre, "nombre", 1, 200);
+
         return new Trato(
             TratoId.create(),
-            DomainAssert.notNull(contactoId, "contactoId"),
-            DomainAssert.notNull(responsableId, "responsableId"),
-            DomainAssert.lengthBetween(nombre, "nombre", 1, 200),
+            contactoId,
+            responsableId,
+            nombre.trim(),
             valorEstimado,
             probabilidad,
             fechaCierreEsperada,
@@ -107,18 +111,24 @@ public static Trato reconstitute(
         LocalDateTime creadoEn,
         LocalDateTime actualizadoEn
     ) {
+        DomainAssert.notNull(id, "id");
+        DomainAssert.notNull(contactoId, "contactoId");
+        DomainAssert.notNull(responsableId, "responsableId");
+        DomainAssert.notNull(creadoEn, "creadoEn");
+        DomainAssert.lengthBetween(nombre, "nombre", 1, 200);
+
         return new Trato(
-            DomainAssert.notNull(id, "id"),
-            DomainAssert.notNull(contactoId, "contactoId"),
-            DomainAssert.notNull(responsableId, "responsableId"),
-            DomainAssert.lengthBetween(nombre, "nombre", 1, 200),
+            id,
+            contactoId,
+            responsableId,
+            nombre.trim(),
             valorEstimado,
             probabilidad,
             fechaCierreEsperada,
             tipoContrato,
             estado != null ? estado : EstadoTrato.ABIERTO,
             motivoPerdida,
-            DomainAssert.notNull(creadoEn, "creadoEn"),
+            creadoEn,
             actualizadoEn
         );
     }

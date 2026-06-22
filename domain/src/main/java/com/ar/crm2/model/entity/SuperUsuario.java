@@ -46,12 +46,19 @@ public class SuperUsuario {
         String correo,
         String keycloakId
     ) {
+        DomainAssert.email(correo, "correo");
+
+        String normalizedKeycloakId = (keycloakId == null || keycloakId.isBlank())
+            ? null
+            : keycloakId.trim();
+        DomainAssert.optionalLength(normalizedKeycloakId, 255, "keycloakId");
+
         return new SuperUsuario(
             SuperUsuarioId.create(),
-            DomainAssert.email(correo, "correo"),
+            correo.trim(),
             LocalDateTime.now(),
             true,
-            DomainAssert.optionalLength(keycloakId, 255, "keycloakId")
+            normalizedKeycloakId
         );
     }
 
@@ -65,12 +72,21 @@ public class SuperUsuario {
         boolean activo,
         String keycloakId
     ) {
+        DomainAssert.notNull(id, "id");
+        DomainAssert.notNull(creadoEn, "creadoEn");
+        DomainAssert.email(correo, "correo");
+
+        String normalizedKeycloakId = (keycloakId == null || keycloakId.isBlank())
+            ? null
+            : keycloakId.trim();
+        DomainAssert.optionalLength(normalizedKeycloakId, 255, "keycloakId");
+
         return new SuperUsuario(
-            DomainAssert.notNull(id, "id"),
-            DomainAssert.email(correo, "correo"),
-            DomainAssert.notNull(creadoEn, "creadoEn"),
+            id,
+            correo.trim(),
+            creadoEn,
             activo,
-            DomainAssert.optionalLength(keycloakId, 255, "keycloakId")
+            normalizedKeycloakId
         );
     }
 
@@ -83,12 +99,16 @@ public class SuperUsuario {
      * Allows external systems to set the Keycloak linkage without exposing a public setter.
      */
     public SuperUsuario withKeycloakId(String keycloakId) {
+        String normalizedKeycloakId = (keycloakId == null || keycloakId.isBlank())
+            ? null
+            : keycloakId.trim();
+        DomainAssert.optionalLength(normalizedKeycloakId, 255, "keycloakId");
         return new SuperUsuario(
             this.id,
             this.correo,
             this.creadoEn,
             this.activo,
-            DomainAssert.optionalLength(keycloakId, 255, "keycloakId")
+            normalizedKeycloakId
         );
     }
 
