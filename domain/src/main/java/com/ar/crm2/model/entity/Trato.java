@@ -89,15 +89,17 @@ public class Trato {
 
     /** Marca la oportunidad como perdida, con el motivo. */
     public Trato perder(String motivo) {
+        DomainAssert.lengthBetween(motivo, "motivo", 1, 500);
+
         return new Trato(id, contactoId, responsableId, nombre, valorEstimado, probabilidad,
             fechaCierreEsperada, tipoContrato, EstadoTrato.PERDIDO,
-            DomainAssert.lengthBetween(motivo, "motivo", 1, 500), creadoEn, LocalDateTime.now());
+            motivo.trim(), creadoEn, LocalDateTime.now());
     }
 
     /**
      * Reconstitutes an existing Trato from persistence.
      */
-public static Trato reconstitute(
+    public static Trato reconstitute(
         TratoId id,
         ContactoId contactoId,
         UsuarioId responsableId,

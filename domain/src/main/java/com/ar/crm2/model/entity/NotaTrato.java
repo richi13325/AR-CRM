@@ -33,24 +33,31 @@ public class NotaTrato {
 
     /** Nota manual escrita por un usuario. */
     public static NotaTrato crearNota(TratoId tratoId, UsuarioId autorId, String contenido) {
+        DomainAssert.notNull(tratoId, "tratoId");
+        DomainAssert.notNull(autorId, "autorId");
+        DomainAssert.lengthBetween(contenido, "contenido", 1, 2000);
+
         return new NotaTrato(
             NotaTratoId.create(),
-            DomainAssert.notNull(tratoId, "tratoId"),
-            DomainAssert.notNull(autorId, "autorId"),
+            tratoId,
+            autorId,
             TipoNota.NOTA,
-            DomainAssert.lengthBetween(contenido, "contenido", 1, 2000),
+            contenido.trim(),
             LocalDateTime.now()
         );
     }
 
     /** Evento automático del sistema (sin autor). */
     public static NotaTrato crearEvento(TratoId tratoId, String contenido) {
+        DomainAssert.notNull(tratoId, "tratoId");
+        DomainAssert.lengthBetween(contenido, "contenido", 1, 2000);
+
         return new NotaTrato(
             NotaTratoId.create(),
-            DomainAssert.notNull(tratoId, "tratoId"),
+            tratoId,
             null,
             TipoNota.EVENTO,
-            DomainAssert.lengthBetween(contenido, "contenido", 1, 2000),
+            contenido.trim(),
             LocalDateTime.now()
         );
     }
@@ -59,13 +66,18 @@ public class NotaTrato {
         NotaTratoId id, TratoId tratoId, UsuarioId autorId, TipoNota tipo,
         String contenido, LocalDateTime creadoEn
     ) {
+        DomainAssert.notNull(id, "id");
+        DomainAssert.notNull(tratoId, "tratoId");
+        DomainAssert.notNull(tipo, "tipo");
+        DomainAssert.notNull(creadoEn, "creadoEn");
+
         return new NotaTrato(
-            DomainAssert.notNull(id, "id"),
-            DomainAssert.notNull(tratoId, "tratoId"),
+            id,
+            tratoId,
             autorId,
-            DomainAssert.notNull(tipo, "tipo"),
+            tipo,
             contenido,
-            DomainAssert.notNull(creadoEn, "creadoEn")
+            creadoEn
         );
     }
 }
