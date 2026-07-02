@@ -42,7 +42,7 @@ class KeycloakJwtActorContextMapperTest {
     // ------------------------------------------------------------------
 
     @Test
-    @DisplayName("map(Jwt) — all claims present — returns complete ActorContext")
+    @DisplayName("map(Jwt) — all identity claims present — returns complete ActorContext")
     void map_jwt_allClaimsPresent_returnsFullActorContext() {
         // Arrange
         UUID usuarioId = UUID.randomUUID();

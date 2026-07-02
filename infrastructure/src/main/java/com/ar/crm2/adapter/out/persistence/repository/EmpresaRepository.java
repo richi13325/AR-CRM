@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 /**
  * Spring Data JPA repository for Empresa persistence.
  */
@@ -21,4 +23,14 @@ public interface EmpresaRepository extends JpaRepository<EmpresaEntity, String> 
         WHERE c.empresaId = :empresaId
         """)
     boolean existsTratosByEmpresaId(@Param("empresaId") String empresaId);
+
+    /**
+     * PR 2 (add-crm-ai-assistant-spring-ai) — tenant scope derived query.
+     *
+     * <p>Returns the Empresa rows created by the given user. Used by
+     * {@code FindEmpresasByCreadorPort} so the AI assistant can resolve
+     * the set of {@code empresaId} values a requester owns (per
+     * design.md §Security: {@code Empresa.creadoPor == usuarioId}).
+     */
+    List<EmpresaEntity> findByCreadoPor(String creadoPor);
 }

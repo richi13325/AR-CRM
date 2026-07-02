@@ -3,6 +3,7 @@ package com.ar.crm2.security;
 import com.ar.crm2.security.ActorContextFilterConfiguration;
 import com.ar.crm2.security.KeycloakJwtActorContextMapper;
 import com.ar.crm2.security.KeycloakJwtAuthoritiesConverter;
+import com.ar.crm2.whatsapp.application.bot.port.in.FindBotByTokenUseCase;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -30,6 +31,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.core.convert.converter.Converter;
@@ -66,9 +68,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         ActorContextFilterConfiguration.class,
         ActorContextRequestAttributeFilter.class,
         KeycloakJwtActorContextMapper.class,
+        WaApiKeyFilter.class,
+        BotApiTokenFilter.class,
         SecurityConfigTest.TestSecurityConfig.class
 })
-@Import(SecurityConfigTest.TestJwtDecoderConfig.class)
+@Import({
+        SecurityConfigTest.TestJwtDecoderConfig.class,
+        SecurityConfigTest.TestFilterDependencyConfig.class
+})
 class SecurityConfigTest {
 
     @TestConfiguration
@@ -104,6 +111,11 @@ class SecurityConfigTest {
             @PatchMapping("/api/tableros/{id}")
             HttpStatus update() { return HttpStatus.OK; }
 
+            @PostMapping("/api/wa/webhook")
+            ResponseEntity<Void> waWebhook() {
+                return ResponseEntity.ok().build();
+            }
+
             @RequestMapping("/api/**")
             HttpStatus fallback() { return HttpStatus.OK; }
         }
@@ -132,6 +144,19 @@ class SecurityConfigTest {
                     .expiresAt(Instant.now().plusSeconds(3600))
                     .issuer("http://localhost:8180/realms/crm2-local")
                     .build();
+        }
+    }
+
+    @TestConfiguration
+    static class TestFilterDependencyConfig {
+        @Bean
+        WaProperties waProperties() {
+            return new WaProperties("test-wa-api-key", "https://example.test");
+        }
+
+        @Bean
+        FindBotByTokenUseCase findBotByTokenUseCase() {
+            return token -> Optional.empty();
         }
     }
 
@@ -252,6 +277,27 @@ class SecurityConfigTest {
             mvc.perform(options("/api/tableros")
                             .header("Origin", "http://localhost:5173")
                             .header("Access-Control-Request-Method", "GET"))
+                    .andExpect(status().isOk());
+        }
+    }
+
+    @Nested
+    @DisplayName("WA webhook API key filter")
+    class WaWebhookApiKeyFilter {
+
+        @Test
+        @DisplayName("POST /api/wa/webhook — missing x-api-key — returns 401 Unauthorized")
+        void postWaWebhook_missingApiKey_returns401(@Autowired MockMvc mvc) throws Exception {
+            mvc.perform(post("/api/wa/webhook"))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(content().json("{\"error\":\"API key invalida\"}"));
+        }
+
+        @Test
+        @DisplayName("POST /api/wa/webhook — valid x-api-key — returns 200 OK")
+        void postWaWebhook_validApiKey_returns200(@Autowired MockMvc mvc) throws Exception {
+            mvc.perform(post("/api/wa/webhook")
+                            .header("x-api-key", "test-wa-api-key"))
                     .andExpect(status().isOk());
         }
     }

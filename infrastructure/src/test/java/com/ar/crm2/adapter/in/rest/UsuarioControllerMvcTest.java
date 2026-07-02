@@ -15,6 +15,8 @@ import com.ar.crm2.model.entity.Usuario;
 import com.ar.crm2.model.vo.RolId;
 import com.ar.crm2.model.vo.UsuarioId;
 import com.ar.crm2.security.KeycloakJwtActorContextMapper;
+import com.ar.crm2.security.WaProperties;
+import com.ar.crm2.whatsapp.application.bot.port.in.FindBotByTokenUseCase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -74,6 +76,33 @@ class UsuarioControllerMvcTest {
 
     @MockitoBean
     private KeycloakJwtActorContextMapper actorContextMapper;
+
+    /**
+     * The security filter chain loads {@code BotApiTokenFilter} (a {@code @Component})
+     * into this MVC slice, which constructor-injects {@link FindBotByTokenUseCase}.
+     * The bean is provided by the WhatsApp module in production, but the
+     * {@code @WebMvcTest} slice does not scan that module's services — so we
+     * register a Mockito stub here. Returning {@code Optional.empty()} mirrors
+     * the {@code SecurityConfigTest} fixture and is safe because the Usuario
+     * controller paths under test never hit the {@code /api/v1/accounts/**}
+     * guard prefix that would invoke this use case.
+     */
+    @MockitoBean
+    private FindBotByTokenUseCase findBotByTokenUseCase;
+
+    /**
+     * The security filter chain also loads {@code WaApiKeyFilter} into this MVC
+     * slice, which constructor-injects {@link WaProperties}. In production,
+     * {@code WaProperties} is registered via {@code @EnableConfigurationProperties}
+     * on {@code BootApplication} (which lives in the boot module and is NOT
+     * reachable from this infrastructure MVC slice). The MVC slice does not
+     * auto-bind {@code crm2.wa.*} properties either, so we provide a stub here
+     * for symmetry with the {@code SecurityConfigTest} fixture. The Usuario
+     * controller paths under test never hit {@code /api/wa/webhook} or
+     * {@code /api/cron/auto-resolver}, so the stub value is never exercised.
+     */
+    @MockitoBean
+    private WaProperties waProperties;
 
     // ── Helpers ─────────────────────────────────────────────────────
 

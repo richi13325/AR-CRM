@@ -15,15 +15,23 @@ import java.util.*;
  * are confined here and never leak into application/domain.
  *
  * Keycloak claim names used:
- * - {@code sub}             → subject
+ * - {@code sub}                → subject
  * - {@code preferred_username} → username
- * - {@code email}           → email
- * - {@code usuario_id}      → usuarioId (custom Keycloak mapper, UUID as string)
- * - {@code super_usuario_id} → superUsuarioId (custom Keycloak mapper, UUID as string)
+ * - {@code email}              → email
+ * - {@code usuario_id}         → usuarioId (custom Keycloak mapper, UUID as string)
+ * - {@code super_usuario_id}   → superUsuarioId (custom Keycloak mapper, UUID as string)
  * - {@code realm_access.roles} → roles (array from Keycloak token)
  *
- * Missing or malformed custom UUID claims result in empty Optionals — the
- * actor context is still valid but identity fields will be absent.
+ * <p><b>Tenant scope is intentionally NOT extracted here.</b>
+ * {@link ActorContext} is a pure identity record; tenant authority is
+ * resolved per-endpoint by the application services (either from an
+ * explicit {@code empresaId} request parameter or from the owned
+ * resource addressed by the request). The previous
+ * {@code empresa_id} claim extraction was removed in the PR4/PR5
+ * corrective slice.
+ *
+ * <p>Missing or malformed custom UUID claims result in empty Optionals —
+ * the actor context is still valid but identity fields will be absent.
  */
 @Component
 public class  KeycloakJwtActorContextMapper {

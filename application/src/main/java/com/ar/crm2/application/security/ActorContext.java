@@ -14,12 +14,19 @@ import java.util.UUID;
  * is assembled in the infrastructure layer and passed to application services
  * through assembler/mapper code (never injected as a framework artifact).
  *
- * @param subject      Keycloak subject (sub claim) — the unique identity identifier
- * @param username     Keycloak preferred_username claim
- * @param email        Keycloak email claim (may be absent for service accounts)
- * @param usuarioId     Custom Keycloak claim (usuario_id) — the CRM Usuario entity ID
- * @param superUsuarioId Custom Keycloak claim (super_usuario_id) — the CRM SuperUsuario entity ID
- * @param roles         Keycloak realm_access.roles — set of role strings assigned in the realm
+ * <p><b>Tenant scope is NOT carried here.</b> Tenant authority is resolved
+ * per-endpoint by the application services: either from an explicit
+ * {@code empresaId} request parameter supplied by the caller or from the
+ * owned resource addressed by the request (resource-first tenant model).
+ * This keeps {@link ActorContext} strictly an identity record and prevents
+ * the actor from carrying a tenant hint that could override the resource.
+ *
+ * @param subject         Keycloak subject (sub claim) — the unique identity identifier
+ * @param username        Keycloak preferred_username claim
+ * @param email           Keycloak email claim (may be absent for service accounts)
+ * @param usuarioId       Custom Keycloak claim (usuario_id) — the CRM Usuario entity ID
+ * @param superUsuarioId  Custom Keycloak claim (super_usuario_id) — the CRM SuperUsuario entity ID
+ * @param roles           Keycloak realm_access.roles — set of role strings assigned in the realm
  */
 public record ActorContext(
     String subject,
