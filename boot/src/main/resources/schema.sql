@@ -205,3 +205,142 @@ CREATE TABLE IF NOT EXISTS wa_bot (
 
 CREATE INDEX IF NOT EXISTS idx_wa_bot_canal
     ON wa_bot (canal_id);
+
+-- AI Assistant tables (add-crm-ai-assistant-spring-ai, PR 2)
+-- Idempotent: safe on fresh databases and repeated startups.
+-- Table name: ai_accion (not ai_accion_propuesta) — matches the
+-- domain class AiAccion after the PR 1 naming cleanup. The previous
+-- name was never deployed, so no backward-compat migration is needed.
+CREATE TABLE IF NOT EXISTS ai_accion (
+    id                      VARCHAR(36)  NOT NULL,
+    empresa_id              VARCHAR(36)  NOT NULL,
+    solicitada_por          VARCHAR(36)  NOT NULL,
+    wa_conversacion_id      VARCHAR(64)  NOT NULL,
+    wa_mensaje_id           VARCHAR(64),
+    ai_conversacion_id      VARCHAR(36)  NOT NULL DEFAULT '',
+    tipo_accion             VARCHAR(50)  NOT NULL,
+    estado                  VARCHAR(20)  NOT NULL,
+    payload_json            TEXT         NOT NULL,
+    rationale               TEXT         NOT NULL,
+    version                 INT          NOT NULL,
+    expires_at              TIMESTAMP,
+    resultado_entidad_id    VARCHAR(64),
+    error_reason            TEXT,
+    creado_en               TIMESTAMP    NOT NULL,
+    actualizado_en          TIMESTAMP    NOT NULL,
+    CONSTRAINT pk_ai_accion PRIMARY KEY (id),
+    CONSTRAINT ck_ai_accion_estado CHECK (estado IN
+        ('PENDING','CONFIRMED','REJECTED','EXPIRED','EXECUTED','FAILED'))
+);
+
+-- Audit-link fields added after PR1/PR2 verification: every proposal must
+-- store the source AI conversation id (required) and the optional source
+-- WhatsApp message id. Additive: safe on existing databases (legacy rows
+-- keep ai_conversacion_id='' if they predate this change; the application
+-- layer always sets a real UUID on new proposals via AiAccionMapper).
+ALTER TABLE ai_accion ADD COLUMN IF NOT EXISTS wa_mensaje_id VARCHAR(64);
+ALTER TABLE ai_accion ADD COLUMN IF NOT EXISTS ai_conversacion_id VARCHAR(36) NOT NULL DEFAULT '';
+
+CREATE INDEX IF NOT EXISTS idx_ai_accion_solicitada_por_estado
+    ON ai_accion (solicitada_por, estado);
+
+CREATE INDEX IF NOT EXISTS idx_ai_accion_expires_at_estado
+    ON ai_accion (expires_at, estado);
+
+CREATE INDEX IF NOT EXISTS idx_ai_accion_empresa_wa_conv
+    ON ai_accion (empresa_id, wa_conversacion_id);
+
+CREATE INDEX IF NOT EXISTS idx_ai_accion_ai_conversacion_id
+    ON ai_accion (ai_conversacion_id);
+
+-- AI conversation table (PR 2, Phase 3).
+-- One row per AI assistant session, scoped to (actor, empresa, wa_conversacion, contacto?).
+CREATE TABLE IF NOT EXISTS ai_conversacion (
+    id                  VARCHAR(36)  NOT NULL,
+    empresa_id          VARCHAR(36)  NOT NULL,
+    actor_usuario_id    VARCHAR(36)  NOT NULL,
+    wa_conversacion_id  VARCHAR(64)  NOT NULL,
+    contacto_id         VARCHAR(36),
+    archivada           BOOLEAN      NOT NULL DEFAULT FALSE,
+    creado_en           TIMESTAMP    NOT NULL,
+    actualizado_en      TIMESTAMP    NOT NULL,
+    CONSTRAINT pk_ai_conversacion PRIMARY KEY (id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_conversacion_actor_wa_conv
+    ON ai_conversacion (actor_usuario_id, wa_conversacion_id);
+
+CREATE INDEX IF NOT EXISTS idx_ai_conversacion_empresa_actualizado
+    ON ai_conversacion (empresa_id, actualizado_en);
+
+-- AI message table (PR 2, Phase 3). One row per turn inside an AI
+-- conversation (user, assistant, system or tool). Never replaces
+-- wa_mensaje as the canonical WhatsApp transcript.
+CREATE TABLE IF NOT EXISTS ai_mensaje (
+    id                  VARCHAR(36)  NOT NULL,
+    ai_conversacion_id  VARCHAR(36)  NOT NULL,
+    rol                 VARCHAR(20)  NOT NULL,
+    contenido           TEXT         NOT NULL,
+    modelo              VARCHAR(100),
+    prompt_tokens       INT,
+    completion_tokens   INT,
+    latency_ms          BIGINT,
+    tool_call_json      TEXT,
+    creado_en           TIMESTAMP    NOT NULL,
+    CONSTRAINT pk_ai_mensaje PRIMARY KEY (id),
+    CONSTRAINT ck_ai_mensaje_rol CHECK (rol IN ('USER','ASSISTANT','SYSTEM','TOOL'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_mensaje_conversacion_creado
+    ON ai_mensaje (ai_conversacion_id, creado_en);
+
+-- AI context summary table (PR 2, Phase 3). Latest summary per AI
+-- conversation; the application layer decides whether it must be
+-- regenerated based on the source_watermark monotonic counter.
+CREATE TABLE IF NOT EXISTS ai_resumen_contexto (
+    id                  VARCHAR(36)  NOT NULL,
+    actor_usuario_id    VARCHAR(36)  NOT NULL,
+    empresa_id          VARCHAR(36)  NOT NULL,
+    wa_conversacion_id  VARCHAR(64)  NOT NULL,
+    contacto_id         VARCHAR(36),
+    facts               TEXT         NOT NULL,
+    inferences          TEXT         NOT NULL,
+    source_wa_mensaje_id VARCHAR(64),
+    source_watermark    BIGINT       NOT NULL,
+    ai_conversacion_id  VARCHAR(36)  NOT NULL,
+    creado_en           TIMESTAMP    NOT NULL,
+    actualizado_en      TIMESTAMP    NOT NULL,
+    CONSTRAINT pk_ai_resumen_contexto PRIMARY KEY (id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_resumen_conversacion_actualizado
+    ON ai_resumen_contexto (ai_conversacion_id, actualizado_en);
+
+-- AI memory table (PR 2, Phase 3). One atomic idea per row. Memory
+-- is always private to (actor, empresa, wa_conversacion OR contacto).
+CREATE TABLE IF NOT EXISTS ai_memoria (
+    id                  VARCHAR(36)  NOT NULL,
+    actor_usuario_id    VARCHAR(36)  NOT NULL,
+    empresa_id          VARCHAR(36)  NOT NULL,
+    wa_conversacion_id  VARCHAR(64),
+    contacto_id         VARCHAR(36),
+    visibilidad         VARCHAR(30)  NOT NULL,
+    contenido           TEXT         NOT NULL,
+    origen_tipo         VARCHAR(30)  NOT NULL,
+    origen_id           VARCHAR(64),
+    version             BIGINT       NOT NULL,
+    creado_en           TIMESTAMP    NOT NULL,
+    actualizado_en      TIMESTAMP    NOT NULL,
+    expires_at          TIMESTAMP    NOT NULL,
+    superseded_by       VARCHAR(36),
+    superseded          BOOLEAN      NOT NULL DEFAULT FALSE,
+    expirada            BOOLEAN      NOT NULL DEFAULT FALSE,
+    CONSTRAINT pk_ai_memoria PRIMARY KEY (id),
+    CONSTRAINT ck_ai_memoria_visibilidad CHECK (visibilidad IN ('CONVERSACION_SCOPED','CONTACTO_SCOPED'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_memoria_scope_activa
+    ON ai_memoria (actor_usuario_id, empresa_id, wa_conversacion_id, superseded, expirada);
+
+CREATE INDEX IF NOT EXISTS idx_ai_memoria_expires_at
+    ON ai_memoria (expires_at);
