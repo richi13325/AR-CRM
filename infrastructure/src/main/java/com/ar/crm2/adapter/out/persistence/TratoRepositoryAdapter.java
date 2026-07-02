@@ -14,8 +14,18 @@ import lombok.RequiredArgsConstructor;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Single persistence adapter that satisfies every Trato outbound port.
+ * The {@code findById(TratoId)} method is consumed by both CRM use
+ * cases and AI assistant flows through the same
+ * {@link FindTratoByIdPort} — there is no separate AI read port.
+ *
+ * <p>Tenant authorization is enforced by the AI application service
+ * that calls {@link FindTratoByIdPort}; this adapter is tenant-blind.
+ */
 @RequiredArgsConstructor
-public class TratoRepositoryAdapter implements SaveTratoPort, FindAllTratosPort, FindTratoByIdPort, DeleteTratoByIdPort {
+public class TratoRepositoryAdapter
+        implements SaveTratoPort, FindAllTratosPort, FindTratoByIdPort, DeleteTratoByIdPort {
 
     private final TratoRepository repository;
 

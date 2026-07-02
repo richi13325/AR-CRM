@@ -228,6 +228,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
  * infrastructure adapters plus application services without contaminating inner layers.
  */
 @Configuration
+@org.springframework.context.annotation.Import(AiWiringConfig.class)
 public class WiringConfig {
 
     @Bean
@@ -302,9 +303,20 @@ public class WiringConfig {
     }
 
     @Bean
-    public KeycloakUserProvisioningAdapter keycloakUserProvisioningAdapter(KeycloakAdminProperties props) {
-        return new KeycloakUserProvisioningAdapter(props);
+    public com.ar.crm2.adapter.out.keycloak.KeycloakUserProvisioningAdapter keycloakUserProvisioningAdapter(KeycloakAdminProperties props) {
+        return new com.ar.crm2.adapter.out.keycloak.KeycloakUserProvisioningAdapter(props);
     }
+
+    // ── AI Wiring ──────────────────────────────────────────────────────
+    // The AI assistant beans (services, adapters, tools, ChatClient)
+    // live in {@link AiWiringConfig} and are gated by
+    // {@code ai-assistant.enabled}. When the flag is {@code false}
+    // (the default), no AI bean is created and the AI surface is
+    // fully absent from the runtime context. Boot-wiring tests
+    // (e.g. FichaWiringTest) that load only this config therefore
+    // never trigger AI bean instantiation and are immune to the
+    // un-mocked AI repository dependencies introduced by the
+    // application/AI module.
 
     // ── Empresa UseCase Beans ──
 

@@ -43,6 +43,30 @@ spring:
           issuer-uri: ${CRM2_KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/crm2-local}
           audiences: ${CRM2_KEYCLOAK_AUDIENCE:crm2-api}
 
+  # AI Assistant (PR 4 — Spring AI). Feature-flagged and bounded to keep the
+  # AI surface opt-in and safe-by-default.
+  ai:
+    openai:
+      # Base URL of the OpenAI-compatible Anthropic gateway. The CRM uses
+      # Anthropic Claude as the default model; the OpenAI starter is wired
+      # because Anthropic does not ship an official Spring AI starter yet.
+      base-url: ${AI_OPENAI_BASE_URL:https://api.anthropic.com/v1/}
+      api-key: ${ANTHROPIC_API_KEY:}
+      chat:
+        options:
+          model: ${ANTHROPIC_MODEL:claude-haiku-4-5-20251001}
+          # Per-turn wall-clock timeout. Spring AI's provider HTTP
+          # client enforces this against the upstream LLM; the
+          # OpenAiChatAdapter runs ChatClient.call() synchronously on
+          # the request thread, so a tight `timeout` value here is the
+          # runtime gate for "the model took too long". Configuring it
+          # shorter than the per-handler wall-clock budget below
+          # ensures the framework aborts first and the boundary
+          # surfaces a controlled AiAssistantException -> HTTP 502.
+          timeout: ${AI_OPENAI_TIMEOUT:PT30S}
+          temperature: 0.2
+          max-tokens: 2048
+
   mail:
     host: smtp.gmail.com
     port: 587
@@ -93,3 +117,54 @@ crm2:
 anthropic:
   api-key: ${ANTHROPIC_API_KEY:}
   model: ${ANTHROPIC_MODEL:claude-haiku-4-5-20251001}
+
+# ───────────────────────────────────────────────────────────────────────────
+# AI Assistant (PR 4 — Spring AI). Feature-flagged and bounded to keep the
+# AI surface opt-in and safe-by-default. Spring AI config lives under
+# the merged `spring.ai.*` block above to avoid a duplicate top-level key.
+# ───────────────────────────────────────────────────────────────────────────
+
+# CRM-side AI feature flags and safety budgets. Defaults are conservative;
+# a misconfigured deploy cannot enable the AI surface accidentally.
+ai-assistant:
+  # Master kill-switch. The AiController bean is only registered when
+  # this is true (see WiringConfig); setting it to false disables the
+  # REST endpoint, the @Tool surface and the OpenAiChatAdapter in one
+  # place.
+  enabled: ${AI_ASSISTANT_ENABLED:false}
+  # Phase 1 memory mutations are disabled by default. The AI module may
+  # read active conversation-scoped rows from `ai_memoria`, but any save
+  # or delete attempt is rejected while this flag stays false.
+  phase1:
+    memory-writes-enabled: ${AI_MEMORY_WRITES_ENABLED:false}
+  # Per-conversation token budget. The AnalizarChatService rejects
+  # turns that would exceed this; the per-turn handler aborts the
+  # loop with a 502 timeout error when the budget is consumed.
+  token-budget-per-conversation: ${AI_TOKEN_BUDGET:12000}
+  # Max tool calls the model may issue per turn. This value is
+  # surfaced as a deterministic test seam in OpenAiChatAdapter
+  # (assertToolCallBudget(int)) so callers and tests can verify the
+  # configured budget end-to-end. Spring AI 2.0 does NOT expose a
+  # built-in per-tool-call knob in the ChatClient chain, so this
+  # value is a validated configuration surface only — real loop-
+  # stopping enforcement requires a custom CallAdvisor (follow-up).
+  # See design.md "Architecture Decisions" and apply-progress.md
+  # "Slice 10 — AI tool-safety honesty correction".
+  max-tool-calls-per-turn: ${AI_MAX_TOOL_CALLS:5}
+  # Per-turn wall-clock budget in milliseconds. Surfaced as a
+  # deterministic test seam in OpenAiChatAdapter
+  # (getTurnTimeoutMillis()). The runtime per-turn HTTP-timeout
+  # gate is owned by Spring AI's auto-configured provider via
+  # spring.ai.openai.chat.options.timeout above — not by this
+  # value. Configuring timeout (ISO-8601) shorter than this budget
+  # ensures the framework aborts first; the boundary then surfaces
+  # the abort as AiAssistantException -> HTTP 502. Wrapping the
+  # chat call in CompletableFuture.supplyAsync(...).orTimeout(...)
+  # was attempted in an earlier iteration but it broke thread-local
+  # tool-context propagation for @Tool callbacks (audit #1) and
+  # has been removed.
+  turn-timeout-ms: ${AI_TURN_TIMEOUT_MS:25000}
+  # TTL (minutes) applied to staged AI action proposals when the model
+  # does not supply an explicit value. Matches the default in
+  # AnalizarChatService.
+  default-proposal-ttl-minutes: ${AI_PROPOSAL_TTL_MIN:60}

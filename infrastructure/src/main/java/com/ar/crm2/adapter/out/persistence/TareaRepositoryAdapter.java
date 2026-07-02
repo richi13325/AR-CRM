@@ -14,8 +14,18 @@ import lombok.RequiredArgsConstructor;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Single persistence adapter that satisfies every Tarea outbound port.
+ * The {@code findById(TareaId)} method is consumed by both CRM use
+ * cases and AI assistant flows through the same
+ * {@link FindTareaByIdPort} — there is no separate AI read port.
+ *
+ * <p>Tenant authorization is enforced by the AI application service
+ * that calls {@link FindTareaByIdPort}; this adapter is tenant-blind.
+ */
 @RequiredArgsConstructor
-public class TareaRepositoryAdapter implements SaveTareaPort, FindAllTareasPort, FindTareaByIdPort, DeleteTareaByIdPort {
+public class TareaRepositoryAdapter
+        implements SaveTareaPort, FindAllTareasPort, FindTareaByIdPort, DeleteTareaByIdPort {
 
     private final TareaRepository repository;
 

@@ -2,19 +2,9 @@ package com.ar.crm2.config;
 
 import com.ar.crm2.adapter.out.persistence.FichaRepositoryAdapter;
 import com.ar.crm2.adapter.out.persistence.EtiquetaRepositoryAdapter;
-import com.ar.crm2.adapter.out.persistence.repository.ColumnaRepository;
-import com.ar.crm2.adapter.out.persistence.repository.ContactoRepository;
-import com.ar.crm2.adapter.out.persistence.repository.EmpresaRepository;
 import com.ar.crm2.adapter.out.persistence.repository.EtiquetaRepository;
 import com.ar.crm2.adapter.out.persistence.repository.FichaEtiquetaRepository;
 import com.ar.crm2.adapter.out.persistence.repository.FichaRepository;
-import com.ar.crm2.adapter.out.persistence.repository.RolRepository;
-import com.ar.crm2.adapter.out.persistence.repository.SuperUsuarioRepository;
-import com.ar.crm2.adapter.out.persistence.repository.TableroRepository;
-import com.ar.crm2.adapter.out.persistence.repository.TareaRepository;
-import com.ar.crm2.adapter.out.persistence.repository.TratoRepository;
-import com.ar.crm2.adapter.out.persistence.repository.UsuarioRepository;
-import com.ar.crm2.adapter.out.persistence.repository.AgendaRepository;
 import com.ar.crm2.application.etiqueta.port.out.FindEtiquetasByIdsPort;
 import com.ar.crm2.application.ficha.port.in.CreateFichaUseCase;
 import com.ar.crm2.application.ficha.port.in.EditFichaUseCase;
@@ -24,6 +14,8 @@ import com.ar.crm2.application.ficha.service.CreateFichaService;
 import com.ar.crm2.application.ficha.service.EditFichaService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
@@ -39,36 +31,58 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@link FindEtiquetasByIdsPort} port that the slice-3 ficha services
  * require but the slice-3 wiring initially omitted.
  *
- * <p>This test loads only {@code WiringConfig} (no full Spring Boot
- * context), so it stays fast and isolated from runtime dependencies
- * (Keycloak, JPA, controllers).
+ * <p>This test now loads only the ficha-relevant bean subset from
+ * {@link WiringConfig}. That keeps the composition-root contract for the
+ * ficha services while avoiding unrelated transitive collaborators from the
+ * broader boot graph.
  */
-@SpringJUnitConfig(classes = WiringConfig.class)
+@SpringJUnitConfig(classes = FichaWiringTest.FichaSliceConfig.class)
 class FichaWiringTest {
 
-    @MockitoBean private EmpresaRepository empresaRepository;
-    @MockitoBean private ContactoRepository contactoRepository;
-    @MockitoBean private TableroRepository tableroRepository;
-    @MockitoBean private TratoRepository tratoRepository;
-    @MockitoBean private TareaRepository tareaRepository;
     @MockitoBean private FichaRepository fichaRepository;
-    @MockitoBean private RolRepository rolRepository;
-    @MockitoBean private ColumnaRepository columnaRepository;
-    @MockitoBean private UsuarioRepository usuarioRepository;
-    @MockitoBean private SuperUsuarioRepository superUsuarioRepository;
     @MockitoBean private EtiquetaRepository etiquetaRepository;
     @MockitoBean private FichaEtiquetaRepository fichaEtiquetaRepository;
-    @MockitoBean private AgendaRepository agendaRepository;
-
-    @MockitoBean private com.ar.crm2.adapter.out.keycloak.KeycloakUserProvisioningAdapter keycloakUserProvisioningAdapter;
-    @MockitoBean private com.ar.crm2.adapter.out.email.AgendaEmailAdapter agendaEmailAdapter;
-    @MockitoBean private org.springframework.mail.javamail.JavaMailSender mailSender;
-    @MockitoBean private com.ar.crm2.adapter.out.email.config.EmailProperties emailProperties;
 
     @Autowired private CreateFichaUseCase createFichaUseCase;
     @Autowired private EditFichaUseCase editFichaUseCase;
     @Autowired private FichaRepositoryAdapter fichaRepositoryAdapter;
     @Autowired private EtiquetaRepositoryAdapter etiquetaRepositoryAdapter;
+
+    @Configuration
+    static class FichaSliceConfig {
+
+        private final WiringConfig wiringConfig = new WiringConfig();
+
+        @Bean
+        FichaRepositoryAdapter fichaRepositoryAdapter(FichaRepository repository) {
+            return wiringConfig.fichaRepositoryAdapter(repository);
+        }
+
+        @Bean
+        EtiquetaRepositoryAdapter etiquetaRepositoryAdapter(
+                EtiquetaRepository etiquetaRepository,
+                FichaEtiquetaRepository fichaEtiquetaRepository
+        ) {
+            return wiringConfig.etiquetaRepositoryAdapter(etiquetaRepository, fichaEtiquetaRepository);
+        }
+
+        @Bean
+        CreateFichaUseCase createFichaUseCase(
+                FichaRepositoryAdapter savePort,
+                EtiquetaRepositoryAdapter findEtiquetasPort
+        ) {
+            return wiringConfig.createFichaUseCase(savePort, findEtiquetasPort);
+        }
+
+        @Bean
+        EditFichaUseCase editFichaUseCase(
+                FichaRepositoryAdapter findPort,
+                FichaRepositoryAdapter savePort,
+                EtiquetaRepositoryAdapter findEtiquetasPort
+        ) {
+            return wiringConfig.editFichaUseCase(findPort, savePort, findEtiquetasPort);
+        }
+    }
 
     /**
      * Reflectively reads the private {@code findEtiquetasPort} field from
